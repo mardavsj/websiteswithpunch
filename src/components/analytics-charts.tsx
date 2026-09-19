@@ -531,8 +531,11 @@ const MILESTONE_MIN_GAP = 0.14;
 
 function domainMeterFill(days: number | null): string {
   if (days == null) return MUTED;
-  if (days <= 14) return ROSE;
-  if (days <= 60) return AMBER;
+  // Expired or critical (≤30d): deep / near-red rose
+  if (days <= 30) return ROSE;
+  // Halfway through watch window (≤ ~547d): amber
+  if (days <= DOMAIN_WATCH_DAYS / 2) return AMBER;
+  // Healthy: accent blue
   return ACCENT;
 }
 
@@ -583,14 +586,21 @@ export function DomainExpiryMeter({
   days: number | null;
   expiresAt: string | null;
 }) {
-  const critical = days != null && days <= 14;
-  const warn = days != null && days <= 60;
+  const expired = days != null && days <= 0;
+  const critical = days != null && days <= 30;
+  const warn = days != null && days <= DOMAIN_WATCH_DAYS / 2;
   const clamped =
     days == null ? 0 : Math.max(0, Math.min(DOMAIN_WATCH_DAYS, days));
+  // Expired: fill entire track red (100%). Otherwise remaining % of watch window.
   const pct =
     days == null
       ? 0
-      : Math.max(0, Math.min(100, Math.round((clamped / DOMAIN_WATCH_DAYS) * 100)));
+      : expired
+        ? 100
+        : Math.max(
+            0,
+            Math.min(100, Math.round((clamped / DOMAIN_WATCH_DAYS) * 100)),
+          );
   const fill = domainMeterFill(days);
 
   const W = 400;
@@ -615,7 +625,9 @@ export function DomainExpiryMeter({
   const secondary =
     days == null
       ? "Watch window unavailable"
-      : `${pct}% of watch window remaining · ${formatMonthsDays(days)}`;
+      : expired
+        ? "Domain registration expired"
+        : `${pct}% of watch window remaining · ${formatMonthsDays(days)}`;
 
   return (
     <div className="rounded-none border border-rule bg-bg p-4">
@@ -634,7 +646,7 @@ export function DomainExpiryMeter({
           {days == null ? "—" : days}
           {days != null ? (
             <span className="ml-1.5 text-base font-normal text-muted">
-              days left
+              {expired ? "days (expired)" : "days left"}
             </span>
           ) : null}
         </p>
@@ -651,7 +663,9 @@ export function DomainExpiryMeter({
         aria-label={
           days == null
             ? "Domain registration expiry unavailable"
-            : `Domain registration: ${days} days left, ${pct}% of watch window remaining`
+            : expired
+              ? "Domain registration expired"
+              : `Domain registration: ${days} days left, ${pct}% of watch window remaining`
         }
       >
         {/* Full track */}
@@ -662,7 +676,7 @@ export function DomainExpiryMeter({
           height={trackH}
           fill={RULE}
         />
-        {/* Remaining life fill */}
+        {/* Remaining life fill — expired paints 100% track red */}
         <rect
           x={padX}
           y={trackY}
