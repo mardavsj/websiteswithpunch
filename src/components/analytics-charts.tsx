@@ -526,6 +526,9 @@ export function ExpiryRingCard({
 /** ~3-year watch window for domain registration remaining life. */
 const DOMAIN_WATCH_DAYS = 365 * 3;
 
+/** Minimum fraction of track width between milestone labels. */
+const MILESTONE_MIN_GAP = 0.14;
+
 function domainMeterFill(days: number | null): string {
   if (days == null) return MUTED;
   if (days <= 14) return ROSE;
@@ -540,6 +543,37 @@ function formatMonthsDays(days: number): string {
   if (months <= 0) return `${days} day${days === 1 ? "" : "s"}`;
   if (rem === 0) return `${months} mo`;
   return `${months} mo ${rem}d`;
+}
+
+/**
+ * Always keep Today + Expires. Add intermediates only when ≥ ~14% of track
+ * apart from already-selected neighbors. Prefer 1y over 90d over 30d.
+ */
+function selectDomainMilestones(
+  watchDays: number,
+): Array<{ days: number; label: string }> {
+  const ends: Array<{ days: number; label: string }> = [
+    { days: 0, label: "Today" },
+    { days: watchDays, label: "Expires" },
+  ];
+  // Preference order: keep 1y before 90d before 30d when dropping for space.
+  const candidates: Array<{ days: number; label: string }> = [
+    { days: 365, label: "1y" },
+    { days: 90, label: "90d" },
+    { days: 30, label: "30d" },
+  ];
+
+  const selected = [...ends];
+  for (const c of candidates) {
+    if (c.days <= 0 || c.days >= watchDays) continue;
+    const pos = c.days / watchDays;
+    const fits = selected.every(
+      (s) => Math.abs(s.days / watchDays - pos) >= MILESTONE_MIN_GAP,
+    );
+    if (fits) selected.push(c);
+  }
+
+  return selected.sort((a, b) => a.days - b.days);
 }
 
 export function DomainExpiryMeter({
@@ -560,19 +594,16 @@ export function DomainExpiryMeter({
   const fill = domainMeterFill(days);
 
   const W = 400;
-  const trackY = 18;
+  const trackY = 8;
   const trackH = 10;
   const padX = 2;
   const trackW = W - padX * 2;
   const fillW = (pct / 100) * trackW;
 
-  const milestones: Array<{ days: number; label: string }> = [
-    { days: 0, label: "Today" },
-    { days: 30, label: "30d" },
-    { days: 90, label: "90d" },
-    { days: 365, label: "1y" },
-    { days: DOMAIN_WATCH_DAYS, label: "Expires" },
-  ];
+  const milestones = selectDomainMilestones(DOMAIN_WATCH_DAYS);
+  const middleMilestones = milestones.filter(
+    (m) => m.days !== 0 && m.days !== DOMAIN_WATCH_DAYS,
+  );
 
   const expiryLabel = expiresAt
     ? new Date(expiresAt).toLocaleDateString("en-IN", {
@@ -613,9 +644,9 @@ export function DomainExpiryMeter({
       </div>
 
       <svg
-        viewBox={`0 0 ${W} 48`}
-        className="mt-4 h-12 w-full"
-        preserveAspectRatio="none"
+        viewBox={`0 0 ${W} 26`}
+        className="mt-4 h-7 w-full"
+        preserveAspectRatio="xMidYMid meet"
         role="img"
         aria-label={
           days == null
@@ -640,40 +671,40 @@ export function DomainExpiryMeter({
           fill={fill}
           style={{ transition: "width 0.65s ease, fill 0.3s ease" }}
         />
-        {/* Tick marks + milestone labels */}
+        {/* Tick marks for non-colliding milestones only (paired with labels below) */}
         {milestones.map((m) => {
           const x = padX + (m.days / DOMAIN_WATCH_DAYS) * trackW;
-          const isEnd = m.days === 0 || m.days === DOMAIN_WATCH_DAYS;
           return (
-            <g key={m.label}>
-              <line
-                x1={x}
-                y1={trackY - 3}
-                x2={x}
-                y2={trackY + trackH + 3}
-                stroke={INK}
-                strokeOpacity={0.28}
-                strokeWidth="1"
-              />
-              <text
-                x={x}
-                y={trackY + trackH + 14}
-                textAnchor={isEnd ? (m.days === 0 ? "start" : "end") : "middle"}
-                style={{
-                  fontSize: "9px",
-                  fill: MUTED,
-                  fontWeight: 500,
-                  letterSpacing: "0.04em",
-                }}
-              >
-                {m.label}
-              </text>
-            </g>
+            <line
+              key={m.label}
+              x1={x}
+              y1={trackY - 3}
+              x2={x}
+              y2={trackY + trackH + 3}
+              stroke={INK}
+              strokeOpacity={0.28}
+              strokeWidth="1"
+            />
           );
         })}
       </svg>
 
-      <p className="mt-1 text-xs text-muted">{secondary}</p>
+      {/* HTML labels: Today / Expires always; middles only when collision filter kept them */}
+      <div className="relative mt-1.5 h-4 text-[11px] font-medium tracking-wide text-muted">
+        <span className="absolute left-0">Today</span>
+        {middleMilestones.map((m) => (
+          <span
+            key={m.label}
+            className="absolute -translate-x-1/2"
+            style={{ left: `${(m.days / DOMAIN_WATCH_DAYS) * 100}%` }}
+          >
+            {m.label}
+          </span>
+        ))}
+        <span className="absolute right-0">Expires</span>
+      </div>
+
+      <p className="mt-2 text-xs text-muted">{secondary}</p>
     </div>
   );
 }
