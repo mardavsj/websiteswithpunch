@@ -21,9 +21,9 @@ type Site = {
 function DaysPill({ days, label, warnAt = 30 }: { days: number | null; label: string; warnAt?: number }) {
   if (days === null || days === undefined) {
     return (
-      <div className="rounded-lg bg-slate-50 px-3 py-2">
-        <p className="text-xs text-slate-500">{label}</p>
-        <p className="text-sm font-medium text-slate-400">Unknown</p>
+      <div className="rounded-none border border-rule bg-bg px-3 py-2">
+        <p className="text-xs text-muted">{label}</p>
+        <p className="text-sm font-medium text-muted">Unknown</p>
       </div>
     );
   }
@@ -31,14 +31,14 @@ function DaysPill({ days, label, warnAt = 30 }: { days: number | null; label: st
   const critical = days <= 7;
   return (
     <div
-      className={`rounded-lg px-3 py-2 ${
-        critical ? "bg-rose-50" : warn ? "bg-amber-50" : "bg-slate-50"
+      className={`rounded-none border border-rule px-3 py-2 ${
+        critical ? "bg-rose-50" : warn ? "bg-amber-50" : "bg-bg"
       }`}
     >
-      <p className="text-xs text-slate-500">{label}</p>
+      <p className="text-xs text-muted">{label}</p>
       <p
         className={`text-sm font-semibold ${
-          critical ? "text-rose-700" : warn ? "text-amber-800" : "text-slate-900"
+          critical ? "text-rose-700" : warn ? "text-amber-800" : "text-ink"
         }`}
       >
         {days} day{days === 1 ? "" : "s"}
@@ -71,18 +71,18 @@ export function SiteCard({ site }: { site: Site }) {
   }
 
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+    <article className="rounded-none border border-rule bg-bg p-5 transition hover:border-ink/20">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="truncate text-lg font-semibold text-slate-900">{site.name}</h3>
+            <h3 className="truncate font-display text-lg font-medium text-ink">{site.name}</h3>
             <StatusBadge status={site.status} />
           </div>
           <a
             href={site.url}
             target="_blank"
             rel="noreferrer"
-            className="mt-1 block truncate text-sm text-indigo-600 hover:underline"
+            className="mt-1 block truncate text-sm text-accent hover:underline"
           >
             {site.url}
           </a>
@@ -90,13 +90,13 @@ export function SiteCard({ site }: { site: Site }) {
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <div className="rounded-lg bg-slate-50 px-3 py-2">
-          <p className="text-xs text-slate-500">Last check</p>
-          <p className="text-sm font-medium text-slate-800">{formatDate(site.lastCheckedAt)}</p>
+        <div className="rounded-none border border-rule bg-bg px-3 py-2">
+          <p className="text-xs text-muted">Last check</p>
+          <p className="text-sm font-medium text-ink">{formatDate(site.lastCheckedAt)}</p>
         </div>
-        <div className="rounded-lg bg-slate-50 px-3 py-2">
-          <p className="text-xs text-slate-500">Latency / code</p>
-          <p className="text-sm font-medium text-slate-800">
+        <div className="rounded-none border border-rule bg-bg px-3 py-2">
+          <p className="text-xs text-muted">Latency / code</p>
+          <p className="text-sm font-medium text-ink">
             {site.lastLatencyMs != null ? `${site.lastLatencyMs}ms` : "—"}
             {site.lastStatusCode != null ? ` · ${site.lastStatusCode}` : ""}
           </p>
@@ -109,20 +109,20 @@ export function SiteCard({ site }: { site: Site }) {
         <button
           onClick={recheck}
           disabled={busy}
-          className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+          className="rounded-none bg-ink px-3 py-1.5 text-xs font-medium text-bg hover:opacity-90 disabled:opacity-50"
         >
           Recheck
         </button>
         <Link
           href={`/dashboard/sites/${site.id}/edit`}
-          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+          className="rounded-none border border-rule px-3 py-1.5 text-xs font-medium text-ink hover:bg-accent-soft"
         >
           Edit
         </Link>
         <button
           onClick={remove}
           disabled={busy}
-          className="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-rose-50 disabled:opacity-50"
+          className="rounded-none border border-rose-200 px-3 py-1.5 text-xs font-medium text-ink hover:bg-rose-50 disabled:opacity-50"
         >
           Delete
         </button>
