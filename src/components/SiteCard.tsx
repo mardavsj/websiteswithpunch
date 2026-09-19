@@ -23,7 +23,8 @@ function DaysPill({ days, label, warnAt = 30 }: { days: number | null; label: st
     return (
       <div className="rounded-none border border-rule bg-bg px-3 py-2">
         <p className="text-xs text-muted">{label}</p>
-        <p className="text-sm font-medium text-muted">Unknown</p>
+        <p className="text-sm font-medium text-muted">Not available</p>
+        <p className="text-[10px] text-muted/80">retry recheck</p>
       </div>
     );
   }
