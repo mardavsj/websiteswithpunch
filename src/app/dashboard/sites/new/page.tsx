@@ -8,7 +8,7 @@ export default async function NewSitePage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <h1 className="mb-6 text-2xl font-bold text-slate-900">Add a site</h1>
+      <h1 className="mb-6 font-display text-2xl font-medium text-ink">Add a site</h1>
       <SiteForm mode="create" />
     </div>
   );

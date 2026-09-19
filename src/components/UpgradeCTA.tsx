@@ -24,7 +24,7 @@ export function UpgradeCTA({ plan }: { plan: string }) {
           }
         }}
         disabled={loading}
-        className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+        className="rounded-none border border-rule bg-bg px-4 py-2 text-sm font-medium text-ink hover:bg-accent-soft disabled:opacity-60"
       >
         {loading ? "Opening…" : "Manage billing"}
       </button>
@@ -49,7 +49,7 @@ export function UpgradeCTA({ plan }: { plan: string }) {
           }
         }}
         disabled={loading}
-        className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+        className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-60"
       >
         {loading ? "Redirecting…" : "Upgrade to Pro — $12/mo"}
       </button>

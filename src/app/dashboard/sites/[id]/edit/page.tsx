@@ -14,7 +14,7 @@ export default async function EditSitePage({ params }: { params: { id: string } 
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <h1 className="mb-6 text-2xl font-bold text-slate-900">Edit site</h1>
+      <h1 className="mb-6 font-display text-2xl font-medium text-ink">Edit site</h1>
       <SiteForm mode="edit" siteId={site.id} initialName={site.name} initialUrl={site.url} />
     </div>
   );
