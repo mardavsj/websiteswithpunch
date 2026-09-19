@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { StatusBadge } from "./StatusBadge";
+import { EditSiteModal } from "./EditSiteModal";
 import { formatDate } from "@/lib/utils";
 
 type Site = {
@@ -57,6 +58,7 @@ export function SiteCard({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   async function remove() {
     if (!confirm(`Delete “${site.name}”? This cannot be undone.`)) return;
@@ -128,12 +130,13 @@ export function SiteCard({
             Analytics →
           </Link>
         )}
-        <Link
-          href={`/dashboard/sites/${site.id}/edit`}
+        <button
+          type="button"
+          onClick={() => setEditOpen(true)}
           className="rounded-none border border-rule px-3 py-1.5 text-xs font-medium text-ink hover:bg-accent-soft"
         >
           Edit
-        </Link>
+        </button>
         <button
           onClick={remove}
           disabled={busy}
@@ -142,6 +145,12 @@ export function SiteCard({
           Delete
         </button>
       </div>
+
+      <EditSiteModal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        site={{ id: site.id, name: site.name, url: site.url }}
+      />
     </article>
   );
 }
