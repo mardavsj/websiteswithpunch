@@ -44,43 +44,43 @@ export function SiteForm({ mode, siteId, initialName = "", initialUrl = "" }: Pr
   }
 
   return (
-    <form onSubmit={onSubmit} className="mx-auto max-w-lg space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <form onSubmit={onSubmit} className="mx-auto max-w-lg space-y-5 rounded-none border border-rule bg-bg p-6">
       <div>
-        <label className="block text-sm font-medium text-slate-700">Site name</label>
+        <label className="block text-sm font-medium text-ink">Site name</label>
         <input
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Marketing site"
-          className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+          className="mt-1.5 w-full rounded-none border border-rule bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-slate-700">URL</label>
+        <label className="block text-sm font-medium text-ink">URL</label>
         <input
           required
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://example.com"
-          className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+          className="mt-1.5 w-full rounded-none border border-rule bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
         />
-        <p className="mt-1 text-xs text-slate-500">HTTPS recommended for SSL expiry checks.</p>
+        <p className="mt-1 text-xs text-muted">HTTPS recommended for SSL expiry checks.</p>
       </div>
       {error && (
-        <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="rounded-none bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
       )}
       <div className="flex gap-3">
         <button
           type="submit"
           disabled={loading}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+          className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-60"
         >
           {loading ? "Saving…" : mode === "create" ? "Add site" : "Save changes"}
         </button>
         <button
           type="button"
           onClick={() => router.back()}
-          className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+          className="rounded-none border border-rule px-4 py-2 text-sm text-ink hover:bg-accent-soft"
         >
           Cancel
         </button>
