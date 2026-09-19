@@ -119,6 +119,7 @@ export default async function DashboardPage({
           {sites.map((site) => (
             <SiteCard
               key={site.id}
+              showAnalyticsLink={!showInlineAnalytics}
               site={{
                 ...site,
                 lastCheckedAt: site.lastCheckedAt?.toISOString() ?? null,

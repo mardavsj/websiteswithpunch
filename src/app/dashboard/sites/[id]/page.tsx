@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SiteAnalytics } from "@/components/SiteAnalytics";
-import { StatusBadge } from "@/components/StatusBadge";
+import { SiteCard } from "@/components/SiteCard";
 
 export const dynamic = "force-dynamic";
 
@@ -22,20 +22,17 @@ export default async function SiteAnalyticsPage({ params }: { params: { id: stri
         <Link href="/dashboard" className="text-sm text-muted hover:text-accent">
           ← Dashboard
         </Link>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <h1 className="font-display text-2xl font-medium text-ink">{site.name}</h1>
-          <StatusBadge status={site.status} />
-        </div>
-        <a
-          href={site.url}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-1 inline-block text-sm text-accent hover:underline"
-        >
-          {site.url}
-        </a>
       </div>
-      <SiteAnalytics siteId={site.id} />
+      <div className="space-y-5">
+        <SiteCard
+          showAnalyticsLink={false}
+          site={{
+            ...site,
+            lastCheckedAt: site.lastCheckedAt?.toISOString() ?? null,
+          }}
+        />
+        <SiteAnalytics siteId={site.id} />
+      </div>
     </div>
   );
 }

@@ -48,7 +48,13 @@ function DaysPill({ days, label, warnAt = 30 }: { days: number | null; label: st
   );
 }
 
-export function SiteCard({ site }: { site: Site }) {
+export function SiteCard({
+  site,
+  showAnalyticsLink = false,
+}: {
+  site: Site;
+  showAnalyticsLink?: boolean;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
@@ -114,12 +120,14 @@ export function SiteCard({ site }: { site: Site }) {
         >
           Recheck
         </button>
-        <Link
-          href={`/dashboard/sites/${site.id}`}
-          className="rounded-none bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover"
-        >
-          Analytics →
-        </Link>
+        {showAnalyticsLink && (
+          <Link
+            href={`/dashboard/sites/${site.id}`}
+            className="rounded-none bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover"
+          >
+            Analytics →
+          </Link>
+        )}
         <Link
           href={`/dashboard/sites/${site.id}/edit`}
           className="rounded-none border border-rule px-3 py-1.5 text-xs font-medium text-ink hover:bg-accent-soft"
