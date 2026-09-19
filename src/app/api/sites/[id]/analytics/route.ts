@@ -2,14 +2,18 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
+  ageDaysFromMs,
   buildIncidents,
   buildTimeline,
+  clampRangeToUnlocked,
+  getUnlockedRanges,
   healthScore,
   latencySeries,
   parseRange,
   percentile,
   rangeToMs,
   type CheckPoint,
+  type RangeKey,
 } from "@/lib/analytics";
 
 export const dynamic = "force-dynamic";
@@ -29,8 +33,26 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
 
   const { searchParams } = new URL(req.url);
-  const range = parseRange(searchParams.get("range"));
-  const since = new Date(Date.now() - rangeToMs(range));
+  const requestedRange = parseRange(searchParams.get("range"));
+
+  // Site age from createdAt; fall back to earliest CheckResult when needed
+  let siteCreatedAt: Date = site.createdAt;
+  if (!siteCreatedAt || Number.isNaN(siteCreatedAt.getTime())) {
+    const earliest = await prisma.checkResult.findFirst({
+      where: { siteId: site.id },
+      orderBy: { checkedAt: "asc" },
+      select: { checkedAt: true },
+    });
+    siteCreatedAt = earliest?.checkedAt ?? new Date();
+  }
+
+  const now = Date.now();
+  const ageMs = Math.max(0, now - siteCreatedAt.getTime());
+  const ageDays = ageDaysFromMs(ageMs);
+  const unlockedRanges = getUnlockedRanges(ageMs);
+  const { range, rangeClamped } = clampRangeToUnlocked(requestedRange, unlockedRanges);
+
+  const since = new Date(now - rangeToMs(range));
 
   const rows = await prisma.checkResult.findMany({
     where: { siteId: site.id, checkedAt: { gte: since } },
@@ -82,6 +104,12 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
   const body = {
     range,
+    requestedRange,
+    rangeClamped,
+    siteCreatedAt: siteCreatedAt.toISOString(),
+    ageMs,
+    ageDays,
+    unlockedRanges: unlockedRanges as RangeKey[],
     siteId: site.id,
     siteName: site.name,
     siteUrl: site.url,
