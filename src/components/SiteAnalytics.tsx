@@ -166,31 +166,45 @@ export function SiteAnalytics({
   const [error, setError] = useState<string | null>(null);
   const [fade, setFade] = useState(true);
 
-  const load = useCallback(
-    async (r: RangeKey) => {
-      setLoading(true);
-      setError(null);
-      setFade(false);
-      try {
-        const res = await fetch(`/api/sites/${siteId}/analytics?range=${r}`, {
+  const load = useCallback(async (r: RangeKey) => {
+    setLoading(true);
+    setError(null);
+    setFade(false);
+    try {
+      const res = await fetch(
+        `/api/sites/${siteId}/analytics?range=${encodeURIComponent(r)}&_=${Date.now()}`,
+        {
+          method: "GET",
           cache: "no-store",
-        });
-        if (!res.ok) throw new Error("Could not load analytics");
-        const json = (await res.json()) as AnalyticsPayload;
-        setData(json);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load");
-      } finally {
-        setLoading(false);
-        requestAnimationFrame(() => setFade(true));
-      }
-    },
-    [siteId]
-  );
+          headers: { Accept: "application/json" },
+        }
+      );
+      if (!res.ok) throw new Error("Could not load analytics");
+      const json = (await res.json()) as AnalyticsPayload;
+      setData(json);
+      setRange(json.range);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load");
+    } finally {
+      setLoading(false);
+      requestAnimationFrame(() => setFade(true));
+    }
+  }, [siteId]);
 
   useEffect(() => {
-    load(range);
-  }, [range, load]);
+    void load(range);
+    // intentionally only on mount / site change — range changes call load directly
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [siteId, load]);
+
+  function selectRange(next: RangeKey) {
+    if (next === range && !loading) {
+      void load(next);
+      return;
+    }
+    setRange(next);
+    void load(next);
+  }
 
   return (
     <section
@@ -209,7 +223,8 @@ export function SiteAnalytics({
               <button
                 key={r.key}
                 type="button"
-                onClick={() => setRange(r.key)}
+                onClick={() => selectRange(r.key)}
+                disabled={loading && range === r.key}
                 className={`px-3 py-1.5 text-xs font-medium transition-colors duration-200 ${
                   range === r.key
                     ? "bg-ink text-bg"
@@ -230,7 +245,17 @@ export function SiteAnalytics({
         </div>
       </div>
 
+      {data && (
+        <p className="mt-3 text-xs text-muted">
+          Showing <span className="font-medium text-ink">{data.range}</span>
+          {" · "}
+          <span className="font-medium text-ink">{data.totals.checks}</span> checks in this window
+          {loading ? " · updating…" : ""}
+        </p>
+      )}
+
       <div
+        key={data?.range ?? "loading"}
         className={`mt-5 transition-opacity duration-300 ${fade && !loading ? "opacity-100" : "opacity-40"}`}
       >
         {error && (

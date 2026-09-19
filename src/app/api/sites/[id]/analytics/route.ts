@@ -12,6 +12,9 @@ import {
   type CheckPoint,
 } from "@/lib/analytics";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   const session = await getSession();
   if (!session?.user?.id) {
@@ -77,7 +80,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     domainDaysLeft: site.domainDaysLeft,
   });
 
-  return NextResponse.json({
+  const body = {
     range,
     siteId: site.id,
     siteName: site.name,
@@ -106,5 +109,13 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     statusCodes,
     lastDowntimeAt: lastDowntimeAt?.toISOString() ?? null,
     empty: total === 0,
+    since: since.toISOString(),
+  };
+
+  return NextResponse.json(body, {
+    headers: {
+      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+      Pragma: "no-cache",
+    },
   });
 }
