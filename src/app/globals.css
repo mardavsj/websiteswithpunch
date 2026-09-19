@@ -4,12 +4,73 @@
 
 :root {
   color-scheme: light;
+  --bg: 45 14% 96%;
+  --ink: 216 35% 6%;
+  --muted: 220 9% 46%;
+  --rule: 216 35% 6% / 0.12;
+  --accent: 216 84% 53%;
+  --accent-soft: 216 60% 85% / 0.3;
+  --accent-hover: 216 84% 45%;
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --border: var(--rule);
+  --radius: 0px;
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
 }
 
-body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+* {
+  border-color: hsl(var(--border));
 }
 
 html {
   scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  @apply bg-bg text-ink antialiased;
+  font-family: var(--font-body);
+  line-height: 1.6;
+  letter-spacing: -0.011em;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+
+::selection {
+  background: hsl(var(--accent-soft));
+  color: hsl(var(--ink));
+}
+
+:focus-visible {
+  outline: 2px solid hsl(var(--accent));
+  outline-offset: 2px;
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+  .font-body {
+    font-family: var(--font-body);
+  }
+  .label-caps {
+    font-family: var(--font-body);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: hsl(var(--muted));
+  }
 }
