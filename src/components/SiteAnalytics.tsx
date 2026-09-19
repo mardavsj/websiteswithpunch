@@ -8,6 +8,7 @@ import {
 } from "@/lib/analytics";
 import {
   AvailabilityStrip,
+  DomainExpiryMeter,
   DonutChart,
   ExpiryRingCard,
   LatencyAreaChart,
@@ -338,11 +339,9 @@ export function SiteAnalytics({
                 expiresAt={data.ssl.expiresAt}
                 warnAt={30}
               />
-              <ExpiryRingCard
-                title="Domain registration"
+              <DomainExpiryMeter
                 days={data.domain.daysLeft}
                 expiresAt={data.domain.expiresAt}
-                warnAt={60}
               />
             </div>
 

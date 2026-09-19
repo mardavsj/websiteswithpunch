@@ -522,3 +522,158 @@ export function ExpiryRingCard({
     </div>
   );
 }
+
+/** ~3-year watch window for domain registration remaining life. */
+const DOMAIN_WATCH_DAYS = 365 * 3;
+
+function domainMeterFill(days: number | null): string {
+  if (days == null) return MUTED;
+  if (days <= 14) return ROSE;
+  if (days <= 60) return AMBER;
+  return ACCENT;
+}
+
+function formatMonthsDays(days: number): string {
+  if (days <= 0) return "Expired";
+  const months = Math.floor(days / 30);
+  const rem = days % 30;
+  if (months <= 0) return `${days} day${days === 1 ? "" : "s"}`;
+  if (rem === 0) return `${months} mo`;
+  return `${months} mo ${rem}d`;
+}
+
+export function DomainExpiryMeter({
+  days,
+  expiresAt,
+}: {
+  days: number | null;
+  expiresAt: string | null;
+}) {
+  const critical = days != null && days <= 14;
+  const warn = days != null && days <= 60;
+  const clamped =
+    days == null ? 0 : Math.max(0, Math.min(DOMAIN_WATCH_DAYS, days));
+  const pct =
+    days == null
+      ? 0
+      : Math.max(0, Math.min(100, Math.round((clamped / DOMAIN_WATCH_DAYS) * 100)));
+  const fill = domainMeterFill(days);
+
+  const W = 400;
+  const trackY = 18;
+  const trackH = 10;
+  const padX = 2;
+  const trackW = W - padX * 2;
+  const fillW = (pct / 100) * trackW;
+
+  const milestones: Array<{ days: number; label: string }> = [
+    { days: 0, label: "Today" },
+    { days: 30, label: "30d" },
+    { days: 90, label: "90d" },
+    { days: 365, label: "1y" },
+    { days: DOMAIN_WATCH_DAYS, label: "Expires" },
+  ];
+
+  const expiryLabel = expiresAt
+    ? new Date(expiresAt).toLocaleDateString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        dateStyle: "medium",
+      })
+    : null;
+
+  const secondary =
+    days == null
+      ? "Watch window unavailable"
+      : `${pct}% of watch window remaining · ${formatMonthsDays(days)}`;
+
+  return (
+    <div className="rounded-none border border-rule bg-bg p-4">
+      <p className="label-caps text-muted">Domain registration</p>
+
+      <div className="mt-3 flex flex-wrap items-baseline justify-between gap-2">
+        <p
+          className={`font-display text-3xl font-medium tabular-nums ${
+            critical
+              ? "text-rose-700"
+              : warn
+                ? "text-amber-800"
+                : "text-ink"
+          }`}
+        >
+          {days == null ? "—" : days}
+          {days != null ? (
+            <span className="ml-1.5 text-base font-normal text-muted">
+              days left
+            </span>
+          ) : null}
+        </p>
+        <p className="text-xs text-muted">
+          {expiryLabel ? `Expires ${expiryLabel}` : "Expiry not available"}
+        </p>
+      </div>
+
+      <svg
+        viewBox={`0 0 ${W} 48`}
+        className="mt-4 h-12 w-full"
+        preserveAspectRatio="none"
+        role="img"
+        aria-label={
+          days == null
+            ? "Domain registration expiry unavailable"
+            : `Domain registration: ${days} days left, ${pct}% of watch window remaining`
+        }
+      >
+        {/* Full track */}
+        <rect
+          x={padX}
+          y={trackY}
+          width={trackW}
+          height={trackH}
+          fill={RULE}
+        />
+        {/* Remaining life fill */}
+        <rect
+          x={padX}
+          y={trackY}
+          width={Math.max(fillW, days != null && days > 0 ? 2 : 0)}
+          height={trackH}
+          fill={fill}
+          style={{ transition: "width 0.65s ease, fill 0.3s ease" }}
+        />
+        {/* Tick marks + milestone labels */}
+        {milestones.map((m) => {
+          const x = padX + (m.days / DOMAIN_WATCH_DAYS) * trackW;
+          const isEnd = m.days === 0 || m.days === DOMAIN_WATCH_DAYS;
+          return (
+            <g key={m.label}>
+              <line
+                x1={x}
+                y1={trackY - 3}
+                x2={x}
+                y2={trackY + trackH + 3}
+                stroke={INK}
+                strokeOpacity={0.28}
+                strokeWidth="1"
+              />
+              <text
+                x={x}
+                y={trackY + trackH + 14}
+                textAnchor={isEnd ? (m.days === 0 ? "start" : "end") : "middle"}
+                style={{
+                  fontSize: "9px",
+                  fill: MUTED,
+                  fontWeight: 500,
+                  letterSpacing: "0.04em",
+                }}
+              >
+                {m.label}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+
+      <p className="mt-1 text-xs text-muted">{secondary}</p>
+    </div>
+  );
+}
