@@ -32,10 +32,10 @@ export default async function DashboardPage({
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-slate-600">
+          <h1 className="font-display text-2xl font-medium text-ink">Dashboard</h1>
+          <p className="mt-1 text-sm text-muted">
             Welcome{user.name ? `, ${user.name}` : ""}. Plan:{" "}
-            <span className="font-medium capitalize text-slate-900">{plan}</span> ·{" "}
+            <span className="font-medium capitalize text-ink">{plan}</span> ·{" "}
             {sites.length}/{limit} sites
           </p>
         </div>
@@ -44,12 +44,12 @@ export default async function DashboardPage({
           {!atLimit ? (
             <Link
               href="/dashboard/sites/new"
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+              className="rounded-none bg-ink px-4 py-2 text-sm font-medium text-bg hover:opacity-90"
             >
               Add site
             </Link>
           ) : (
-            <span className="rounded-lg bg-slate-100 px-4 py-2 text-sm text-slate-500">
+            <span className="rounded-none border border-rule bg-accent-soft px-4 py-2 text-sm text-muted">
               Site limit reached
             </span>
           )}
@@ -57,26 +57,26 @@ export default async function DashboardPage({
       </div>
 
       {searchParams.upgraded && (
-        <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+        <div className="mt-6 rounded-none border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
           Upgrade successful (or checkout returned). Refresh if your plan has not updated yet —
           Stripe webhooks set Pro status.
         </div>
       )}
       {searchParams.canceled && (
-        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div className="mt-6 rounded-none border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           Checkout canceled. You can upgrade anytime.
         </div>
       )}
 
       {sites.length === 0 ? (
-        <div className="mt-12 rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
-          <h2 className="text-lg font-semibold text-slate-900">No sites yet</h2>
-          <p className="mt-2 text-sm text-slate-600">
+        <div className="mt-12 rounded-none border border-dashed border-rule bg-bg p-12 text-center">
+          <h2 className="font-display text-lg font-medium text-ink">No sites yet</h2>
+          <p className="mt-2 text-sm text-muted">
             Add your first URL to start uptime, SSL, and domain monitoring.
           </p>
           <Link
             href="/dashboard/sites/new"
-            className="mt-6 inline-flex rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+            className="mt-6 inline-flex rounded-none bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
           >
             Add your first site
           </Link>
