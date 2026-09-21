@@ -18,16 +18,14 @@ export function FeaturesSection() {
             return (
               <div
                 key={row.title}
-                className={`grid items-center gap-8 md:grid-cols-2 md:gap-14 ${reverse ? "md:[&>*:first-child]:order-2" : ""}`}
+                className={`grid items-stretch gap-8 md:grid-cols-2 md:gap-14 ${reverse ? "md:[&>*:first-child]:order-2" : ""}`}
               >
                 <div
-                  className={`flex items-center justify-center ${reverse ? "md:justify-self-end" : ""}`}
+                  className={`flex min-h-[220px] w-full items-center justify-center bg-accent-soft sm:min-h-[280px] ${reverse ? "md:justify-self-stretch" : ""}`}
                 >
-                  <div className="flex h-24 w-24 items-center justify-center bg-accent-soft sm:h-28 sm:w-28">
-                    <row.Icon className="h-10 w-10 text-accent sm:h-12 sm:w-12" />
-                  </div>
+                  <row.Icon className="h-12 w-12 text-accent sm:h-14 sm:w-14" />
                 </div>
-                <div>
+                <div className="flex flex-col justify-center">
                   <p className="label-caps text-accent">{row.eyebrow}</p>
                   <h3 className="mt-2 font-display text-2xl font-medium text-ink sm:text-3xl">
                     {row.title}
