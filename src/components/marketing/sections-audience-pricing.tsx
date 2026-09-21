@@ -15,7 +15,7 @@ export function AudienceSection() {
             a.wide ? (
               <div
                 key={a.title}
-                className="border border-rule bg-accent-soft p-8 md:row-span-2 md:flex md:flex-col md:justify-end md:p-10"
+                className="border border-rule bg-accent-soft p-8 md:row-span-2 md:flex md:flex-col md:justify-center md:p-10"
               >
                 <p className="label-caps text-accent">Primary</p>
                 <h3 className="mt-3 font-display text-3xl font-medium text-ink sm:text-4xl">
