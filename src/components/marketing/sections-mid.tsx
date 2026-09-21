@@ -1,6 +1,7 @@
 import { PLANS } from "@/lib/plans";
 import { DashboardMock } from "./DashboardMock";
 import { monitorRows, painPoints } from "./home-content";
+import { LINE_FLOW_BG } from "./line-flow-bg";
 
 export function FeaturesSection() {
   return (
@@ -82,7 +83,7 @@ export function ProductPreviewSection() {
       <div
         className="pointer-events-none absolute inset-0 -z-10 opacity-[0.5]"
         style={{
-          backgroundImage: "url(/marketing/line-flow.jpg)",
+          backgroundImage: `url(${LINE_FLOW_BG})`,
           backgroundRepeat: "no-repeat",
           backgroundPosition: "left bottom",
           backgroundSize: "min(1400px, 115%) auto",
