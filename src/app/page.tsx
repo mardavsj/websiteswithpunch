@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth";
 import {
   AudienceSection,
   PricingSection,
@@ -18,7 +20,10 @@ import {
   ProofStrip,
 } from "@/components/marketing/sections-top";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const session = await getSession();
+  if (session?.user) redirect("/dashboard");
+
   return (
     <div>
       <HeroSection />

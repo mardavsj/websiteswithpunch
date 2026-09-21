@@ -6,6 +6,7 @@ import { getSiteLimit, isPro } from "@/lib/plans";
 import { SiteCard } from "@/components/SiteCard";
 import { SiteAnalytics } from "@/components/SiteAnalytics";
 import { UpgradeCTA } from "@/components/UpgradeCTA";
+import { SignOutButton } from "@/components/SignOutButton";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +49,7 @@ export default async function DashboardPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          <SignOutButton />
           <UpgradeCTA plan={plan} />
           {!atLimit ? (
             <Link
