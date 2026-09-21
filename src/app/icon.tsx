@@ -21,10 +21,11 @@ export default async function Icon() {
           alignItems: "center",
           justifyContent: "center",
           background: "#ffffff",
+          overflow: "hidden",
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} width={28} height={28} alt="" />
+        <img src={src} width={40} height={40} alt="" />
       </div>
     ),
     { ...size },

@@ -21,10 +21,11 @@ export default async function AppleIcon() {
           alignItems: "center",
           justifyContent: "center",
           background: "#EEF3FF",
+          overflow: "hidden",
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} width={140} height={140} alt="" />
+        <img src={src} width={176} height={176} alt="" />
       </div>
     ),
     { ...size },

@@ -53,6 +53,13 @@ h6 {
   color: hsl(var(--ink));
 }
 
+/* Black / ink surfaces: keep selected text light and readable */
+.bg-ink ::selection,
+.bg-ink *::selection {
+  background: hsl(var(--accent) / 0.55);
+  color: #ffffff;
+}
+
 :focus-visible {
   outline: 2px solid hsl(var(--accent));
   outline-offset: 2px;

@@ -93,11 +93,11 @@ export const faqs = [
   },
   {
     q: "What’s free vs Pro?",
-    a: `Free monitors ${PLANS.free.siteLimit} site with uptime, SSL, and domain checks. Pro ($${PLANS.pro.price}/mo) raises the limit to ${PLANS.pro.siteLimit} sites and unlocks Stripe billing management.`,
+    a: `Free monitors ${PLANS.free.siteLimit} site with uptime, SSL, and domain checks. Pro ($${PLANS.pro.price}/mo) raises the limit to ${PLANS.pro.siteLimit} sites and unlocks billing management.`,
   },
   {
     q: "Do I need a card to start?",
-    a: "No. Create an account, add one URL, and use the free plan. Upgrade to Pro when you need more sites; Stripe checkout comes when you’re ready to pay.",
+    a: "No. Create an account, add one URL, and use the free plan. Upgrade to Pro when you need more sites — secure checkout appears only when you’re ready to pay.",
   },
   {
     q: "How accurate is domain expiry?",
