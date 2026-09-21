@@ -1,59 +1,105 @@
 "use client";
 
 import { useState } from "react";
+import type { PlanId } from "@/lib/plans";
+import { PLANS } from "@/lib/plans";
 
-export function UpgradeCTA({ plan }: { plan: string }) {
-  const [loading, setLoading] = useState(false);
+export function UpgradeCTA({ plan }: { plan: PlanId | string }) {
+  const [loading, setLoading] = useState<"pro" | "business" | "portal" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  async function openPortal() {
+    setLoading("portal");
+    setMessage(null);
+    try {
+      const res = await fetch("/api/stripe/portal", { method: "POST" });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else setMessage(data.error || "Billing portal unavailable.");
+    } catch {
+      setMessage("Could not open billing portal.");
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  async function checkout(planId: "pro" | "business") {
+    setLoading(planId);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else setMessage(data.error || "Checkout is not configured yet.");
+    } catch {
+      setMessage("Checkout failed. Check billing configuration.");
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  if (plan === "business") {
+    return (
+      <div className="space-y-2">
+        <button
+          onClick={openPortal}
+          disabled={loading !== null}
+          className="rounded-none border border-rule bg-bg px-4 py-2 text-sm font-medium text-ink hover:bg-accent-soft disabled:opacity-60"
+        >
+          {loading === "portal" ? "Opening…" : "Manage billing"}
+        </button>
+        {message && <p className="text-xs text-amber-700">{message}</p>}
+      </div>
+    );
+  }
 
   if (plan === "pro") {
     return (
-      <button
-        onClick={async () => {
-          setLoading(true);
-          setMessage(null);
-          try {
-            const res = await fetch("/api/stripe/portal", { method: "POST" });
-            const data = await res.json();
-            if (data.url) window.location.href = data.url;
-            else setMessage(data.error || "Billing portal unavailable. Configure Stripe keys.");
-          } catch {
-            setMessage("Could not open billing portal.");
-          } finally {
-            setLoading(false);
-          }
-        }}
-        disabled={loading}
-        className="rounded-none border border-rule bg-bg px-4 py-2 text-sm font-medium text-ink hover:bg-accent-soft disabled:opacity-60"
-      >
-        {loading ? "Opening…" : "Manage billing"}
-      </button>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          onClick={openPortal}
+          disabled={loading !== null}
+          className="rounded-none border border-rule bg-bg px-4 py-2 text-sm font-medium text-ink hover:bg-accent-soft disabled:opacity-60"
+        >
+          {loading === "portal" ? "Opening…" : "Manage billing"}
+        </button>
+        <button
+          onClick={() => checkout("business")}
+          disabled={loading !== null}
+          className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-60"
+        >
+          {loading === "business"
+            ? "Redirecting…"
+            : `Upgrade to Business — $${PLANS.business.price}/mo`}
+        </button>
+        {message && <p className="basis-full text-xs text-amber-700">{message}</p>}
+      </div>
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-wrap items-center gap-2">
       <button
-        onClick={async () => {
-          setLoading(true);
-          setMessage(null);
-          try {
-            const res = await fetch("/api/stripe/checkout", { method: "POST" });
-            const data = await res.json();
-            if (data.url) window.location.href = data.url;
-            else setMessage(data.error || "Stripe is not configured yet. See README for setup.");
-          } catch {
-            setMessage("Checkout failed. Check Stripe configuration.");
-          } finally {
-            setLoading(false);
-          }
-        }}
-        disabled={loading}
+        onClick={() => checkout("pro")}
+        disabled={loading !== null}
         className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-60"
       >
-        {loading ? "Redirecting…" : "Upgrade to Pro — $12/mo"}
+        {loading === "pro" ? "Redirecting…" : `Upgrade to Pro — $${PLANS.pro.price}/mo`}
       </button>
-      {message && <p className="text-xs text-amber-700">{message}</p>}
+      <button
+        onClick={() => checkout("business")}
+        disabled={loading !== null}
+        className="rounded-none border border-rule bg-bg px-4 py-2 text-sm font-medium text-ink hover:bg-accent-soft disabled:opacity-60"
+      >
+        {loading === "business"
+          ? "Redirecting…"
+          : `Business — $${PLANS.business.price}/mo`}
+      </button>
+      {message && <p className="basis-full text-xs text-amber-700">{message}</p>}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getSiteLimit, isPro } from "@/lib/plans";
+import { getEffectivePlan, getSiteLimit, PLANS } from "@/lib/plans";
 import { normalizeUrl } from "@/lib/utils";
 import { runFullSiteCheck } from "@/lib/checks";
 
@@ -33,18 +33,16 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const count = await prisma.site.count({ where: { userId: user.id } });
-  const plan = isPro(user.plan, user.stripeStatus) ? "pro" : "free";
+  const plan = getEffectivePlan(user.plan, user.stripeStatus);
   const limit = getSiteLimit(plan);
   if (count >= limit) {
-    return NextResponse.json(
-      {
-        error:
-          plan === "free"
-            ? "Free plan allows 1 site. Upgrade to Pro for up to 10 sites."
-            : "Pro plan allows up to 10 sites.",
-      },
-      { status: 403 }
-    );
+    const upgradeHint =
+      plan === "free"
+        ? `Free allows ${PLANS.free.siteLimit} site. Upgrade to Pro (${PLANS.pro.siteLimit}) or Business (${PLANS.business.siteLimit}).`
+        : plan === "pro"
+          ? `Pro allows up to ${PLANS.pro.siteLimit} sites. Upgrade to Business for ${PLANS.business.siteLimit}.`
+          : `Business allows up to ${PLANS.business.siteLimit} sites. Contact us for a higher limit.`;
+    return NextResponse.json({ error: upgradeHint }, { status: 403 });
   }
 
   const body = await req.json();
@@ -70,7 +68,6 @@ export async function POST(req: Request) {
     },
   });
 
-  // Run initial check (best-effort)
   try {
     const result = await runFullSiteCheck(url);
     await prisma.site.update({
