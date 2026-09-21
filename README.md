@@ -10,7 +10,7 @@
 - **Dashboard** — list sites with status, last check, SSL days, domain days
 - **CRUD** — add / edit / delete monitored sites
 - **Auth** — email/password signup + login (NextAuth credentials)
-- **Plans** — Free = 1 site; Pro = 10 sites at **$12/mo**
+- **Plans** — Free = 1 site; Pro = 10 sites at **$12/mo**; Business = 50 sites at **$39/mo**
 - **Stripe-ready** — Checkout, Customer Portal, webhook route
 - **Cron** — protected `/api/cron/check` to run all checks
 
@@ -85,7 +85,9 @@ On Vercel, add a Cron Job hitting `/api/cron/check` with the secret header. Else
 
 ## Stripe setup
 
-1. Create a Product + recurring Price ($12/mo) in Stripe Dashboard; copy `price_...` into `STRIPE_PRICE_ID`.
+1. Create Products + recurring Prices in Stripe Dashboard:
+   - Pro **$12/mo** → `STRIPE_PRICE_ID_PRO` (or legacy `STRIPE_PRICE_ID`)
+   - Business **$39/mo** → `STRIPE_PRICE_ID_BUSINESS`
 2. Set `STRIPE_SECRET_KEY` and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
 3. Forward webhooks locally:
 
@@ -111,12 +113,13 @@ Without Stripe keys the product still demos fully for Free-plan monitoring.
 
 ## Plan limits
 
-| Plan | Sites | Price |
-|------|-------|-------|
-| Free | 1     | $0    |
-| Pro  | 10    | $12/mo|
+| Plan     | Sites | Price  |
+|----------|-------|--------|
+| Free     | 1     | $0     |
+| Pro      | 10    | $12/mo |
+| Business | 50    | $39/mo |
 
-Enforced server-side when creating sites.
+Need more than 50? Contact us for a custom limit. Enforced server-side when creating sites.
 
 ## Lockfile
 
