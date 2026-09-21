@@ -27,8 +27,8 @@ export default async function HomePage() {
   return (
     <div>
       <HeroSection />
-      <ProofStrip />
       <IntroLine />
+      <ProofStrip />
       <HowItWorksSection />
       <FeaturesSection />
       <WhyItMattersSection />
