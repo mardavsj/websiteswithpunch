@@ -127,20 +127,24 @@ export function PricingSection() {
           })}
         </div>
 
-        <p className="mt-10 text-sm text-muted">
-          Need more than {PLANS.business.siteLimit} sites?{" "}
-          <a
-            href="mailto:hello@websiteswithpunch.com?subject=Custom%20site%20limit"
-            className="font-semibold text-ink underline-offset-2 hover:underline"
-          >
-            Contact us
-          </a>{" "}
-          for a custom limit.{" "}
-          Already have an account?{" "}
-          <Link href="/login" className="font-semibold text-ink underline-offset-2 hover:underline">
-            Log in
-          </Link>
-        </p>
+        <div className="mt-10 space-y-2 text-sm text-muted">
+          <p>
+            Need more than {PLANS.business.siteLimit} sites?{" "}
+            <a
+              href="mailto:hello@websiteswithpunch.com?subject=Custom%20site%20limit"
+              className="font-semibold text-ink underline-offset-2 hover:underline"
+            >
+              Contact us
+            </a>{" "}
+            for a custom limit.
+          </p>
+          <p>
+            Already have an account?{" "}
+            <Link href="/login" className="font-semibold text-ink underline-offset-2 hover:underline">
+              Log in
+            </Link>
+          </p>
+        </div>
       </div>
     </section>
   );
