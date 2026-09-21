@@ -12,7 +12,7 @@ export const howSteps = [
   {
     step: "01",
     title: "Add your URL",
-    body: "Paste the site you care about. Free covers one site; Pro scales to ten.",
+    body: "Paste the site you care about. Free covers one site; paid plans scale with you.",
     Icon: IconLink,
   },
   {
@@ -81,7 +81,7 @@ export const audiences = [
   },
   {
     title: "Small agencies",
-    body: "Monitor a handful of properties without enterprise pricing. Free for one, Pro for ten.",
+    body: "Monitor a portfolio without enterprise pricing. Free for one, Pro for ten, Business for fifty.",
     wide: false,
   },
 ];
@@ -92,12 +92,12 @@ export const faqs = [
     a: "Uptime checks run on a regular schedule so you see recent status and latency on the dashboard. SSL and domain expiry are refreshed so days-remaining stay useful — not stale.",
   },
   {
-    q: "What’s free vs Pro?",
-    a: `Free monitors ${PLANS.free.siteLimit} site with uptime, SSL, and domain checks. Pro ($${PLANS.pro.price}/mo) raises the limit to ${PLANS.pro.siteLimit} sites and unlocks billing management.`,
+    q: "What’s free vs Pro vs Business?",
+    a: `Free monitors ${PLANS.free.siteLimit} site. Pro ($${PLANS.pro.price}/mo) covers up to ${PLANS.pro.siteLimit} sites. Business ($${PLANS.business.price}/mo) covers up to ${PLANS.business.siteLimit} sites. Need more than ${PLANS.business.siteLimit}? Contact us for a custom limit.`,
   },
   {
     q: "Do I need a card to start?",
-    a: "No. Create an account, add one URL, and use the free plan. Upgrade to Pro when you need more sites — secure checkout appears only when you’re ready to pay.",
+    a: "No. Create an account, add one URL, and use the free plan. Upgrade when you need more sites — secure checkout appears only when you’re ready to pay.",
   },
   {
     q: "How accurate is domain expiry?",
@@ -109,7 +109,7 @@ export const faqs = [
   },
   {
     q: "Can I cancel anytime?",
-    a: "Yes. Pro is month-to-month. Downgrade or cancel when you don’t need the extra site slots; your free site stays available within Free limits.",
+    a: "Yes. Paid plans are month-to-month. Downgrade or cancel when you don’t need the extra site slots; your free site stays available within Free limits.",
   },
 ];
 

@@ -14,7 +14,7 @@ model User {
   password             String
   emailVerified        DateTime?
   image                String?
-  plan                 String    @default("free") // free | pro
+  plan                 String    @default("free") // free | pro | business
   stripeCustomerId     String?   @unique
   stripeSubscriptionId String?   @unique
   stripeStatus         String?   // active | canceled | past_due | etc
