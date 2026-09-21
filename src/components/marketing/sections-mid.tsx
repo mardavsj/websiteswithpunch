@@ -1,4 +1,3 @@
-import { PLANS } from "@/lib/plans";
 import { DashboardMock } from "./DashboardMock";
 import { monitorRows, painPoints } from "./home-content";
 
@@ -75,44 +74,20 @@ export function WhyItMattersSection() {
   );
 }
 
-/** Bottom band of grey waves — left→right, pinned low (not vertically centered). */
-function BottomWaveBand() {
-  return (
-    <div
-      className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-[38%] min-h-[120px] sm:h-[42%]"
-      aria-hidden
-    >
-      <svg
-        className="absolute bottom-0 left-0 h-full w-[160%] max-w-none -translate-x-[12%]"
-        viewBox="0 0 1440 320"
-        preserveAspectRatio="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          fill="#e5e5e5"
-          d="M0,224 C180,180 320,260 480,220 C640,180 720,140 900,170 C1080,200 1260,250 1440,210 L1440,320 L0,320 Z"
-        />
-        <path
-          fill="#a3a3a3"
-          d="M0,248 C200,210 340,280 520,240 C700,200 820,170 980,200 C1140,230 1280,270 1440,240 L1440,320 L0,320 Z"
-        />
-        <path
-          fill="#525252"
-          d="M0,272 C160,250 300,300 480,270 C660,240 780,220 960,250 C1140,280 1300,295 1440,268 L1440,320 L0,320 Z"
-        />
-        <path
-          fill="#171717"
-          d="M0,296 C140,280 280,310 460,292 C640,274 800,268 980,288 C1160,308 1320,312 1440,294 L1440,320 L0,320 Z"
-        />
-      </svg>
-    </div>
-  );
-}
-
 export function ProductPreviewSection() {
   return (
     <section className="relative isolate overflow-hidden border-b border-rule bg-bg">
-      <BottomWaveBand />
+      {/* Parallel curved line field — monochrome, anchored lower-left */}
+      <div
+        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.55]"
+        style={{
+          backgroundImage: "url(/marketing/arc-lines.svg)",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "left bottom",
+          backgroundSize: "min(1200px, 110%) auto",
+        }}
+        aria-hidden
+      />
 
       <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
@@ -134,10 +109,6 @@ export function ProductPreviewSection() {
             aria-hidden
           />
           <DashboardMock className="relative" />
-          <p className="relative mt-8 text-center text-sm text-muted">
-            Free = {PLANS.free.siteLimit} site · Pro = up to {PLANS.pro.siteLimit} · Business =
-            up to {PLANS.business.siteLimit}
-          </p>
         </div>
       </div>
     </section>
