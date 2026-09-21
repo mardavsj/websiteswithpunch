@@ -22,28 +22,14 @@ export function Navbar() {
         </Link>
         <nav className="flex items-center gap-3 text-sm">
           {status === "loading" ? null : session ? (
-            <>
-              <Link
-                href="/dashboard"
-                className="rounded-none px-3 py-1.5 text-ink hover:bg-accent-soft"
-              >
-                Dashboard
-              </Link>
-              <button
-                onClick={() => signOut({ callbackUrl: "/" })}
-                className="rounded-none border border-rule px-3 py-1.5 text-ink hover:bg-accent-soft"
-              >
-                Sign out
-              </button>
-            </>
+            <button
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="rounded-none border border-rule px-3 py-1.5 text-ink hover:bg-accent-soft"
+            >
+              Sign out
+            </button>
           ) : (
             <>
-              <Link href="/#features" className="hidden text-muted hover:text-ink sm:inline">
-                Features
-              </Link>
-              <Link href="/#pricing" className="hidden text-muted hover:text-ink sm:inline">
-                Pricing
-              </Link>
               <Link
                 href="/login"
                 className="rounded-none px-3 py-1.5 text-ink hover:bg-accent-soft"
