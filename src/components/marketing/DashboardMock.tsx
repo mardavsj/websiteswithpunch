@@ -1,5 +1,3 @@
-import { PLANS } from "@/lib/plans";
-
 type DashboardMockProps = {
   className?: string;
   /** Slightly denser chrome for hero / overlapping layers */
@@ -45,9 +43,7 @@ export function DashboardMock({ className = "", dense = false }: DashboardMockPr
           <p className="mt-1 text-xs text-muted">Renewal window · OK</p>
         </div>
       </div>
-      <div className="border-t border-rule px-5 py-3 text-xs text-muted">
-        One row per site. Free = {PLANS.free.siteLimit} · Pro = up to {PLANS.pro.siteLimit}.
-      </div>
+      <div className="border-t border-rule px-5 py-3 text-xs text-muted">Health Score: 100</div>
     </div>
   );
 }
