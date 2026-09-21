@@ -6,7 +6,7 @@ export function HeroSection() {
   return (
     <section className="relative overflow-hidden border-b border-rule bg-bg">
       <div
-        className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-accent-soft max-lg:hidden"
+        className="pointer-events-none absolute inset-y-0 right-0 w-[30%] bg-accent-soft max-lg:hidden"
         aria-hidden
       />
       <div
@@ -14,11 +14,8 @@ export function HeroSection() {
         aria-hidden
       />
       <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24 lg:py-28">
-        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+        <div className="grid items-center gap-12 lg:grid-cols-[7fr_3fr] lg:gap-10">
           <div>
-            <p className="label-caps mb-4 inline-flex bg-accent-soft px-3 py-1 text-accent">
-              Website health monitoring
-            </p>
             <h1 className="font-display text-4xl font-medium tracking-tight text-ink sm:text-5xl lg:text-[3.25rem] lg:leading-[1.08]">
               Monitor uptime, SSL, and domain renewal{" "}
               <span className="text-accent">with punch</span>
@@ -45,7 +42,7 @@ export function HeroSection() {
               Free to start · Uptime + SSL + domain · Cancel anytime
             </p>
           </div>
-          <div className="relative lg:pl-4">
+          <div className="relative lg:pl-2">
             <div className="absolute -inset-4 -z-10 bg-accent-soft lg:hidden" aria-hidden />
             <DashboardMock dense />
           </div>
