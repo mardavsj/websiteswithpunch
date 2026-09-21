@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { DashboardMock } from "./DashboardMock";
 import { howSteps, proofMetrics } from "./home-content";
 
 export function HeroSection() {
@@ -14,38 +13,32 @@ export function HeroSection() {
         aria-hidden
       />
       <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24 lg:py-28">
-        <div className="grid items-center gap-12 lg:grid-cols-[7fr_3fr] lg:gap-10">
-          <div>
-            <h1 className="font-display text-4xl font-medium tracking-tight text-ink sm:text-5xl lg:text-[3.25rem] lg:leading-[1.08]">
-              Monitor uptime, SSL, and domain renewal{" "}
-              <span className="text-accent">with punch</span>
-            </h1>
-            <p className="mt-6 max-w-lg text-lg text-muted">
-              For freelancers, founders, and small agencies who can’t afford surprise downtime —
-              or finding out from a customer that the cert expired.
-            </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link
-                href="/signup"
-                className="rounded-none bg-accent px-6 py-3 text-sm font-semibold text-white hover:bg-accent-hover"
-              >
-                Start free — 1 site
-              </Link>
-              <Link
-                href="/#how-it-works"
-                className="rounded-none border border-rule bg-bg px-6 py-3 text-sm font-semibold text-ink hover:bg-accent-soft"
-              >
-                See how it works
-              </Link>
-            </div>
-            <p className="mt-6 text-sm text-muted">
-              Free to start · Uptime + SSL + domain · Cancel anytime
-            </p>
+        <div className="max-w-3xl">
+          <h1 className="font-display text-4xl font-medium tracking-tight text-ink sm:text-5xl lg:text-[3.25rem] lg:leading-[1.08]">
+            Monitor uptime, SSL, and domain renewal{" "}
+            <span className="text-accent">with punch</span>
+          </h1>
+          <p className="mt-6 max-w-lg text-lg text-muted">
+            For freelancers, founders, and small agencies who can’t afford surprise downtime —
+            or finding out from a customer that the cert expired.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <Link
+              href="/signup"
+              className="rounded-none bg-accent px-6 py-3 text-sm font-semibold text-white hover:bg-accent-hover"
+            >
+              Start free — 1 site
+            </Link>
+            <Link
+              href="/#how-it-works"
+              className="rounded-none border border-rule bg-bg px-6 py-3 text-sm font-semibold text-ink hover:bg-accent-soft"
+            >
+              See how it works
+            </Link>
           </div>
-          <div className="relative lg:pl-2">
-            <div className="absolute -inset-4 -z-10 bg-accent-soft lg:hidden" aria-hidden />
-            <DashboardMock dense />
-          </div>
+          <p className="mt-6 text-sm text-muted">
+            Free to start · Uptime + SSL + domain · Cancel anytime
+          </p>
         </div>
       </div>
     </section>
