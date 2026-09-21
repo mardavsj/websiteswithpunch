@@ -25,6 +25,14 @@ export const metadata: Metadata = {
   description:
     "Monitor uptime, SSL certificates, and domain expiry for your websites. Free for one site. Pro for ten at $12/mo.",
   metadataBase: new URL("https://websiteswithpunch.com"),
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "https://www.websiteswithpunch.com/logo.png", type: "image/png" },
+    ],
+    apple: "https://www.websiteswithpunch.com/logo.png",
+    shortcut: "/favicon.svg",
+  },
   openGraph: {
     title: "Websites With Punch",
     description: "Website health monitoring with punch — uptime, SSL, and domain expiry.",
