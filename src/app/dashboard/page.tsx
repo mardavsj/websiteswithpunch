@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getSiteLimit, isPro } from "@/lib/plans";
+import { getEffectivePlan, getSiteLimit, PLANS } from "@/lib/plans";
 import { SiteCard } from "@/components/SiteCard";
 import { SiteAnalytics } from "@/components/SiteAnalytics";
 import { UpgradeCTA } from "@/components/UpgradeCTA";
@@ -26,10 +26,11 @@ export default async function DashboardPage({
     orderBy: { createdAt: "desc" },
   });
 
-  const plan = isPro(user.plan, user.stripeStatus) ? "pro" : "free";
+  const plan = getEffectivePlan(user.plan, user.stripeStatus);
   const limit = getSiteLimit(plan);
   const atLimit = sites.length >= limit;
   const showInlineAnalytics = sites.length === 1;
+  const planLabel = PLANS[plan].name;
 
   const downNow = sites.filter((s) => s.status === "down" || s.status === "error").length;
   const sslSoon = sites
@@ -44,8 +45,8 @@ export default async function DashboardPage({
           <h1 className="font-display text-2xl font-medium text-ink">Dashboard</h1>
           <p className="mt-1 text-sm text-muted">
             Welcome{user.name ? `, ${user.name}` : ""}. Plan:{" "}
-            <span className="font-medium capitalize text-ink">{plan}</span> ·{" "}
-            {sites.length}/{limit} sites
+            <span className="font-medium text-ink">{planLabel}</span> · {sites.length}/{limit}{" "}
+            sites
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -69,7 +70,7 @@ export default async function DashboardPage({
       {searchParams.upgraded && (
         <div className="mt-6 rounded-none border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
           Upgrade successful (or checkout returned). Refresh if your plan has not updated yet —
-          Stripe webhooks set Pro status.
+          billing webhooks set plan status.
         </div>
       )}
       {searchParams.canceled && (
@@ -128,9 +129,7 @@ export default async function DashboardPage({
               }}
             />
           ))}
-          {showInlineAnalytics && (
-            <SiteAnalytics siteId={sites[0].id} />
-          )}
+          {showInlineAnalytics && <SiteAnalytics siteId={sites[0].id} />}
           {!showInlineAnalytics && (
             <p className="text-center text-sm text-muted">
               Open <span className="font-medium text-ink">Analytics →</span> on any site for the full

@@ -65,7 +65,6 @@ export function stripePriceIdForPlan(planId: "pro" | "business"): string | null 
   if (planId === "business") {
     return process.env.STRIPE_PRICE_ID_BUSINESS || null;
   }
-  // Prefer explicit Pro id; fall back to legacy STRIPE_PRICE_ID
   return process.env.STRIPE_PRICE_ID_PRO || process.env.STRIPE_PRICE_ID || null;
 }
 
