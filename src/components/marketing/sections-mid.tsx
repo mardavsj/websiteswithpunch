@@ -81,43 +81,39 @@ export function WhyItMattersSection() {
 
 export function ProductPreviewSection() {
   return (
-    <section className="relative isolate overflow-hidden border-b border-rule bg-ink text-bg">
-      {/* Free Subtle Patterns tile via Transparent Textures — Dark Stripes (Stefan Aleksić) */}
+    <section className="relative isolate overflow-hidden border-b border-rule bg-bg">
+      {/* Black stripe texture on light base — Subtle Patterns Dark Stripes (Stefan Aleksić) */}
       <div
-        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.55]"
+        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.28] mix-blend-multiply"
         style={{
-          backgroundColor: "#0a0a0a",
           backgroundImage: `url(${DARK_STRIPES})`,
           backgroundRepeat: "repeat",
+          backgroundColor: "#000000",
         }}
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-ink/40 via-transparent to-ink/70"
         aria-hidden
       />
 
       <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-display text-3xl font-medium text-bg sm:text-4xl">
+          <h2 className="font-display text-3xl font-medium text-ink sm:text-4xl">
             One glance. Three signals.
           </h2>
-          <p className="mt-3 text-bg/65">
+          <p className="mt-3 text-muted">
             Status, SSL days, and domain days — together. Static preview of the dashboard after
             signup.
           </p>
         </div>
         <div className="relative mx-auto mt-14 max-w-3xl">
           <div
-            className="absolute -bottom-4 -right-4 hidden h-full w-full border border-bg/15 bg-bg/5 sm:block"
+            className="absolute -bottom-4 -right-4 hidden h-full w-full border border-rule bg-bg/40 sm:block"
             aria-hidden
           />
           <div
-            className="absolute -bottom-8 -right-8 hidden h-full w-full border border-bg/10 bg-accent/20 sm:block"
+            className="absolute -bottom-8 -right-8 hidden h-full w-full border border-rule bg-accent/15 sm:block"
             aria-hidden
           />
           <DashboardMock className="relative" />
-          <p className="relative mt-8 text-center text-sm text-bg/55">
+          <p className="relative mt-8 text-center text-sm text-muted">
             Free = {PLANS.free.siteLimit} site · Pro = up to {PLANS.pro.siteLimit} sites
           </p>
         </div>
