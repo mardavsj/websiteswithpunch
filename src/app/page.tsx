@@ -1,9 +1,11 @@
 import {
   AudienceSection,
+  PricingSection,
+} from "@/components/marketing/sections-audience-pricing";
+import {
   FaqSection,
   FinalCtaSection,
-  PricingSection,
-} from "@/components/marketing/sections-bottom";
+} from "@/components/marketing/sections-faq-cta";
 import {
   FeaturesSection,
   ProductPreviewSection,
