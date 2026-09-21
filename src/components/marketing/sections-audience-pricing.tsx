@@ -45,7 +45,7 @@ export function PricingSection() {
           <p className="mt-3 text-muted">Start free. Upgrade when you need more sites.</p>
         </div>
         <div className="mx-auto mt-12 grid max-w-5xl gap-8 lg:grid-cols-[1fr_1.15fr] lg:items-stretch">
-          <div className="flex flex-col py-2 lg:py-6">
+          <div className="flex flex-col border border-rule p-8 sm:p-10">
             <p className="label-caps">Starter</p>
             <h3 className="mt-2 font-display text-2xl font-medium text-ink">{PLANS.free.name}</h3>
             <p className="mt-4 font-display text-5xl font-medium text-ink">

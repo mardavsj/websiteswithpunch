@@ -21,9 +21,11 @@ export function FeaturesSection() {
                 className={`grid items-center gap-8 md:grid-cols-2 md:gap-14 ${reverse ? "md:[&>*:first-child]:order-2" : ""}`}
               >
                 <div
-                  className={`flex aspect-[4/3] max-h-64 items-center justify-center bg-accent-soft sm:max-h-72 ${reverse ? "md:justify-self-end" : ""}`}
+                  className={`flex items-center justify-center ${reverse ? "md:justify-self-end" : ""}`}
                 >
-                  <row.Icon className="h-16 w-16 text-accent sm:h-20 sm:w-20" />
+                  <div className="flex h-24 w-24 items-center justify-center bg-accent-soft sm:h-28 sm:w-28">
+                    <row.Icon className="h-10 w-10 text-accent sm:h-12 sm:w-12" />
+                  </div>
                 </div>
                 <div>
                   <p className="label-caps text-accent">{row.eyebrow}</p>

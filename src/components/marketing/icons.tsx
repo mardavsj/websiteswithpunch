@@ -31,8 +31,8 @@ export function IconPulse(props: SVGProps<SVGSVGElement>) {
 export function IconLock(props: SVGProps<SVGSVGElement>) {
   return (
     <IconBase {...props}>
-      <rect x="5" y="11" width="14" height="10" />
-      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+      <rect x="5" y="10" width="14" height="10" />
+      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
     </IconBase>
   );
 }
