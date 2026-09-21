@@ -101,7 +101,7 @@ export function PricingSection() {
                 <span className="text-accent" aria-hidden>
                   —
                 </span>
-                Stripe billing portal
+                Billing portal included
               </li>
               <li className="flex gap-3">
                 <span className="text-accent" aria-hidden>
