@@ -75,7 +75,7 @@ export function IntroLine() {
           </p>
           <div className="flex justify-center lg:justify-end">
             <img
-              src="https://websiteswithpunch.com/logo.png"
+              src="https://www.websiteswithpunch.com/logo.png"
               alt="Websites With Punch"
               className="h-28 w-28 object-contain sm:h-36 sm:w-36 lg:h-44 lg:w-44"
             />
