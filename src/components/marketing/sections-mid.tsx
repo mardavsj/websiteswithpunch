@@ -20,9 +20,7 @@ export function FeaturesSection() {
                 key={row.title}
                 className={`grid items-stretch gap-8 md:grid-cols-2 md:gap-14 ${reverse ? "md:[&>*:first-child]:order-2" : ""}`}
               >
-                <div
-                  className={`flex min-h-[220px] w-full items-center justify-center bg-accent-soft sm:min-h-[280px] ${reverse ? "md:justify-self-stretch" : ""}`}
-                >
+                <div className="flex h-full min-h-[220px] w-full items-center justify-center bg-accent-soft sm:min-h-[280px]">
                   <row.Icon className="h-12 w-12 text-accent sm:h-14 sm:w-14" />
                 </div>
                 <div className="flex flex-col justify-center">
