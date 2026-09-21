@@ -1,26 +1,54 @@
 import Link from "next/link";
 import { howSteps, proofMetrics } from "./home-content";
 
+/** Mixkit Free License — Digital network representation (related to uptime/network monitoring). */
+const HERO_VIDEO =
+  "https://assets.mixkit.co/videos/31590/31590-720.mp4";
+const HERO_POSTER =
+  "https://assets.mixkit.co/videos/31590/31590-thumb-720-0.jpg";
+
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden border-b border-rule bg-bg">
-      <div
-        className="pointer-events-none absolute inset-y-0 right-0 w-[30%] bg-accent-soft max-lg:hidden"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute -right-8 top-0 h-full w-px rotate-12 bg-rule max-lg:hidden"
-        aria-hidden
-      />
-      <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24 lg:py-28">
+    <section className="relative isolate overflow-hidden border-b border-rule bg-ink text-bg">
+      {/* Live stock background — network visualization from Mixkit */}
+      <div className="absolute inset-0 -z-10" aria-hidden>
+        <video
+          className="h-full w-full object-cover opacity-55 motion-reduce:hidden"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          poster={HERO_POSTER}
+        >
+          <source src={HERO_VIDEO} type="video/mp4" />
+        </video>
+        {/* Static fallback when reduced motion is preferred */}
+        <div
+          className="absolute inset-0 hidden bg-cover bg-center motion-reduce:block"
+          style={{ backgroundImage: `url(${HERO_POSTER})` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/85 to-ink/55" />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-transparent to-ink/40" />
+      </div>
+
+      <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28 lg:py-32">
         <div className="max-w-3xl">
-          <h1 className="font-display text-4xl font-medium tracking-tight text-ink sm:text-5xl lg:text-[3.25rem] lg:leading-[1.08]">
+          <p className="inline-flex items-center gap-2 rounded-none border border-bg/20 bg-bg/10 px-3 py-1.5 text-xs font-medium text-bg/90 backdrop-blur-sm">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
+            </span>
+            Live network pulse · uptime + SSL + domain
+          </p>
+
+          <h1 className="mt-6 font-display text-4xl font-medium tracking-tight text-bg sm:text-5xl lg:text-[3.35rem] lg:leading-[1.08]">
             Monitor uptime, SSL, and domain renewal{" "}
             <span className="text-accent">with punch</span>
           </h1>
-          <p className="mt-6 max-w-lg text-lg text-muted">
-            For freelancers, founders, and small agencies who can’t afford surprise downtime —
-            or finding out from a customer that the cert expired.
+          <p className="mt-6 max-w-lg text-lg text-bg/70">
+            For freelancers, founders, and small agencies who can’t afford surprise downtime — or
+            finding out from a customer that the cert expired.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link
@@ -31,15 +59,35 @@ export function HeroSection() {
             </Link>
             <Link
               href="/#how-it-works"
-              className="rounded-none border border-rule bg-bg px-6 py-3 text-sm font-semibold text-ink hover:bg-accent-soft"
+              className="rounded-none border border-bg/25 bg-bg/10 px-6 py-3 text-sm font-semibold text-bg backdrop-blur-sm hover:bg-bg/20"
             >
               See how it works
             </Link>
           </div>
-          <p className="mt-6 text-sm text-muted">
+          <p className="mt-6 text-sm text-bg/55">
             Free to start · Uptime + SSL + domain · Cancel anytime
           </p>
         </div>
+
+        <dl className="mt-14 grid max-w-2xl grid-cols-3 gap-3 sm:gap-4">
+          {[
+            { label: "Uptime", value: "Live" },
+            { label: "SSL", value: "Days left" },
+            { label: "Domain", value: "Renewal" },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className="border border-bg/15 bg-bg/10 px-3 py-4 backdrop-blur-sm sm:px-4"
+            >
+              <dt className="text-[10px] font-medium uppercase tracking-wider text-bg/50">
+                {item.label}
+              </dt>
+              <dd className="mt-1 font-display text-base font-medium text-bg sm:text-lg">
+                {item.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
       </div>
     </section>
   );
