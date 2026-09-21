@@ -1,16 +1,13 @@
 import Link from "next/link";
 import { howSteps, proofMetrics } from "./home-content";
 
-/** Mixkit Free License — Digital network representation (related to uptime/network monitoring). */
-const HERO_VIDEO =
-  "https://assets.mixkit.co/videos/31590/31590-720.mp4";
-const HERO_POSTER =
-  "https://assets.mixkit.co/videos/31590/31590-thumb-720-0.jpg";
+/** Mixkit Free License — digital network clip (uptime / connectivity themed). */
+const HERO_VIDEO = "https://assets.mixkit.co/videos/31590/31590-720.mp4";
+const HERO_POSTER = "https://assets.mixkit.co/videos/31590/31590-thumb-720-0.jpg";
 
 export function HeroSection() {
   return (
     <section className="relative isolate overflow-hidden border-b border-rule bg-ink text-bg">
-      {/* Live stock background — network visualization from Mixkit */}
       <div className="absolute inset-0 -z-10" aria-hidden>
         <video
           className="h-full w-full object-cover opacity-55 motion-reduce:hidden"
@@ -23,7 +20,6 @@ export function HeroSection() {
         >
           <source src={HERO_VIDEO} type="video/mp4" />
         </video>
-        {/* Static fallback when reduced motion is preferred */}
         <div
           className="absolute inset-0 hidden bg-cover bg-center motion-reduce:block"
           style={{ backgroundImage: `url(${HERO_POSTER})` }}
@@ -34,7 +30,7 @@ export function HeroSection() {
 
       <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28 lg:py-32">
         <div className="max-w-3xl">
-          <p className="inline-flex items-center gap-2 rounded-none border border-bg/20 bg-bg/10 px-3 py-1.5 text-xs font-medium text-bg/90 backdrop-blur-sm">
+          <p className="inline-flex items-center gap-2 border border-bg/20 bg-bg/10 px-3 py-1.5 text-xs font-medium text-bg/90 backdrop-blur-sm">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
@@ -53,13 +49,13 @@ export function HeroSection() {
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link
               href="/signup"
-              className="rounded-none bg-accent px-6 py-3 text-sm font-semibold text-white hover:bg-accent-hover"
+              className="bg-accent px-6 py-3 text-sm font-semibold text-white hover:bg-accent-hover"
             >
               Start free — 1 site
             </Link>
             <Link
               href="/#how-it-works"
-              className="rounded-none border border-bg/25 bg-bg/10 px-6 py-3 text-sm font-semibold text-bg backdrop-blur-sm hover:bg-bg/20"
+              className="border border-bg/25 bg-bg/10 px-6 py-3 text-sm font-semibold text-bg backdrop-blur-sm hover:bg-bg/20"
             >
               See how it works
             </Link>
