@@ -3,15 +3,24 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
+import { planIdFromStripePriceId, type PlanId } from "@/lib/plans";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function setPro(userId: string, subscription: Stripe.Subscription) {
+function resolvePlanId(subscription: Stripe.Subscription): PlanId {
+  const fromMeta = subscription.metadata?.planId;
+  if (fromMeta === "business" || fromMeta === "pro") return fromMeta;
+  const priceId = subscription.items.data[0]?.price?.id;
+  return planIdFromStripePriceId(priceId);
+}
+
+async function setPaid(userId: string, subscription: Stripe.Subscription) {
+  const plan = resolvePlanId(subscription);
   await prisma.user.update({
     where: { id: userId },
     data: {
-      plan: "pro",
+      plan,
       stripeSubscriptionId: subscription.id,
       stripeStatus: subscription.status,
       stripeCustomerId:
@@ -38,10 +47,7 @@ export async function POST(req: Request) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!stripe || !webhookSecret) {
-    return NextResponse.json(
-      { error: "Stripe webhook not configured" },
-      { status: 503 }
-    );
+    return NextResponse.json({ error: "Billing webhook not configured" }, { status: 503 });
   }
 
   const body = await req.text();
@@ -69,7 +75,14 @@ export async function POST(req: Request) {
               ? session.subscription
               : session.subscription.id;
           const subscription = await stripe.subscriptions.retrieve(subId);
-          await setPro(userId, subscription);
+          // Prefer checkout metadata when present
+          if (session.metadata?.planId === "business" || session.metadata?.planId === "pro") {
+            subscription.metadata = {
+              ...subscription.metadata,
+              planId: session.metadata.planId,
+            };
+          }
+          await setPaid(userId, subscription);
         }
         break;
       }
@@ -84,7 +97,7 @@ export async function POST(req: Request) {
           )?.id;
         if (userId) {
           if (subscription.status === "active" || subscription.status === "trialing") {
-            await setPro(userId, subscription);
+            await setPaid(userId, subscription);
           } else if (
             subscription.status === "canceled" ||
             subscription.status === "unpaid" ||

@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { stripePriceIdForPlan } from "./plans";
 
 export function getStripe(): Stripe | null {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -7,9 +8,9 @@ export function getStripe(): Stripe | null {
 }
 
 export function isStripeConfigured(): boolean {
-  return Boolean(
-    process.env.STRIPE_SECRET_KEY &&
-      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY &&
-      process.env.STRIPE_PRICE_ID
+  const hasKeys = Boolean(
+    process.env.STRIPE_SECRET_KEY && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
   );
+  const hasPro = Boolean(stripePriceIdForPlan("pro"));
+  return hasKeys && hasPro;
 }
