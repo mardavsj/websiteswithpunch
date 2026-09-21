@@ -27,10 +27,10 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://websiteswithpunch.com"),
   icons: {
     icon: [
+      { url: "/icon", type: "image/png" },
       { url: "/favicon.svg", type: "image/svg+xml" },
-      { url: "https://www.websiteswithpunch.com/logo.png", type: "image/png" },
     ],
-    apple: "https://www.websiteswithpunch.com/logo.png",
+    apple: [{ url: "/apple-icon", type: "image/png" }],
     shortcut: "/favicon.svg",
   },
   openGraph: {
