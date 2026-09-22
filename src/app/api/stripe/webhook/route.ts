@@ -3,11 +3,22 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
-import { planIdFromStripePriceId, type PlanId } from "@/lib/plans";
+import {
+  getPackConfig,
+  isPackPriceId,
+  planIdFromStripePriceId,
+  type PlanId,
+} from "@/lib/plans";
 import { upsertUserFromPaidSignupSession } from "@/lib/complete-paid-signup";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+function isSitePackSubscription(subscription: Stripe.Subscription): boolean {
+  if (subscription.metadata?.type === "site_pack") return true;
+  const priceId = subscription.items.data[0]?.price?.id;
+  return isPackPriceId(priceId);
+}
 
 function resolvePlanId(subscription: Stripe.Subscription): PlanId {
   const fromMeta = subscription.metadata?.planId;
@@ -40,6 +51,36 @@ async function setFree(userId: string, status?: string) {
       stripeStatus: status || "canceled",
       stripeSubscriptionId: null,
     },
+  });
+}
+
+async function incrementSitePack(userId: string, packPlan: string | undefined) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return;
+
+  const planKey =
+    packPlan === "business" || packPlan === "pro"
+      ? packPlan
+      : user.plan === "business" || user.plan === "pro"
+        ? user.plan
+        : null;
+  const config = getPackConfig(planKey);
+  const maxPacks = config?.maxPacks ?? 0;
+  const next = Math.min((user.sitePackCount ?? 0) + 1, maxPacks);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { sitePackCount: next },
+  });
+}
+
+async function decrementSitePack(userId: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return;
+  const next = Math.max(0, (user.sitePackCount ?? 0) - 1);
+  await prisma.user.update({
+    where: { id: userId },
+    data: { sitePackCount: next },
   });
 }
 
@@ -79,6 +120,15 @@ export async function POST(req: Request) {
           break;
         }
 
+        // Site pack add-on (does not change plan)
+        if (session.metadata?.type === "site_pack") {
+          const userId = session.metadata.userId;
+          if (userId) {
+            await incrementSitePack(userId, session.metadata.packPlan);
+          }
+          break;
+        }
+
         // Existing logged-in upgrade flow
         const userId = session.metadata?.userId;
         if (userId && session.subscription) {
@@ -99,6 +149,12 @@ export async function POST(req: Request) {
       }
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
+
+        // Pack subscriptions must never overwrite plan / stripeSubscriptionId
+        if (isSitePackSubscription(subscription)) {
+          break;
+        }
+
         let userId =
           subscription.metadata?.userId ||
           (
@@ -139,6 +195,20 @@ export async function POST(req: Request) {
       }
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
+
+        // Pack-only cancel: decrement pack count, never wipe plan
+        if (isSitePackSubscription(subscription)) {
+          const userId =
+            subscription.metadata?.userId ||
+            (
+              await prisma.user.findFirst({
+                where: { stripeCustomerId: String(subscription.customer) },
+              })
+            )?.id;
+          if (userId) await decrementSitePack(userId);
+          break;
+        }
+
         const user = await prisma.user.findFirst({
           where: {
             OR: [
