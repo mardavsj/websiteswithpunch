@@ -76,20 +76,8 @@ export function WhyItMattersSection() {
 
 export function ProductPreviewSection() {
   return (
-    <section className="relative isolate overflow-hidden border-b border-rule bg-bg">
-      {/* Parallel curved lines — darker on the left, fading toward the right */}
-      <div
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          backgroundImage: "url(/marketing/arc-lines.svg)",
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "left bottom",
-          backgroundSize: "min(1200px, 110%) auto",
-        }}
-        aria-hidden
-      />
-
-      <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6">
+    <section className="border-b border-rule bg-bg">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="font-display text-3xl font-medium text-ink sm:text-4xl">
             One glance. Three signals.
