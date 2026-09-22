@@ -69,7 +69,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     const updated = await prisma.site.update({ where: { id: site.id }, data });
     return NextResponse.json({ site: updated });
   } catch (err: unknown) {
-    const code = typeof err === "object" && err && "code" in err ? (err as { code?: string }).code : undefined;
+    const code =
+      typeof err === "object" && err && "code" in err ? (err as { code?: string }).code : undefined;
     if (code === "P2002") {
       return NextResponse.json(
         { error: "Site already added", code: "DUPLICATE_URL" },

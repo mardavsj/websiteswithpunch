@@ -81,8 +81,8 @@ export async function POST(req: Request) {
       },
     });
   } catch (err: unknown) {
-    // Unique constraint race (userId + url)
-    const code = typeof err === "object" && err && "code" in err ? (err as { code?: string }).code : undefined;
+    const code =
+      typeof err === "object" && err && "code" in err ? (err as { code?: string }).code : undefined;
     if (code === "P2002") {
       return NextResponse.json(
         { error: "Site already added", code: "DUPLICATE_URL" },

@@ -25,7 +25,6 @@ export function extractHostname(url: string): string {
 export function extractRootDomain(hostname: string): string {
   const parts = hostname.toLowerCase().replace(/^www\./, "").split(".");
   if (parts.length <= 2) return parts.join(".");
-  // Simple heuristic for common multi-part TLDs
   const multi = ["co.uk", "com.au", "co.in", "com.br", "co.jp", "co.nz"];
   const lastTwo = parts.slice(-2).join(".");
   const lastThree = parts.slice(-3).join(".");
