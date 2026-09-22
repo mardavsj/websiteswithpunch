@@ -112,8 +112,16 @@ export function PricingSection() {
                     <span className="text-accent" aria-hidden>
                       —
                     </span>
-                    {plan.id === "free" ? "Dashboard & history" : "Billing portal included"}
+                    Dashboard & history
                   </li>
+                  {plan.id !== "free" && (
+                    <li className="flex gap-3">
+                      <span className="text-accent" aria-hidden>
+                        —
+                      </span>
+                      Billing portal included
+                    </li>
+                  )}
                   {plan.id === "pro" && (
                     <li className="flex gap-3">
                       <span className="text-accent" aria-hidden>
@@ -155,8 +163,9 @@ export function PricingSection() {
         <div className="mt-10 space-y-2 text-sm text-muted">
           <p>
             Pro packs add +{SITE_PACKS.pro.sitesPerPack} sites for $
-            {SITE_PACKS.pro.pricePerMonth}/mo (up to {PLANS.pro.siteLimit + SITE_PACKS.pro.maxPacks * SITE_PACKS.pro.sitesPerPack}{" "}
-            sites). Business packs add +{SITE_PACKS.business.sitesPerPack} for $
+            {SITE_PACKS.pro.pricePerMonth}/mo (up to{" "}
+            {PLANS.pro.siteLimit + SITE_PACKS.pro.maxPacks * SITE_PACKS.pro.sitesPerPack} sites).
+            Business packs add +{SITE_PACKS.business.sitesPerPack} for $
             {SITE_PACKS.business.pricePerMonth}/mo (up to{" "}
             {PLANS.business.siteLimit +
               SITE_PACKS.business.maxPacks * SITE_PACKS.business.sitesPerPack}{" "}
