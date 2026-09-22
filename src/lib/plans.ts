@@ -14,7 +14,8 @@ export const PLANS = {
     name: "Pro",
     price: 12,
     siteLimit: 10,
-    description: "Monitor up to 10 sites with billing portal access.",
+    description:
+      "Monitor up to 10 sites, with optional +5 site packs when you need more.",
     highlight: true,
   },
   business: {
@@ -22,10 +23,29 @@ export const PLANS = {
     name: "Business",
     price: 39,
     siteLimit: 50,
-    description: "Monitor up to 50 sites for agencies and multi-brand teams.",
+    description:
+      "Monitor up to 50 sites, with optional +10 site packs for larger portfolios.",
     highlight: false,
   },
 } as const;
+
+/** Dashboard-only add-on packs (not separate homepage plans). */
+export const SITE_PACKS = {
+  pro: {
+    planId: "pro" as const,
+    sitesPerPack: 5,
+    pricePerMonth: 6,
+    maxPacks: 4, // 10 + 4×5 = 30
+  },
+  business: {
+    planId: "business" as const,
+    sitesPerPack: 10,
+    pricePerMonth: 8,
+    maxPacks: 5, // 50 + 5×10 = 100
+  },
+} as const;
+
+export type PackPlanId = keyof typeof SITE_PACKS;
 
 export const PAID_PLAN_IDS: PlanId[] = ["pro", "business"];
 
@@ -33,6 +53,33 @@ export function getSiteLimit(plan: string | null | undefined): number {
   if (plan === "business") return PLANS.business.siteLimit;
   if (plan === "pro") return PLANS.pro.siteLimit;
   return PLANS.free.siteLimit;
+}
+
+export function getPackConfig(plan: string | null | undefined) {
+  if (plan === "pro") return SITE_PACKS.pro;
+  if (plan === "business") return SITE_PACKS.business;
+  return null;
+}
+
+/** Base plan limit + purchased packs (clamped to maxPacks). Free ignores packs. */
+export function getEffectiveSiteLimit(
+  plan: string | null | undefined,
+  sitePackCount: number | null | undefined,
+): number {
+  const base = getSiteLimit(plan);
+  const config = getPackConfig(plan);
+  if (!config) return base;
+  const packs = Math.max(0, Math.min(sitePackCount ?? 0, config.maxPacks));
+  return base + packs * config.sitesPerPack;
+}
+
+export function canBuySitePack(
+  plan: string | null | undefined,
+  sitePackCount: number | null | undefined,
+): boolean {
+  const config = getPackConfig(plan);
+  if (!config) return false;
+  return (sitePackCount ?? 0) < config.maxPacks;
 }
 
 /** Active paid plan, or free if canceled / missing. */
@@ -66,6 +113,20 @@ export function stripePriceIdForPlan(planId: "pro" | "business"): string | null 
     return process.env.STRIPE_PRICE_ID_BUSINESS || null;
   }
   return process.env.STRIPE_PRICE_ID_PRO || process.env.STRIPE_PRICE_ID || null;
+}
+
+export function stripePriceIdForPack(planId: PackPlanId): string | null {
+  if (planId === "business") {
+    return process.env.STRIPE_PRICE_ID_PACK_BUSINESS || null;
+  }
+  return process.env.STRIPE_PRICE_ID_PACK_PRO || null;
+}
+
+export function isPackPriceId(priceId: string | null | undefined): boolean {
+  if (!priceId) return false;
+  const pro = process.env.STRIPE_PRICE_ID_PACK_PRO;
+  const business = process.env.STRIPE_PRICE_ID_PACK_BUSINESS;
+  return Boolean((pro && priceId === pro) || (business && priceId === business));
 }
 
 export function planIdFromStripePriceId(priceId: string | null | undefined): PlanId {
