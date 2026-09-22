@@ -1,7 +1,6 @@
 import { PLANS } from "@/lib/plans";
 import { DashboardMock } from "./DashboardMock";
 import { monitorRows, painPoints } from "./home-content";
-import { LINE_FLOW_BG } from "./line-flow-bg";
 
 export function FeaturesSection() {
   return (
@@ -79,14 +78,14 @@ export function WhyItMattersSection() {
 export function ProductPreviewSection() {
   return (
     <section className="relative isolate overflow-hidden border-b border-rule bg-bg">
-      {/* User-provided parallel curved line artwork */}
+      {/* Parallel curved line field — monochrome, anchored lower-left */}
       <div
-        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.5]"
+        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.55]"
         style={{
-          backgroundImage: `url(${LINE_FLOW_BG})`,
+          backgroundImage: "url(/marketing/arc-lines.svg)",
           backgroundRepeat: "no-repeat",
           backgroundPosition: "left bottom",
-          backgroundSize: "min(1400px, 115%) auto",
+          backgroundSize: "min(1200px, 110%) auto",
         }}
         aria-hidden
       />
