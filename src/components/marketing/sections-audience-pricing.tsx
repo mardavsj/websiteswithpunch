@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PLANS } from "@/lib/plans";
+import { PLANS, SITE_PACKS } from "@/lib/plans";
 import { audiences } from "./home-content";
 
 export function AudienceSection() {
@@ -51,7 +51,8 @@ export function PricingSection() {
         <div className="max-w-xl">
           <h2 className="font-display text-3xl font-medium text-ink sm:text-4xl">Simple pricing</h2>
           <p className="mt-3 text-muted">
-            Start free. Upgrade when you need more sites — every plan includes the same checks.
+            Three plans. Need a few more sites? Add packs from the dashboard — no confusing
+            per-site pricing.
           </p>
         </div>
 
@@ -113,6 +114,24 @@ export function PricingSection() {
                     </span>
                     {plan.id === "free" ? "Dashboard & history" : "Billing portal included"}
                   </li>
+                  {plan.id === "pro" && (
+                    <li className="flex gap-3">
+                      <span className="text-accent" aria-hidden>
+                        —
+                      </span>
+                      Optional +{SITE_PACKS.pro.sitesPerPack} site packs ($
+                      {SITE_PACKS.pro.pricePerMonth}/mo)
+                    </li>
+                  )}
+                  {plan.id === "business" && (
+                    <li className="flex gap-3">
+                      <span className="text-accent" aria-hidden>
+                        —
+                      </span>
+                      Optional +{SITE_PACKS.business.sitesPerPack} site packs ($
+                      {SITE_PACKS.business.pricePerMonth}/mo)
+                    </li>
+                  )}
                 </ul>
                 <Link
                   href={signupHref(plan.id)}
@@ -123,7 +142,7 @@ export function PricingSection() {
                   }
                 >
                   {plan.id === "free"
-                    ? "Get started free →"
+                    ? "Get started free \u2192"
                     : plan.id === "pro"
                       ? "Start with Pro"
                       : "Start with Business"}
@@ -135,14 +154,20 @@ export function PricingSection() {
 
         <div className="mt-10 space-y-2 text-sm text-muted">
           <p>
-            Need more than {PLANS.business.siteLimit} sites?{" "}
+            Pro packs add +{SITE_PACKS.pro.sitesPerPack} sites for $
+            {SITE_PACKS.pro.pricePerMonth}/mo (up to {PLANS.pro.siteLimit + SITE_PACKS.pro.maxPacks * SITE_PACKS.pro.sitesPerPack}{" "}
+            sites). Business packs add +{SITE_PACKS.business.sitesPerPack} for $
+            {SITE_PACKS.business.pricePerMonth}/mo (up to{" "}
+            {PLANS.business.siteLimit +
+              SITE_PACKS.business.maxPacks * SITE_PACKS.business.sitesPerPack}{" "}
+            sites). Need more?{" "}
             <a
               href="mailto:hello@websiteswithpunch.com?subject=Custom%20site%20limit"
               className="font-semibold text-ink underline-offset-2 hover:underline"
             >
               Contact us
-            </a>{" "}
-            for a custom limit.
+            </a>
+            .
           </p>
           <p>
             Already have an account?{" "}
