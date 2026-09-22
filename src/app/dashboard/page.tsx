@@ -2,18 +2,19 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getEffectivePlan, getSiteLimit, PLANS } from "@/lib/plans";
+import { getEffectivePlan, getEffectiveSiteLimit, PLANS } from "@/lib/plans";
 import { SiteCard } from "@/components/SiteCard";
 import { SiteAnalytics } from "@/components/SiteAnalytics";
 import { UpgradeCTA } from "@/components/UpgradeCTA";
 import { SignOutButton } from "@/components/SignOutButton";
+import { SiteCapacityActions } from "@/components/SiteCapacityActions";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: { upgraded?: string; canceled?: string };
+  searchParams: { upgraded?: string; canceled?: string; pack?: string };
 }) {
   const session = await getSession();
   if (!session?.user?.id) redirect("/login");
@@ -27,8 +28,10 @@ export default async function DashboardPage({
   });
 
   const plan = getEffectivePlan(user.plan, user.stripeStatus);
-  const limit = getSiteLimit(plan);
+  const packCount = user.sitePackCount ?? 0;
+  const limit = getEffectiveSiteLimit(plan, packCount);
   const atLimit = sites.length >= limit;
+  const remaining = Math.max(0, limit - sites.length);
   const showInlineAnalytics = sites.length === 1;
   const planLabel = PLANS[plan].name;
 
@@ -47,6 +50,12 @@ export default async function DashboardPage({
             Welcome{user.name ? `, ${user.name}` : ""}. Plan:{" "}
             <span className="font-medium text-ink">{planLabel}</span> · {sites.length}/{limit}{" "}
             sites
+            {packCount > 0 ? (
+              <span>
+                {" "}
+                (includes {packCount} site pack{packCount === 1 ? "" : "s"})
+              </span>
+            ) : null}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -73,11 +82,24 @@ export default async function DashboardPage({
           billing webhooks set plan status.
         </div>
       )}
+      {searchParams.pack && (
+        <div className="mt-6 rounded-none border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          Site pack purchased. Refresh if your site limit has not updated yet — billing webhooks
+          apply the pack.
+        </div>
+      )}
       {searchParams.canceled && (
         <div className="mt-6 rounded-none border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           Checkout canceled. You can upgrade anytime.
         </div>
       )}
+
+      <SiteCapacityActions
+        plan={plan}
+        sitePackCount={packCount}
+        atLimit={atLimit}
+        remaining={remaining}
+      />
 
       {sites.length > 1 && (
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
