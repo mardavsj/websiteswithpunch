@@ -1,4 +1,3 @@
-import { PLANS } from "@/lib/plans";
 import { DashboardMock } from "./DashboardMock";
 import { monitorRows, painPoints } from "./home-content";
 
@@ -78,9 +77,9 @@ export function WhyItMattersSection() {
 export function ProductPreviewSection() {
   return (
     <section className="relative isolate overflow-hidden border-b border-rule bg-bg">
-      {/* Parallel curved line field — monochrome, anchored lower-left */}
+      {/* Parallel curved lines — darker on the left, fading toward the right */}
       <div
-        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.55]"
+        className="pointer-events-none absolute inset-0 -z-10"
         style={{
           backgroundImage: "url(/marketing/arc-lines.svg)",
           backgroundRepeat: "no-repeat",
@@ -110,10 +109,6 @@ export function ProductPreviewSection() {
             aria-hidden
           />
           <DashboardMock className="relative" />
-          <p className="relative mt-8 text-center text-sm text-muted">
-            Free = {PLANS.free.siteLimit} · Pro = up to {PLANS.pro.siteLimit} · Business = up to{" "}
-            {PLANS.business.siteLimit}
-          </p>
         </div>
       </div>
     </section>
