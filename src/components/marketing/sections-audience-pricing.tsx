@@ -142,7 +142,7 @@ export function PricingSection() {
                   }
                 >
                   {plan.id === "free"
-                    ? "Get started free \u2192"
+                    ? "Get started free →"
                     : plan.id === "pro"
                       ? "Start with Pro"
                       : "Start with Business"}
