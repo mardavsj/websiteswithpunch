@@ -59,14 +59,38 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
   }
 
-  const site = await prisma.site.create({
-    data: {
-      userId: user.id,
-      name: parsed.data.name.trim(),
-      url,
-      status: "pending",
-    },
+  const duplicate = await prisma.site.findFirst({
+    where: { userId: user.id, url },
+    select: { id: true },
   });
+  if (duplicate) {
+    return NextResponse.json(
+      { error: "Site already added", code: "DUPLICATE_URL" },
+      { status: 409 },
+    );
+  }
+
+  let site;
+  try {
+    site = await prisma.site.create({
+      data: {
+        userId: user.id,
+        name: parsed.data.name.trim(),
+        url,
+        status: "pending",
+      },
+    });
+  } catch (err: unknown) {
+    // Unique constraint race (userId + url)
+    const code = typeof err === "object" && err && "code" in err ? (err as { code?: string }).code : undefined;
+    if (code === "P2002") {
+      return NextResponse.json(
+        { error: "Site already added", code: "DUPLICATE_URL" },
+        { status: 409 },
+      );
+    }
+    throw err;
+  }
 
   try {
     const result = await runFullSiteCheck(url);

@@ -7,7 +7,11 @@ export function normalizeUrl(input: string): string {
   if (!/^https?:\/\//i.test(url)) {
     url = `https://${url}`;
   }
-  return url.replace(/\/$/, "");
+  const parsed = new URL(url);
+  parsed.hostname = parsed.hostname.toLowerCase();
+  parsed.hash = "";
+  // Drop trailing slash so example.com and example.com/ match
+  return parsed.toString().replace(/\/$/, "");
 }
 
 export function extractHostname(url: string): string {

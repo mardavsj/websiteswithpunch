@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/Toast";
 
 type Props = {
   mode: "create" | "edit";
@@ -12,6 +13,7 @@ type Props = {
 
 export function SiteForm({ mode, siteId, initialName = "", initialUrl = "" }: Props) {
   const router = useRouter();
+  const { toast } = useToast();
   const [name, setName] = useState(initialName);
   const [url, setUrl] = useState(initialUrl);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +33,11 @@ export function SiteForm({ mode, siteId, initialName = "", initialUrl = "" }: Pr
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Something went wrong");
+        const msg = data.error || "Something went wrong";
+        if (res.status === 409 || data.code === "DUPLICATE_URL") {
+          toast("Site already added");
+        }
+        setError(msg);
         return;
       }
       router.push("/dashboard");

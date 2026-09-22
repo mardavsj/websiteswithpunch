@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/Toast";
 
 type Site = {
   id: string;
@@ -17,6 +18,7 @@ type Props = {
 
 export function EditSiteModal({ open, onClose, site }: Props) {
   const router = useRouter();
+  const { toast } = useToast();
   const [name, setName] = useState(site.name);
   const [url, setUrl] = useState(site.url);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +63,11 @@ export function EditSiteModal({ open, onClose, site }: Props) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Something went wrong");
+        const msg = data.error || "Something went wrong";
+        if (res.status === 409 || data.code === "DUPLICATE_URL") {
+          toast("Site already added");
+        }
+        setError(msg);
         return;
       }
       router.refresh();

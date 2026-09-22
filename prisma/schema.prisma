@@ -77,6 +77,7 @@ model Site {
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   checkResults    CheckResult[]
 
+  @@unique([userId, url])
   @@index([userId])
 }
 

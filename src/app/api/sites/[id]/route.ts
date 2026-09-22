@@ -46,10 +46,38 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     } catch {
       return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
     }
+
+    if (data.url !== site.url) {
+      const duplicate = await prisma.site.findFirst({
+        where: {
+          userId: session.user.id,
+          url: data.url,
+          NOT: { id: site.id },
+        },
+        select: { id: true },
+      });
+      if (duplicate) {
+        return NextResponse.json(
+          { error: "Site already added", code: "DUPLICATE_URL" },
+          { status: 409 },
+        );
+      }
+    }
   }
 
-  const updated = await prisma.site.update({ where: { id: site.id }, data });
-  return NextResponse.json({ site: updated });
+  try {
+    const updated = await prisma.site.update({ where: { id: site.id }, data });
+    return NextResponse.json({ site: updated });
+  } catch (err: unknown) {
+    const code = typeof err === "object" && err && "code" in err ? (err as { code?: string }).code : undefined;
+    if (code === "P2002") {
+      return NextResponse.json(
+        { error: "Site already added", code: "DUPLICATE_URL" },
+        { status: 409 },
+      );
+    }
+    throw err;
+  }
 }
 
 export async function DELETE(_: Request, { params }: { params: { id: string } }) {
