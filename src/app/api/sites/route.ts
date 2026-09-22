@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getEffectivePlan, getSiteLimit, PLANS } from "@/lib/plans";
+import {
+  canBuySitePack,
+  getEffectivePlan,
+  getEffectiveSiteLimit,
+  PLANS,
+  SITE_PACKS,
+} from "@/lib/plans";
 import { normalizeUrl } from "@/lib/utils";
 import { runFullSiteCheck } from "@/lib/checks";
 
@@ -34,15 +40,28 @@ export async function POST(req: Request) {
 
   const count = await prisma.site.count({ where: { userId: user.id } });
   const plan = getEffectivePlan(user.plan, user.stripeStatus);
-  const limit = getSiteLimit(plan);
+  const limit = getEffectiveSiteLimit(plan, user.sitePackCount);
   if (count >= limit) {
-    const upgradeHint =
-      plan === "free"
-        ? `Free allows ${PLANS.free.siteLimit} site. Upgrade to Pro (${PLANS.pro.siteLimit}) or Business (${PLANS.business.siteLimit}).`
-        : plan === "pro"
-          ? `Pro allows up to ${PLANS.pro.siteLimit} sites. Upgrade to Business for ${PLANS.business.siteLimit}.`
-          : `Business allows up to ${PLANS.business.siteLimit} sites. Contact us for a higher limit.`;
-    return NextResponse.json({ error: upgradeHint }, { status: 403 });
+    let upgradeHint: string;
+    if (plan === "free") {
+      upgradeHint = `Free allows ${PLANS.free.siteLimit} site. Upgrade to Pro (${PLANS.pro.siteLimit}) or Business (${PLANS.business.siteLimit}).`;
+    } else if (plan === "pro") {
+      if (canBuySitePack("pro", user.sitePackCount)) {
+        upgradeHint = `Pro site limit reached (${limit}). Buy a +${SITE_PACKS.pro.sitesPerPack} site pack ($${SITE_PACKS.pro.pricePerMonth}/mo) or upgrade to Business.`;
+      } else {
+        upgradeHint = `Pro max capacity reached (${limit} sites). Upgrade to Business for more sites.`;
+      }
+    } else {
+      if (canBuySitePack("business", user.sitePackCount)) {
+        upgradeHint = `Business site limit reached (${limit}). Buy a +${SITE_PACKS.business.sitesPerPack} site pack ($${SITE_PACKS.business.pricePerMonth}/mo) or contact hello@websiteswithpunch.com.`;
+      } else {
+        upgradeHint = `Business max capacity reached (${limit} sites). Contact hello@websiteswithpunch.com for a custom limit.`;
+      }
+    }
+    return NextResponse.json(
+      { error: upgradeHint, code: "SITE_LIMIT", limit },
+      { status: 403 },
+    );
   }
 
   const body = await req.json();
