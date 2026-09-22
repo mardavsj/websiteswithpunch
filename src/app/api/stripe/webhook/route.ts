@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { planIdFromStripePriceId, type PlanId } from "@/lib/plans";
+import { upsertUserFromPaidSignupSession } from "@/lib/complete-paid-signup";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -68,6 +69,17 @@ export async function POST(req: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
+
+        // Pay-before-account signup flow
+        if (session.metadata?.signup === "1") {
+          const result = await upsertUserFromPaidSignupSession(session);
+          if (!result.ok) {
+            console.error("Webhook signup upsert failed", result.reason);
+          }
+          break;
+        }
+
+        // Existing logged-in upgrade flow
         const userId = session.metadata?.userId;
         if (userId && session.subscription) {
           const subId =
@@ -75,7 +87,6 @@ export async function POST(req: Request) {
               ? session.subscription
               : session.subscription.id;
           const subscription = await stripe.subscriptions.retrieve(subId);
-          // Prefer checkout metadata when present
           if (session.metadata?.planId === "business" || session.metadata?.planId === "pro") {
             subscription.metadata = {
               ...subscription.metadata,
@@ -88,13 +99,23 @@ export async function POST(req: Request) {
       }
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
-        const userId =
+        let userId =
           subscription.metadata?.userId ||
           (
             await prisma.user.findFirst({
               where: { stripeCustomerId: String(subscription.customer) },
             })
           )?.id;
+
+        // Signup flow may only have email on subscription metadata
+        if (!userId && subscription.metadata?.email) {
+          userId = (
+            await prisma.user.findUnique({
+              where: { email: subscription.metadata.email.toLowerCase().trim() },
+            })
+          )?.id;
+        }
+
         if (userId) {
           if (subscription.status === "active" || subscription.status === "trialing") {
             await setPaid(userId, subscription);

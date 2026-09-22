@@ -13,6 +13,7 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const callbackUrl = params.get("callbackUrl") || "/dashboard";
+  const paid = params.get("paid") === "1";
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -39,6 +40,12 @@ export function LoginForm() {
       <p className="mt-2 text-sm text-muted">
         Log in to Websites With Punch. Demo: demo@websiteswithpunch.com / demo12345
       </p>
+      {paid && (
+        <p className="mt-3 rounded-none border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          Payment successful — your account is ready. Log in with the email and password you just
+          chose.
+        </p>
+      )}
       <form onSubmit={onSubmit} className="mt-8 space-y-4 rounded-none border border-rule bg-bg p-6">
         <div>
           <label className="text-sm font-medium text-ink">Email</label>

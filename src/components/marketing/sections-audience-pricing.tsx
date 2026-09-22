@@ -38,6 +38,12 @@ export function AudienceSection() {
 
 const PRICING_ORDER = [PLANS.free, PLANS.pro, PLANS.business] as const;
 
+function signupHref(planId: "free" | "pro" | "business"): string {
+  if (planId === "pro") return "/signup?plan=pro";
+  if (planId === "business") return "/signup?plan=business";
+  return "/signup";
+}
+
 export function PricingSection() {
   return (
     <section id="pricing" className="border-b border-rule bg-bg">
@@ -109,7 +115,7 @@ export function PricingSection() {
                   </li>
                 </ul>
                 <Link
-                  href="/signup"
+                  href={signupHref(plan.id)}
                   className={
                     featured
                       ? "mt-auto block bg-accent py-3 text-center text-sm font-semibold text-white hover:bg-accent-hover"
