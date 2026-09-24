@@ -1,10 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { PlanId } from "@/lib/plans";
 import { PLANS } from "@/lib/plans";
+import { useToast } from "@/components/Toast";
 
 export function UpgradeCTA({ plan }: { plan: PlanId | string }) {
+  const router = useRouter();
+  const { toast } = useToast();
   const [loading, setLoading] = useState<"pro" | "business" | "portal" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -33,10 +37,27 @@ export function UpgradeCTA({ plan }: { plan: PlanId | string }) {
         body: JSON.stringify({ planId }),
       });
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else setMessage(data.error || "Checkout is not configured yet.");
+      if (data.hostedInvoiceUrl || data.requiresAction) {
+        window.location.href = data.hostedInvoiceUrl;
+        return;
+      }
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      if (data.ok) {
+        toast(
+          planId === "business" ? "Upgraded to Business." : "Upgraded to Pro.",
+          "success",
+        );
+        router.refresh();
+        return;
+      }
+      setMessage(data.error || "Checkout is not configured yet.");
+      toast(data.error || "Checkout is not configured yet.", "error");
     } catch {
       setMessage("Checkout failed. Check billing configuration.");
+      toast("Checkout failed. Check billing configuration.", "error");
     } finally {
       setLoading(null);
     }
@@ -73,7 +94,7 @@ export function UpgradeCTA({ plan }: { plan: PlanId | string }) {
           className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-60"
         >
           {loading === "business"
-            ? "Redirecting…"
+            ? "Working…"
             : `Upgrade to Business — $${PLANS.business.price}/mo`}
         </button>
         {message && <p className="basis-full text-xs text-amber-700">{message}</p>}
