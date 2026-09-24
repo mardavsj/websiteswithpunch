@@ -16,6 +16,10 @@ model User {
   image                String?
   plan                 String    @default("free") // free | pro | business
   sitePackCount        Int       @default(0)
+  /// Target pack count after a scheduled removal (applies at pendingPackChangeAt).
+  pendingSitePackCount Int?
+  /// When pendingSitePackCount becomes the live limit (usually next renewal).
+  pendingPackChangeAt  DateTime?
   stripeCustomerId     String?   @unique
   stripeSubscriptionId String?   @unique
   stripeStatus         String?   // active | canceled | past_due | etc
