@@ -84,24 +84,18 @@ export function useBillingActions(opts: {
     }
   }
 
-  async function confirmChooseActive(
-    siteIds: string[],
-    pendingOnly: boolean,
-  ): Promise<boolean> {
+  async function confirmPendingKeep(siteIds: string[]): Promise<boolean> {
     const res = await fetch("/api/sites/choose-active", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ siteIds, pendingOnly }),
+      body: JSON.stringify({ siteIds }),
     });
     const data = await res.json();
     if (!res.ok) {
       toast(data.error || "Could not update.", "error");
       return false;
     }
-    toast(
-      pendingOnly ? "Selection saved for when your plan changes." : "Active sites updated.",
-      "success",
-    );
+    toast("Selection saved for when your plan changes.", "success");
     await afterOk();
     return true;
   }
@@ -123,7 +117,7 @@ export function useBillingActions(opts: {
     resumePlan,
     confirmDowngrade,
     previewNeedsKeepPicker,
-    confirmChooseActive,
+    confirmPendingKeep,
     undoPendingRemoval,
   };
 }

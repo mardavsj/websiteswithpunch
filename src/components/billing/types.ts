@@ -16,7 +16,6 @@ export type BillingSummary = {
   pendingPlanAtFormatted?: string | null;
   pendingTargetLimit?: number | null;
   paymentFailed?: boolean;
-  swapCooldownMs?: number;
 };
 
 export type SiteOption = KeepSiteOption & { locked?: boolean };
