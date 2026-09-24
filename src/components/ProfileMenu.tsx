@@ -69,7 +69,7 @@ export function ProfileMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-50 mt-2 w-48 border border-rule bg-bg py-1 shadow-lg"
+          className="absolute right-0 z-50 mt-2 w-48 border border-rule bg-surface py-1 shadow-lg"
         >
           <Link
             role="menuitem"
@@ -102,7 +102,7 @@ export function ProfileMenu() {
             role="menuitem"
             type="button"
             onClick={() => signOut({ callbackUrl: "/" })}
-            className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 focus:bg-red-50 active:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40 dark:focus:bg-red-950/40 dark:active:bg-red-950/40"
+            className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 focus:bg-red-50 active:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/15 dark:focus:bg-red-500/15 dark:active:bg-red-500/15"
           >
             Sign out
           </button>

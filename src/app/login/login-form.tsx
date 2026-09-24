@@ -41,12 +41,12 @@ export function LoginForm() {
         Log in to Websites With Punch. Demo: demo@websiteswithpunch.com / demo12345
       </p>
       {paid && (
-        <p className="mt-3 rounded-none border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+        <p className="mt-3 rounded-none border border-emerald-200 bg-emerald-50 dark:border-emerald-400/30 dark:bg-emerald-400/10 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-200">
           Payment successful — your account is ready. Log in with the email and password you just
           chose.
         </p>
       )}
-      <form onSubmit={onSubmit} className="mt-8 space-y-4 rounded-none border border-rule bg-bg p-6">
+      <form onSubmit={onSubmit} className="mt-8 space-y-4 rounded-none border border-rule bg-surface p-6">
         <div>
           <label className="text-sm font-medium text-ink">Email</label>
           <input
@@ -67,7 +67,7 @@ export function LoginForm() {
             className="mt-1.5 w-full rounded-none border border-rule bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           />
         </div>
-        {error && <p className="text-sm text-rose-600">{error}</p>}
+        {error && <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>}
         <button
           type="submit"
           disabled={loading}

@@ -29,7 +29,7 @@ export function LimitBanners({
   return (
     <>
       {showSoft && (
-        <div className="mt-3 rounded-none border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <div className="mt-3 rounded-none border border-amber-200 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
           Only {remaining} site slot{remaining === 1 ? "" : "s"} left on {PLANS[plan].name}.{" "}
           {canBuy
             ? `Add a +${pack.sitesPerPack} site pack for $${pack.pricePerMonth}/mo when you need more.`
@@ -64,13 +64,13 @@ export function LimitBanners({
                 type="button"
                 onClick={onUpgrade}
                 disabled={loading}
-                className="rounded-none border border-rule bg-bg px-4 py-2 text-sm font-medium text-ink hover:bg-white disabled:opacity-60"
+                className="rounded-none border border-rule bg-surface px-4 py-2 text-sm font-medium text-ink hover:bg-surface disabled:opacity-60"
               >
                 Upgrade to Business — ${PLANS.business.price}/mo
               </button>
             )}
           </div>
-          {message && <p className="mt-2 text-xs text-amber-700">{message}</p>}
+          {message && <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">{message}</p>}
         </div>
       )}
     </>
