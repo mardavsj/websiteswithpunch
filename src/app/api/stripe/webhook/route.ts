@@ -8,7 +8,13 @@ import { upsertUserFromPaidSignupSession } from "@/lib/complete-paid-signup";
 import {
   derivePlanAndPacks,
   isLegacyPackOnlySubscription,
+  subscriptionPeriodEnd,
 } from "@/lib/stripe-subscription";
+import {
+  applyDuePendingAndEnforce,
+  clearPendingChanges,
+  enforceSiteLimit,
+} from "@/lib/site-limits";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,41 +33,86 @@ async function syncFromSubscription(
   userId: string,
   subscription: Stripe.Subscription,
 ) {
-  const { plan, sitePackCount: derivedPacks } = derivePlanAndPacks(subscription);
+  const { plan: derivedPlan, sitePackCount: derivedPacks } =
+    derivePlanAndPacks(subscription);
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return;
 
   const now = new Date();
   const periodStart = periodStartUnix(subscription);
+  const periodEnd = subscriptionPeriodEnd(subscription);
+  const cancelAtPeriodEnd = Boolean(subscription.cancel_at_period_end);
+
+  let plan: PlanId | string = derivedPlan;
   let sitePackCount = derivedPacks;
   let pendingSitePackCount = user.pendingSitePackCount;
   let pendingPackChangeAt = user.pendingPackChangeAt;
+  let pendingPlan = user.pendingPlan;
+  let pendingPlanAt = user.pendingPlanAt;
 
+  // Portal cancel: mirror cancel_at_period_end → pending Free
+  if (cancelAtPeriodEnd && subscription.status !== "canceled") {
+    pendingPlan = "free";
+    pendingPlanAt = periodEnd ? new Date(periodEnd * 1000) : pendingPlanAt;
+  } else if (
+    !cancelAtPeriodEnd &&
+    user.cancelAtPeriodEnd &&
+    pendingPlan === "free"
+  ) {
+    // Resumed from portal
+    pendingPlan = null;
+    pendingPlanAt = null;
+  }
+
+  // Pending pack removal
   if (pendingSitePackCount != null && pendingPackChangeAt) {
     const due =
       now >= pendingPackChangeAt ||
       (periodStart != null && periodStart * 1000 >= pendingPackChangeAt.getTime());
-
     if (due) {
-      // New period started — apply pending (prefer Stripe-derived, which should match)
       sitePackCount = derivedPacks;
       pendingSitePackCount = null;
       pendingPackChangeAt = null;
     } else {
-      // Still in paid-through month — do not drop the paid pack count
       sitePackCount = Math.max(user.sitePackCount ?? 0, pendingSitePackCount);
-      // Keep pending target aligned with Stripe qty
       pendingSitePackCount = derivedPacks;
     }
+  }
+
+  // Pending plan downgrade (Business→Pro): keep paid-through plan until due
+  if (pendingPlan && pendingPlanAt) {
+    const due =
+      now >= pendingPlanAt ||
+      (periodStart != null && periodStart * 1000 >= pendingPlanAt.getTime());
+    if (due) {
+      plan = pendingPlan === "pro" || pendingPlan === "business" ? pendingPlan : "free";
+      pendingPlan = null;
+      pendingPlanAt = null;
+      if (plan === "free" || (plan === "pro" && user.plan === "business")) {
+        sitePackCount = plan === "free" ? 0 : derivedPacks;
+      }
+    } else {
+      // Keep current paid-through plan for limits
+      plan = user.plan;
+    }
+  }
+
+  // past_due: keep plan (grace) — do not drop to free
+  if (subscription.status === "past_due" || subscription.status === "unpaid") {
+    plan = user.plan;
+    sitePackCount = user.sitePackCount ?? sitePackCount;
   }
 
   await prisma.user.update({
     where: { id: userId },
     data: {
-      plan,
+      plan: plan as string,
       sitePackCount,
       pendingSitePackCount,
       pendingPackChangeAt,
+      pendingPlan,
+      pendingPlanAt,
+      cancelAtPeriodEnd,
       stripeSubscriptionId: subscription.id,
       stripeStatus: subscription.status,
       stripeCustomerId:
@@ -70,6 +121,8 @@ async function syncFromSubscription(
           : subscription.customer.id,
     },
   });
+
+  await enforceSiteLimit(userId);
 }
 
 async function setFree(userId: string, status?: string) {
@@ -80,10 +133,14 @@ async function setFree(userId: string, status?: string) {
       sitePackCount: 0,
       pendingSitePackCount: null,
       pendingPackChangeAt: null,
+      pendingPlan: null,
+      pendingPlanAt: null,
+      cancelAtPeriodEnd: false,
       stripeStatus: status || "canceled",
       stripeSubscriptionId: null,
     },
   });
+  await enforceSiteLimit(userId);
 }
 
 async function resolveUserId(
@@ -106,33 +163,6 @@ async function resolveUserId(
   }
 
   return undefined;
-}
-
-async function applyPendingIfDue(userId: string, subscription?: Stripe.Subscription) {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user || user.pendingSitePackCount == null || !user.pendingPackChangeAt) return;
-
-  const now = new Date();
-  const periodStart = subscription ? periodStartUnix(subscription) : null;
-  const due =
-    now >= user.pendingPackChangeAt ||
-    (periodStart != null &&
-      periodStart * 1000 >= user.pendingPackChangeAt.getTime());
-
-  if (!due) return;
-
-  const packs = subscription
-    ? derivePlanAndPacks(subscription).sitePackCount
-    : user.pendingSitePackCount;
-
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      sitePackCount: packs,
-      pendingSitePackCount: null,
-      pendingPackChangeAt: null,
-    },
-  });
 }
 
 export async function POST(req: Request) {
@@ -166,6 +196,12 @@ export async function POST(req: Request) {
           const result = await upsertUserFromPaidSignupSession(session);
           if (!result.ok) {
             console.error("Webhook signup upsert failed", result.reason);
+          } else {
+            const u = await prisma.user.findUnique({ where: { email: result.email } });
+            if (u) {
+              await clearPendingChanges(u.id);
+              await enforceSiteLimit(u.id);
+            }
           }
           break;
         }
@@ -200,6 +236,7 @@ export async function POST(req: Request) {
               };
             }
           }
+          await clearPendingChanges(userId);
           await syncFromSubscription(userId, subscription);
           if (
             session.metadata?.planId === "business" ||
@@ -211,8 +248,12 @@ export async function POST(req: Request) {
                 plan: session.metadata.planId as PlanId,
                 pendingSitePackCount: null,
                 pendingPackChangeAt: null,
+                pendingPlan: null,
+                pendingPlanAt: null,
+                cancelAtPeriodEnd: false,
               },
             });
+            await enforceSiteLimit(userId);
           }
         }
         break;
@@ -230,6 +271,12 @@ export async function POST(req: Request) {
 
         if (subscription.status === "active" || subscription.status === "trialing") {
           await syncFromSubscription(userId, subscription);
+        } else if (subscription.status === "past_due") {
+          // Grace: keep sites active, just record status
+          await prisma.user.update({
+            where: { id: userId },
+            data: { stripeStatus: "past_due" },
+          });
         } else if (
           subscription.status === "canceled" ||
           subscription.status === "unpaid" ||
@@ -244,10 +291,6 @@ export async function POST(req: Request) {
           }
         } else {
           await syncFromSubscription(userId, subscription);
-          await prisma.user.update({
-            where: { id: userId },
-            data: { stripeStatus: subscription.status },
-          });
         }
         break;
       }
@@ -294,7 +337,28 @@ export async function POST(req: Request) {
         const subscription = await stripe.subscriptions.retrieve(subRef);
         if (isLegacyPackOnlySubscription(subscription)) break;
         const userId = await resolveUserId(subscription);
-        if (userId) await applyPendingIfDue(userId, subscription);
+        if (userId) {
+          await applyDuePendingAndEnforce(userId);
+          await syncFromSubscription(userId, subscription);
+        }
+        break;
+      }
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId =
+          typeof invoice.customer === "string"
+            ? invoice.customer
+            : invoice.customer?.id;
+        if (!customerId) break;
+        const user = await prisma.user.findFirst({
+          where: { stripeCustomerId: customerId },
+        });
+        if (user) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { stripeStatus: user.stripeStatus === "canceled" ? user.stripeStatus : "past_due" },
+          });
+        }
         break;
       }
       default:
