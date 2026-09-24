@@ -12,19 +12,19 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-rule bg-bg/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
+      <div className="mx-auto flex max-w-6xl min-w-0 items-center justify-between gap-2 px-4 py-4 sm:px-6">
         <Link
           href={session ? "/dashboard" : "/"}
-          className="flex items-center gap-2.5 font-display text-base font-medium text-ink"
+          className="flex min-w-0 items-center gap-2 font-display text-sm font-medium text-ink sm:gap-2.5 sm:text-base"
         >
           <img
             src="https://websiteswithpunch.com/logo.png"
             alt="Websites With Punch"
-            className="h-8 w-8 object-contain"
+            className="h-7 w-7 shrink-0 object-contain md:h-8 md:w-8"
           />
-          <span>Websites With Punch</span>
+          <span className="truncate">Websites With Punch</span>
         </Link>
-        <nav className="flex items-center gap-2 text-sm sm:gap-3">
+        <nav className="flex shrink-0 items-center gap-2 text-sm">
           {status === "loading" ? (
             <ThemeToggle />
           ) : session ? (

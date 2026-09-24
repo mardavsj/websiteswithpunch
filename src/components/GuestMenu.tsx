@@ -32,7 +32,7 @@ export function GuestMenu() {
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         title="Menu"
-        className="inline-flex h-8 w-8 items-center justify-center rounded-none border border-rule text-ink hover:bg-accent-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-none border border-rule text-ink hover:bg-accent-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         <svg aria-hidden viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M4 7h16M4 12h16M4 17h16" />
@@ -41,13 +41,13 @@ export function GuestMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-50 mt-2 w-48 border border-rule bg-surface py-1 shadow-lg"
+          className="absolute right-0 z-50 mt-2 w-48 max-w-[calc(100vw-2rem)] border border-rule bg-surface py-1 shadow-lg"
         >
           <Link
             role="menuitem"
             href="/login"
             onClick={() => setOpen(false)}
-            className="block px-3 py-2 text-sm text-ink hover:bg-accent-soft focus:bg-accent-soft"
+            className="flex min-h-11 items-center px-3 text-sm text-ink hover:bg-accent-soft focus:bg-accent-soft md:min-h-0 md:py-2"
           >
             Log in
           </Link>
@@ -56,7 +56,7 @@ export function GuestMenu() {
             role="menuitem"
             href="/signup"
             onClick={() => setOpen(false)}
-            className="block px-3 py-2 text-sm font-medium text-accent hover:bg-accent-soft focus:bg-accent-soft"
+            className="flex min-h-11 items-center px-3 text-sm font-medium text-accent hover:bg-accent-soft focus:bg-accent-soft md:min-h-0 md:py-2"
           >
             Start free
           </Link>
