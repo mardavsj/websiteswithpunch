@@ -111,13 +111,13 @@ export function SiteForm({
           placeholder="https://example.com"
         />
       </div>
-      {error && <p className="text-sm text-rose-700">{error}</p>}
+      {error && <p className="text-sm text-rose-700 dark:text-rose-300">{error}</p>}
       {lockedDup && (
         <button
           type="button"
           disabled={unlocking}
           onClick={unlockDuplicate}
-          className="rounded-none border border-rule bg-accent-soft px-3 py-2 text-sm font-medium text-ink hover:bg-white disabled:opacity-60"
+          className="rounded-none border border-rule bg-accent-soft px-3 py-2 text-sm font-medium text-ink hover:bg-surface disabled:opacity-60"
         >
           {unlocking ? "Unlocking…" : "Unlock it"}
         </button>

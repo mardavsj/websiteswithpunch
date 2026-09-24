@@ -72,11 +72,11 @@ export function UpgradeCTA({ plan }: { plan: PlanId | string }) {
         <button
           onClick={openPortal}
           disabled={loading !== null}
-          className="rounded-none border border-rule bg-bg px-4 py-2 text-sm font-medium text-ink hover:bg-accent-soft disabled:opacity-60"
+          className="rounded-none border border-rule bg-surface px-4 py-2 text-sm font-medium text-ink hover:bg-accent-soft disabled:opacity-60"
         >
           {loading === "portal" ? "Opening…" : "Manage billing"}
         </button>
-        {message && <p className="text-xs text-amber-700">{message}</p>}
+        {message && <p className="text-xs text-amber-700 dark:text-amber-300">{message}</p>}
       </div>
     );
   }
@@ -87,7 +87,7 @@ export function UpgradeCTA({ plan }: { plan: PlanId | string }) {
         <button
           onClick={openPortal}
           disabled={loading !== null}
-          className="rounded-none border border-rule bg-bg px-4 py-2 text-sm font-medium text-ink hover:bg-accent-soft disabled:opacity-60"
+          className="rounded-none border border-rule bg-surface px-4 py-2 text-sm font-medium text-ink hover:bg-accent-soft disabled:opacity-60"
         >
           {loading === "portal" ? "Opening…" : "Manage billing"}
         </button>
@@ -98,7 +98,7 @@ export function UpgradeCTA({ plan }: { plan: PlanId | string }) {
         >
           Upgrade to Business — ${PLANS.business.price}/mo
         </button>
-        {message && <p className="basis-full text-xs text-amber-700">{message}</p>}
+        {message && <p className="basis-full text-xs text-amber-700 dark:text-amber-300">{message}</p>}
         <UpgradePlanModal
           open={upgradeOpen}
           loading={loading === "business"}
@@ -122,13 +122,13 @@ export function UpgradeCTA({ plan }: { plan: PlanId | string }) {
       <button
         onClick={() => checkout("business")}
         disabled={loading !== null}
-        className="rounded-none border border-rule bg-bg px-4 py-2 text-sm font-medium text-ink hover:bg-accent-soft disabled:opacity-60"
+        className="rounded-none border border-rule bg-surface px-4 py-2 text-sm font-medium text-ink hover:bg-accent-soft disabled:opacity-60"
       >
         {loading === "business"
           ? "Redirecting…"
           : `Business — $${PLANS.business.price}/mo`}
       </button>
-      {message && <p className="basis-full text-xs text-amber-700">{message}</p>}
+      {message && <p className="basis-full text-xs text-amber-700 dark:text-amber-300">{message}</p>}
     </div>
   );
 }
