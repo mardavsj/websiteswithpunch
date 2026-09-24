@@ -121,7 +121,7 @@ export function IntroLine() {
             <img
               src="https://www.websiteswithpunch.com/logo.png"
               alt="Websites With Punch"
-              className="logo-mark h-28 w-28 object-contain sm:h-36 sm:w-36 lg:h-44 lg:w-44"
+              className="h-28 w-28 object-contain sm:h-36 sm:w-36 lg:h-44 lg:w-44"
             />
           </div>
         </div>
