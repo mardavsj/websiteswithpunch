@@ -89,7 +89,7 @@ export function EditSiteModal({ open, onClose, site }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="edit-site-title"
-        className="w-full max-w-lg rounded-none border border-rule bg-bg p-6 shadow-lg"
+        className="w-full max-w-lg rounded-none border border-rule bg-surface p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="edit-site-title" className="mb-5 font-display text-xl font-medium text-ink">
@@ -118,7 +118,7 @@ export function EditSiteModal({ open, onClose, site }: Props) {
             <p className="mt-1 text-xs text-muted">HTTPS recommended for SSL expiry checks.</p>
           </div>
           {error && (
-            <div className="rounded-none bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+            <div className="rounded-none bg-rose-50 dark:bg-rose-400/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-300">{error}</div>
           )}
           <div className="flex gap-3">
             <button
