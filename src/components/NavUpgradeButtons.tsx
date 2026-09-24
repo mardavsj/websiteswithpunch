@@ -1,68 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { getEffectivePlan } from "@/lib/plans";
-import { useToast } from "@/components/Toast";
 import { UpgradePlanModal } from "@/components/UpgradePlanModal";
+import { usePlanUpgrade } from "@/components/usePlanUpgrade";
 
 export function NavUpgradeButtons() {
-  const { data: session } = useSession();
-  const router = useRouter();
-  const { toast } = useToast();
-  const [loading, setLoading] = useState<"pro" | "business" | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const { plan, loading, message, upgradeOpen, setUpgradeOpen, checkout, showUpgrades } =
+    usePlanUpgrade();
 
-  if (!session?.user) return null;
-  const plan = getEffectivePlan(session.user.plan, session.user.stripeStatus ?? null);
-  if (plan === "business") return null;
-
-  async function checkout(planId: "pro" | "business") {
-    setLoading(planId);
-    setMessage(null);
-    try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId }),
-      });
-      const data = await res.json();
-      if (data.hostedInvoiceUrl || data.requiresAction) {
-        window.location.href = data.hostedInvoiceUrl;
-        return;
-      }
-      if (data.url) {
-        window.location.href = data.url;
-        return;
-      }
-      if (data.ok) {
-        setUpgradeOpen(false);
-        toast(planId === "business" ? "Upgraded to Business." : "Upgraded to Pro.", "success");
-        router.refresh();
-        return;
-      }
-      setMessage(data.error || "Checkout unavailable.");
-      toast(data.error || "Checkout unavailable.", "error");
-    } catch {
-      toast("Checkout failed.", "error");
-    } finally {
-      setLoading(null);
-    }
-  }
+  if (!showUpgrades) return null;
 
   if (plan === "pro") {
     return (
       <>
-        <button
-          type="button"
-          onClick={() => setUpgradeOpen(true)}
-          disabled={loading !== null}
-          className="rounded-none bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-60"
-        >
-          Upgrade to Business
-        </button>
+        <div className="hidden items-center gap-2 md:flex">
+          <button
+            type="button"
+            onClick={() => setUpgradeOpen(true)}
+            disabled={loading !== null}
+            className="rounded-none bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-60"
+          >
+            Upgrade to Business
+          </button>
+        </div>
         <UpgradePlanModal
           open={upgradeOpen}
           loading={loading === "business"}
@@ -75,7 +34,7 @@ export function NavUpgradeButtons() {
   }
 
   return (
-    <>
+    <div className="hidden items-center gap-2 md:flex">
       <button
         type="button"
         onClick={() => checkout("pro")}
@@ -92,6 +51,6 @@ export function NavUpgradeButtons() {
       >
         {loading === "business" ? "…" : "Upgrade to Business"}
       </button>
-    </>
+    </div>
   );
 }
