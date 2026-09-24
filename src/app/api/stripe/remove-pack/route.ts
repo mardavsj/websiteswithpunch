@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
+import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -13,17 +14,22 @@ import {
   findPackItem,
   subscriptionPeriodEnd,
 } from "@/lib/stripe-subscription";
+import { setKeepOnDowngrade } from "@/lib/site-limits";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const schema = z.object({
+  keepSiteIds: z.array(z.string()).optional(),
+});
 
 /**
  * Schedule removal of one site pack:
  * - Stripe qty drops now with proration_behavior none (bill drops next renewal)
  * - sitePackCount stays (paid-through) until pendingPackChangeAt
- * - pendingSitePackCount = new lower target
+ * - If new limit < active sites, keepSiteIds required
  */
-export async function POST() {
+export async function POST(req: Request) {
   const session = await getSession();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -40,7 +46,6 @@ export async function POST() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    include: { _count: { select: { sites: true } } },
   });
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -59,6 +64,10 @@ export async function POST() {
     );
   }
 
+  const body = await req.json().catch(() => ({}));
+  const parsed = schema.safeParse(body);
+  const keepSiteIds = parsed.success ? parsed.data.keepSiteIds ?? [] : [];
+
   const packPlan = plan as PackPlanId;
   const config = getPackConfig(packPlan)!;
   const paidPacks = user.sitePackCount ?? 0;
@@ -72,6 +81,26 @@ export async function POST() {
   }
 
   const nextPending = Math.max(0, currentTarget - 1);
+  const newLimitFrom = getEffectiveSiteLimit(packPlan, nextPending);
+  const activeCount = await prisma.site.count({
+    where: { userId: user.id, locked: false },
+  });
+
+  if (activeCount > newLimitFrom) {
+    if (keepSiteIds.length !== newLimitFrom) {
+      return NextResponse.json(
+        {
+          error: `Your plan will include ${newLimitFrom} sites. Choose which ones stay active.`,
+          code: "KEEP_REQUIRED",
+          maxKeep: newLimitFrom,
+          activeCount,
+        },
+        { status: 400 },
+      );
+    }
+    const keep = await setKeepOnDowngrade(user.id, keepSiteIds, newLimitFrom);
+    if (!keep.ok) return NextResponse.json(keep, { status: 400 });
+  }
 
   try {
     const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
@@ -97,7 +126,6 @@ export async function POST() {
       });
     }
 
-    // Keep sitePackCount (paid-through). Store lower target as pending.
     const paidThrough = Math.max(paidPacks, currentTarget);
     await prisma.user.update({
       where: { id: user.id },
@@ -115,8 +143,8 @@ export async function POST() {
       pendingPackChangeAt: new Date(periodEnd * 1000).toISOString(),
       sitesPerPack: config.sitesPerPack,
       keepSiteLimit: getEffectiveSiteLimit(packPlan, paidThrough),
-      newSiteLimitFromRenewal: getEffectiveSiteLimit(packPlan, nextPending),
-      siteCount: user._count.sites,
+      newSiteLimitFromRenewal: newLimitFrom,
+      activeCount,
     });
   } catch (err) {
     console.error("remove-pack error", err);
