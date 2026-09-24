@@ -9,6 +9,7 @@ type Props = {
   initialName?: string;
   initialUrl?: string;
   onSuccess?: () => void;
+  onCancel?: () => void;
 };
 
 export function SiteForm({
@@ -17,6 +18,7 @@ export function SiteForm({
   initialName = "",
   initialUrl = "",
   onSuccess,
+  onCancel,
 }: Props) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
@@ -77,8 +79,11 @@ export function SiteForm({
         );
         return;
       }
-      router.push("/dashboard");
-      router.refresh();
+      if (onSuccess) onSuccess();
+      else {
+        router.push("/dashboard");
+        router.refresh();
+      }
     } finally {
       setUnlocking(false);
     }
@@ -117,13 +122,24 @@ export function SiteForm({
           {unlocking ? "Unlocking…" : "Unlock it"}
         </button>
       )}
-      <button
-        type="submit"
-        disabled={loading}
-        className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-60"
-      >
-        {loading ? "Saving…" : mode === "create" ? "Add site" : "Save"}
-      </button>
+      <div className="flex flex-wrap gap-3">
+        <button
+          type="submit"
+          disabled={loading}
+          className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-60"
+        >
+          {loading ? "Saving…" : mode === "create" ? "Add site" : "Save"}
+        </button>
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-none border border-rule px-4 py-2 text-sm text-ink hover:bg-accent-soft"
+          >
+            Cancel
+          </button>
+        )}
+      </div>
     </form>
   );
 }
