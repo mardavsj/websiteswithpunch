@@ -32,7 +32,7 @@ export function DashboardBanners({
   return (
     <div className="mt-6 space-y-3">
       {paymentFailed && (
-        <div className="rounded-none border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+        <div className="rounded-none border border-amber-300 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 px-4 py-3 text-sm text-amber-950 dark:text-amber-100">
           We couldn&apos;t take your last payment.{" "}
           <button
             type="button"
@@ -45,7 +45,7 @@ export function DashboardBanners({
         </div>
       )}
       {showDefaultLockNotice && (
-        <div className="flex flex-wrap items-start justify-between gap-3 rounded-none border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+        <div className="flex flex-wrap items-start justify-between gap-3 rounded-none border border-amber-300 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 px-4 py-3 text-sm text-amber-950 dark:text-amber-100">
           <p>
             Your plan now includes {siteLimit} site{siteLimit === 1 ? "" : "s"}. We kept your oldest
             site{activeCount === 1 ? "" : "s"} active. Upgrade anytime to unlock the rest.
@@ -54,7 +54,7 @@ export function DashboardBanners({
             type="button"
             disabled={hiding}
             onClick={dismiss}
-            className="rounded-none border border-amber-300 bg-white px-2 py-0.5 text-xs font-medium"
+            className="rounded-none border border-amber-300 bg-surface px-2 py-0.5 text-xs font-medium"
           >
             Dismiss
           </button>

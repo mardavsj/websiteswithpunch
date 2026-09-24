@@ -30,7 +30,7 @@ export function DashboardPendingBanner({
   if (!lines.length) return null;
 
   return (
-    <div className="mt-6 rounded-none border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+    <div className="mt-6 rounded-none border border-amber-300 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 px-4 py-3 text-sm text-amber-950 dark:text-amber-100">
       <p>{lines.join(" ")}</p>
       <Link href="/plan" className="mt-2 inline-block font-medium underline underline-offset-2">
         Manage on My Plan
