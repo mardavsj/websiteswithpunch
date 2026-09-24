@@ -86,7 +86,7 @@ export function SignupForm({
 
   const title = isPaid ? `Start ${plan.name}` : "Create your account";
   const subtitle = isPaid
-    ? `You’ll pay $${plan.price}/mo for up to ${plan.siteLimit} sites. Account is created after payment succeeds.`
+    ? `You'll pay $${plan.price}/mo for up to ${plan.siteLimit} sites. Account is created after payment succeeds.`
     : "Free plan includes 1 monitored site. Upgrade anytime for more sites.";
   const buttonLabel = loading
     ? isPaid
@@ -101,11 +101,11 @@ export function SignupForm({
       <h1 className="font-display text-2xl font-medium text-ink">{title}</h1>
       <p className="mt-2 text-sm text-muted">{subtitle}</p>
       {canceled && (
-        <p className="mt-3 rounded-none border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          Checkout was canceled. You can try again when you’re ready — no account was created.
+        <p className="mt-3 rounded-none border border-amber-200 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
+          Checkout was canceled. You can try again when you're ready — no account was created.
         </p>
       )}
-      <form onSubmit={onSubmit} className="mt-8 space-y-4 rounded-none border border-rule bg-bg p-6">
+      <form onSubmit={onSubmit} className="mt-8 space-y-4 rounded-none border border-rule bg-surface p-6">
         <div>
           <label className="text-sm font-medium text-ink">Name</label>
           <input
@@ -137,7 +137,7 @@ export function SignupForm({
           />
           <p className="mt-1 text-xs text-muted">At least 8 characters.</p>
         </div>
-        {error && <p className="text-sm text-rose-600">{error}</p>}
+        {error && <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>}
         <button
           type="submit"
           disabled={loading}

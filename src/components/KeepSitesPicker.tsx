@@ -89,7 +89,7 @@ export function KeepSitesPicker({
       <div
         role="dialog"
         aria-modal="true"
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-none border border-rule bg-bg p-6 shadow-lg"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-none border border-rule bg-surface p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         {step === "pick" ? (
