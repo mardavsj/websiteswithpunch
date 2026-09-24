@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type Stripe from "stripe";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -10,7 +11,20 @@ import {
   type PackPlanId,
 } from "@/lib/plans";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
+import {
+  derivePlanAndPacks,
+  findPackItem,
+  hostedInvoiceUrlFromSubscription,
+  subscriptionNeedsPaymentAction,
+} from "@/lib/stripe-subscription";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+/**
+ * Add one site pack to the user's existing Pro/Business subscription.
+ * Charges a prorated amount immediately on the saved payment method.
+ */
 export async function POST() {
   const session = await getSession();
   if (!session?.user?.id) {
@@ -38,7 +52,23 @@ export async function POST() {
   const plan = getEffectivePlan(user.plan, user.stripeStatus);
   if (plan !== "pro" && plan !== "business") {
     return NextResponse.json(
-      { error: "Site packs are available on Pro and Business plans only." },
+      {
+        error: "Site packs are available on Pro and Business plans only.",
+        code: "NO_SUBSCRIPTION",
+      },
+      { status: 403 },
+    );
+  }
+
+  if (
+    !user.stripeSubscriptionId ||
+    (user.stripeStatus !== "active" && user.stripeStatus !== "trialing")
+  ) {
+    return NextResponse.json(
+      {
+        error: "An active subscription is required to add a site pack.",
+        code: "NO_SUBSCRIPTION",
+      },
       { status: 403 },
     );
   }
@@ -74,36 +104,117 @@ export async function POST() {
     );
   }
 
-  let customerId = user.stripeCustomerId;
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: user.email,
-      name: user.name || undefined,
-      metadata: { userId: user.id },
-    });
-    customerId = customer.id;
+  try {
+    const subscription = await stripe.subscriptions.retrieve(
+      user.stripeSubscriptionId,
+      { expand: ["latest_invoice.payment_intent"] },
+    );
+
+    if (
+      subscription.status !== "active" &&
+      subscription.status !== "trialing"
+    ) {
+      return NextResponse.json(
+        {
+          error: "An active subscription is required to add a site pack.",
+          code: "NO_SUBSCRIPTION",
+        },
+        { status: 403 },
+      );
+    }
+
+    const existingPack = findPackItem(subscription);
+    const currentQty = existingPack?.quantity ?? 0;
+    if (currentQty >= config.maxPacks) {
+      return NextResponse.json(
+        {
+          error: `You've reached the max packs (${config.maxPacks}).`,
+          code: "PACK_LIMIT",
+          maxPacks: config.maxPacks,
+        },
+        { status: 403 },
+      );
+    }
+
+    const items: Stripe.SubscriptionUpdateParams.Item[] = existingPack
+      ? [{ id: existingPack.id, quantity: currentQty + 1 }]
+      : [{ price: priceId, quantity: 1 }];
+
+    let updated: Stripe.Subscription;
+    try {
+      // pending_if_incomplete: apply only after payment; return hosted invoice for 3DS.
+      // error_if_incomplete would throw on soft declines without a redirect URL.
+      updated = await stripe.subscriptions.update(subscription.id, {
+        items,
+        proration_behavior: "always_invoice",
+        payment_behavior: "pending_if_incomplete",
+        expand: ["latest_invoice.payment_intent"],
+      });
+    } catch (err) {
+      const stripeErr = err as { message?: string };
+      console.error("checkout-pack payment error", err);
+      return NextResponse.json(
+        {
+          error:
+            stripeErr.message ||
+            "Payment failed. No site pack was added. Update your card in Manage billing and try again.",
+          code: "PAYMENT_FAILED",
+        },
+        { status: 402 },
+      );
+    }
+
+    if (subscriptionNeedsPaymentAction(updated)) {
+      const hostedUrl = hostedInvoiceUrlFromSubscription(updated);
+      if (hostedUrl) {
+        return NextResponse.json({
+          requiresAction: true,
+          hostedInvoiceUrl: hostedUrl,
+          code: "PAYMENT_REQUIRED",
+        });
+      }
+      return NextResponse.json(
+        {
+          error:
+            "Payment requires additional confirmation. Complete it from Manage billing, then refresh.",
+          code: "PAYMENT_FAILED",
+        },
+        { status: 402 },
+      );
+    }
+
+    // Confirm the pack item actually increased (pending update must not grant sites)
+    const { sitePackCount } = derivePlanAndPacks(updated);
+    if (sitePackCount <= currentQty) {
+      return NextResponse.json(
+        {
+          error:
+            "Payment did not complete. No site pack was added. Try again or update your card.",
+          code: "PAYMENT_FAILED",
+        },
+        { status: 402 },
+      );
+    }
+
     await prisma.user.update({
       where: { id: user.id },
-      data: { stripeCustomerId: customerId },
+      data: {
+        sitePackCount,
+        stripeStatus: updated.status,
+        stripeSubscriptionId: updated.id,
+      },
     });
+
+    return NextResponse.json({
+      ok: true,
+      sitePackCount,
+      sitesPerPack: config.sitesPerPack,
+    });
+  } catch (err) {
+    console.error("checkout-pack error", err);
+    return NextResponse.json(
+      { error: "Could not add site pack.", code: "PAYMENT_FAILED" },
+      { status: 500 },
+    );
   }
-
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-  const metadata = {
-    userId: user.id,
-    type: "site_pack",
-    packPlan,
-  };
-
-  const checkout = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    customer: customerId,
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${baseUrl}/dashboard?pack=1`,
-    cancel_url: `${baseUrl}/dashboard?canceled=1`,
-    metadata,
-    subscription_data: { metadata },
-  });
-
-  return NextResponse.json({ url: checkout.url });
 }
