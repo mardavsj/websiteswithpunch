@@ -10,7 +10,7 @@
 - **Dashboard** — list sites with status, last check, SSL days, domain days
 - **CRUD** — add / edit / delete monitored sites
 - **Auth** — email/password signup + login (NextAuth credentials)
-- **Plans** — Free = 1 site; Pro = 10 sites at **$12/mo**; Business = 50 sites at **$39/mo**
+- **Plans** — Free = 1 site; Pro = 10 sites at **$12/mo**; Business = 50 sites at **$42/mo**
 - **Stripe-ready** — Checkout, Customer Portal, webhook route
 - **Cron** — protected `/api/cron/check` to run all checks
 
@@ -87,7 +87,9 @@ On Vercel, add a Cron Job hitting `/api/cron/check` with the secret header. Else
 
 1. Create Products + recurring Prices in Stripe Dashboard:
    - Pro **$12/mo** → `STRIPE_PRICE_ID_PRO` (or legacy `STRIPE_PRICE_ID`)
-   - Business **$39/mo** → `STRIPE_PRICE_ID_BUSINESS`
+   - Business **$42/mo** → `STRIPE_PRICE_ID_BUSINESS` (create a new $42/mo Price; existing $39/mo subscribers can stay on their old Stripe price)
+   - Pro pack **+$5 sites @ $6/mo** → `STRIPE_PRICE_ID_PACK_PRO`
+   - Business pack **+$10 sites @ $9/mo** → `STRIPE_PRICE_ID_PACK_BUSINESS` (create a new $9/mo Price; existing $8/mo pack subscribers can stay on their old Stripe price)
 2. Set `STRIPE_SECRET_KEY` and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
 3. Forward webhooks locally:
 
@@ -117,9 +119,9 @@ Without Stripe keys the product still demos fully for Free-plan monitoring.
 |----------|-------|--------|
 | Free     | 1     | $0     |
 | Pro      | 10    | $12/mo |
-| Business | 50    | $39/mo |
+| Business | 50    | $42/mo |
 
-Need more than 50? Contact us for a custom limit. Enforced server-side when creating sites.
+Optional site packs (from the dashboard): Pro +5 sites for $6/mo (max 4 packs, 30 sites); Business +10 sites for $9/mo (max 5 packs, 100 sites). Need more than 100? Contact [hello@websiteswithpunch.com](mailto:hello@websiteswithpunch.com). Enforced server-side when creating sites.
 
 ## Lockfile
 

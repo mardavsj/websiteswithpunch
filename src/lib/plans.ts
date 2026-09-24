@@ -21,7 +21,7 @@ export const PLANS = {
   business: {
     id: "business" as const,
     name: "Business",
-    price: 39,
+    price: 42,
     siteLimit: 50,
     description:
       "Monitor up to 50 sites, with optional +10 site packs for larger portfolios.",
@@ -40,7 +40,7 @@ export const SITE_PACKS = {
   business: {
     planId: "business" as const,
     sitesPerPack: 10,
-    pricePerMonth: 8,
+    pricePerMonth: 9,
     maxPacks: 5, // 50 + 5×10 = 100
   },
 } as const;
