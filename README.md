@@ -99,8 +99,17 @@ On Vercel, add a Cron Job hitting `/api/cron/check` with the secret header. Else
 
    Put the webhook signing secret in `STRIPE_WEBHOOK_SECRET`.
 
-4. Events handled: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`.
-5. Enable Customer Portal in Stripe settings for “Manage billing”.
+4. Events handled: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`.
+5. Enable Customer Portal in Stripe settings for “Manage billing”. Prefer **not** allowing customers to edit subscription item quantities in the portal (packs are managed in-app with site-limit checks).
+
+### Billing model (single subscription)
+
+Each customer has **one** Stripe subscription with **one** renewal date:
+
+- **Plan** (Pro / Business) is the base subscription item.
+- **Site packs** are additional line items on the **same** subscription (quantity = pack count). Adding a pack prorates and invoices immediately; removing a pack uses `proration_behavior: none` (limit drops now, bill drops next renewal, no refund).
+- **Cancel** ends plan + packs together. Webhooks derive `plan` and `sitePackCount` from subscription items (idempotent), not increment/decrement counters.
+- First-time purchase and pay-before-signup still use Checkout Sessions; existing subscribers upgrading Pro → Business are updated **in place** (pack items removed, `sitePackCount` → 0).
 
 Without Stripe keys the product still demos fully for Free-plan monitoring.
 
@@ -121,7 +130,7 @@ Without Stripe keys the product still demos fully for Free-plan monitoring.
 | Pro      | 10    | $12/mo |
 | Business | 50    | $42/mo |
 
-Optional site packs (from the dashboard): Pro +5 sites for $6/mo (max 4 packs, 30 sites); Business +10 sites for $9/mo (max 5 packs, 100 sites). Need more than 100? Contact [hello@websiteswithpunch.com](mailto:hello@websiteswithpunch.com). Enforced server-side when creating sites.
+Optional site packs (from the dashboard, on the same subscription): Pro +5 sites for $6/mo (max 4 packs, 30 sites); Business +10 sites for $9/mo (max 5 packs, 100 sites). Need more than 100? Contact [hello@websiteswithpunch.com](mailto:hello@websiteswithpunch.com). Enforced server-side when creating sites.
 
 ## Lockfile
 
