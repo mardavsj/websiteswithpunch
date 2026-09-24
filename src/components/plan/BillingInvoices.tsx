@@ -49,7 +49,7 @@ export function BillingInvoices() {
   }
 
   return (
-    <ul className="mt-3 divide-y divide-rule border border-rule">
+    <ul className="mt-3 divide-y divide-rule border border-rule bg-surface">
       {invoices.map((inv) => (
         <li key={inv.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-3 text-sm">
           <div className="min-w-0">

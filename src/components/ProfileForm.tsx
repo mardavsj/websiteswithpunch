@@ -60,7 +60,7 @@ export function ProfileForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="mt-6 max-w-md space-y-4">
+    <form onSubmit={onSubmit} className="mt-6 max-w-md space-y-4 rounded-none border border-rule bg-surface p-6">
       <div>
         <label className="block text-sm font-medium text-ink">Email</label>
         <p className="mt-1 text-sm text-muted">{email}</p>

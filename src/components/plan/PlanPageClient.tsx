@@ -32,7 +32,7 @@ export function PlanPageClient({ lockedCount, hasBilling, ...capacity }: Props) 
       />
 
       {plan === "free" ? (
-        <div className="rounded-none border border-rule px-4 py-4">
+        <div className="rounded-none border border-rule bg-surface px-4 py-4">
           <p className="text-sm font-medium text-ink">Upgrade</p>
           <p className="mt-1 text-sm text-muted">Get more site slots with Pro or Business.</p>
           <div className="mt-3">
