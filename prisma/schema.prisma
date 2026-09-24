@@ -26,7 +26,7 @@ model User {
   pendingPlanAt           DateTime?
   /// Mirrors Stripe cancel_at_period_end for dashboard UI.
   cancelAtPeriodEnd       Boolean   @default(false)
-  /// Last time the user swapped which sites are active (24h cooldown).
+  /// Unused (was 24h active-site swap cooldown). Kept to avoid schema churn.
   lastSiteSwapAt          DateTime?
   /// Show the "we kept your oldest" banner until dismissed.
   showDefaultLockNotice   Boolean   @default(false)
