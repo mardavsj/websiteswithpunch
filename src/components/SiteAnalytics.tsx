@@ -200,7 +200,7 @@ export function SiteAnalytics({
                     locked
                       ? "cursor-not-allowed bg-bg text-muted opacity-40"
                       : active
-                        ? "bg-ink text-bg"
+                        ? "bg-solid text-solid-fg"
                         : "bg-bg text-muted hover:bg-accent-soft hover:text-ink"
                   } ${loading && active && !locked ? "opacity-70" : ""}`}
                 >
