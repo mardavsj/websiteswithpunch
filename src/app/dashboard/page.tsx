@@ -10,10 +10,9 @@ import {
 } from "@/lib/plans";
 import { SiteCard } from "@/components/SiteCard";
 import { SiteAnalytics } from "@/components/SiteAnalytics";
-import { UpgradeCTA } from "@/components/UpgradeCTA";
-import { SignOutButton } from "@/components/SignOutButton";
-import { SiteCapacityActions } from "@/components/SiteCapacityActions";
+import { DashboardPackCta } from "@/components/DashboardPackCta";
 import { DashboardBanners } from "@/components/DashboardBanners";
+import { DashboardPendingBanner } from "@/components/DashboardPendingBanner";
 import {
   applyDuePendingAndEnforce,
   toClientSite,
@@ -61,6 +60,7 @@ export default async function DashboardPage({
   const canUnlock = remaining > 0;
   const showInlineAnalytics = activeSites.length === 1 && lockedSites.length === 0;
   const planLabel = PLANS[plan].name;
+  const displayName = user.name || "there";
 
   const clientSites = sitesRaw.map((site) => {
     const stripped = toClientSite(site as unknown as Record<string, unknown>);
@@ -83,27 +83,15 @@ export default async function DashboardPage({
     .filter((d): d is number => d != null)
     .sort((a, b) => a - b)[0];
 
-  const keepOptions = activeSites.map((s) => ({
-    id: s.id,
-    name: s.name,
-    url: s.url,
-    createdAt: s.createdAt.toISOString(),
-  }));
-  const allOptions = sitesRaw.map((s) => ({
-    id: s.id,
-    name: s.name,
-    url: s.url,
-    createdAt: s.createdAt.toISOString(),
-    locked: s.locked,
-  }));
-
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-medium text-ink">Dashboard</h1>
+          <h1 className="font-display text-2xl font-medium text-ink">
+            Welcome, {displayName}
+          </h1>
           <p className="mt-1 text-sm text-muted">
-            Welcome{user.name ? `, ${user.name}` : ""}. Plan:{" "}
+            Current plan:{" "}
             <span className="font-medium text-ink">{planLabel}</span> ·{" "}
             {activeSites.length}/{limit} active
             {lockedSites.length > 0 ? (
@@ -112,17 +100,9 @@ export default async function DashboardPage({
                 · {lockedSites.length} locked
               </span>
             ) : null}
-            {packCount > 0 ? (
-              <span>
-                {" "}
-                (includes {packCount} site pack{packCount === 1 ? "" : "s"})
-              </span>
-            ) : null}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <SignOutButton />
-          <UpgradeCTA plan={plan} />
           {!atLimit ? (
             <Link
               href="/dashboard/sites/new"
@@ -135,6 +115,7 @@ export default async function DashboardPage({
               Site limit reached
             </span>
           )}
+          <DashboardPackCta plan={plan} sitePackCount={packCount} />
         </div>
       </div>
 
@@ -162,19 +143,7 @@ export default async function DashboardPage({
         activeCount={activeSites.length}
       />
 
-      <SiteCapacityActions
-        plan={plan}
-        sitePackCount={packCount}
-        siteCount={activeSites.length}
-        siteLimit={limit}
-        atLimit={atLimit}
-        remaining={remaining}
-        keepOptions={keepOptions}
-        allSiteOptions={allOptions}
-        cancelAtPeriodEnd={user.cancelAtPeriodEnd}
-        pendingPlan={user.pendingPlan}
-        pendingPlanAt={user.pendingPlanAt?.toISOString() ?? null}
-      />
+      <DashboardPendingBanner plan={plan} sitePackCount={packCount} />
 
       {activeSites.length > 1 && (
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
