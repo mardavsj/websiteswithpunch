@@ -24,7 +24,7 @@ type Site = {
 function DaysPill({ days, label, warnAt = 30 }: { days: number | null; label: string; warnAt?: number }) {
   if (days === null || days === undefined) {
     return (
-      <div className="rounded-none border border-rule bg-bg px-3 py-2">
+      <div className="rounded-none border border-rule bg-surface px-3 py-2">
         <p className="text-xs text-muted">{label}</p>
         <p className="text-sm font-medium text-muted">Not available</p>
         <p className="text-[10px] text-muted/80">retry recheck</p>
@@ -36,13 +36,13 @@ function DaysPill({ days, label, warnAt = 30 }: { days: number | null; label: st
   return (
     <div
       className={`rounded-none border border-rule px-3 py-2 ${
-        critical ? "bg-rose-50" : warn ? "bg-amber-50" : "bg-bg"
+        critical ? "bg-rose-50 dark:bg-rose-400/10" : warn ? "bg-amber-50 dark:bg-amber-400/10" : "bg-surface"
       }`}
     >
       <p className="text-xs text-muted">{label}</p>
       <p
         className={`text-sm font-semibold ${
-          critical ? "text-rose-700" : warn ? "text-amber-800" : "text-ink"
+          critical ? "text-rose-700 dark:text-rose-300" : warn ? "text-amber-800 dark:text-amber-200" : "text-ink"
         }`}
       >
         {days} day{days === 1 ? "" : "s"}
@@ -123,7 +123,7 @@ export function SiteCard({
                 To use this site, delete an active site or upgrade.
               </p>
             )}
-            {msg && <p className="mt-2 text-xs text-amber-800">{msg}</p>}
+            {msg && <p className="mt-2 text-xs text-amber-800 dark:text-amber-200">{msg}</p>}
           </div>
           <div className="flex flex-wrap gap-2">
             {canUnlock && (
@@ -131,7 +131,7 @@ export function SiteCard({
                 type="button"
                 disabled={busy}
                 onClick={unlock}
-                className="rounded-none border border-rule bg-bg px-3 py-1.5 text-xs font-medium text-ink hover:bg-accent-soft disabled:opacity-50"
+                className="rounded-none border border-rule bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-accent-soft disabled:opacity-50"
               >
                 Unlock
               </button>
@@ -150,7 +150,7 @@ export function SiteCard({
   }
 
   return (
-    <article className="rounded-none border border-rule bg-bg p-5 transition hover:border-ink/20">
+    <article className="rounded-none border border-rule bg-surface p-5 transition hover:border-ink/20">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <h3 className="truncate font-display text-lg font-medium text-ink">{site.name}</h3>
@@ -168,11 +168,11 @@ export function SiteCard({
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <div className="rounded-none border border-rule bg-bg px-3 py-2">
+        <div className="rounded-none border border-rule bg-surface px-3 py-2">
           <p className="text-xs text-muted">Last check</p>
           <p className="text-sm font-medium text-ink">{formatDate(site.lastCheckedAt)}</p>
         </div>
-        <div className="rounded-none border border-rule bg-bg px-3 py-2">
+        <div className="rounded-none border border-rule bg-surface px-3 py-2">
           <p className="text-xs text-muted">Latency / code</p>
           <p className="text-sm font-medium text-ink">
             {site.lastLatencyMs != null ? `${site.lastLatencyMs}ms` : "—"}
