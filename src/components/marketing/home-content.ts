@@ -112,8 +112,16 @@ export const faqs = [
     a: "The goal is signal, not noise: clear status on the dashboard and practical warnings around SSL and domain windows — not a firehose of every transient blip.",
   },
   {
+    q: "What happens to my sites if I downgrade or cancel?",
+    a: "Nothing is deleted. Sites over your new limit are locked — they stay in your list but aren't checked, and their details stay hidden until you unlock them. You choose which sites stay active when the change is scheduled (or we keep your oldest if you cancel from the billing portal).",
+  },
+  {
+    q: "Can I switch which site stays active?",
+    a: "Yes. From the dashboard, use Choose active sites. You can swap once every 24 hours. Unlocking into a free slot (after deleting a site or upgrading) isn't limited by that cooldown.",
+  },
+  {
     q: "Can I cancel anytime?",
-    a: "Yes. Paid plans are month-to-month. Cancel from Manage billing — your subscription (plan + packs) ends together. Your free site stays available within Free limits.",
+    a: "Yes. Paid plans are month-to-month. Cancel from Your plan on the dashboard (or Manage billing). You keep your paid plan until the period ends, then Free. Nothing is deleted — extra sites are locked.",
   },
 ];
 
