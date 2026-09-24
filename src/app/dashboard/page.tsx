@@ -136,13 +136,13 @@ export default async function DashboardPage({
 
       {activeSites.length > 1 && (
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <div className="card-border p-4">
+          <div className="border border-rule p-4">
             <p className="label-caps text-muted">Sites monitored</p>
             <p className="mt-1 font-display text-2xl font-medium text-ink">
               {activeSites.length}
             </p>
           </div>
-          <div className="card-border p-4">
+          <div className="border border-rule p-4">
             <p className="label-caps text-muted">Down / error now</p>
             <p
               className={`mt-1 font-display text-2xl font-medium ${
@@ -152,7 +152,7 @@ export default async function DashboardPage({
               {downNow}
             </p>
           </div>
-          <div className="card-border p-4">
+          <div className="border border-rule p-4">
             <p className="label-caps text-muted">Nearest SSL expiry</p>
             <p className="mt-1 font-display text-2xl font-medium text-ink">
               {sslSoon == null ? "—" : `${sslSoon}d`}
