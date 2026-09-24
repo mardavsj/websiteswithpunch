@@ -6,6 +6,7 @@ import {
   PLANS,
   type PlanId,
 } from "./plans";
+import { daysLeftUntil } from "./billing-format";
 
 /** Old separate pack Checkout subscriptions (metadata.type === site_pack). */
 export function isLegacyPackOnlySubscription(
@@ -14,7 +15,6 @@ export function isLegacyPackOnlySubscription(
   if (subscription.metadata?.type === "site_pack") return true;
   const items = subscription.items?.data ?? [];
   if (items.length === 0) return false;
-  // Entire subscription is pack-only if every item is a pack price
   return items.every((item) => isPackPriceId(item.price?.id));
 }
 
@@ -69,6 +69,63 @@ export function subscriptionPeriodEnd(
   return typeof legacy === "number" && legacy > 0 ? legacy : null;
 }
 
+export function daysLeftInBillingPeriod(
+  subscription: Stripe.Subscription,
+): number | null {
+  return daysLeftUntil(subscriptionPeriodEnd(subscription));
+}
+
+/** Unit amount in cents from a Stripe Price (null if missing). */
+export function priceUnitAmountCents(
+  price: Stripe.Price | string | null | undefined,
+): number | null {
+  if (!price || typeof price === "string") return null;
+  if (typeof price.unit_amount === "number") return price.unit_amount;
+  return null;
+}
+
+/**
+ * Build plain-language recurring breakdown from subscription items
+ * after a proposed pack count, e.g. "$12 Pro + $6 for the extra sites"
+ * or "$12 Pro + $12 for 10 extra sites".
+ */
+export function buildRecurringBreakdown(opts: {
+  plan: PlanId;
+  packCount: number;
+  planUnitCents: number | null;
+  packUnitCents: number | null;
+  currency?: string;
+}): string {
+  const { plan, packCount } = opts;
+  const planName = plan === "business" ? "Business" : plan === "pro" ? "Pro" : "Free";
+  const config = getPackConfig(plan);
+
+  const planDollars =
+    opts.planUnitCents != null
+      ? opts.planUnitCents / 100
+      : plan === "pro" || plan === "business"
+        ? PLANS[plan].price
+        : 0;
+  const packUnitDollars =
+    opts.packUnitCents != null
+      ? opts.packUnitCents / 100
+      : config?.pricePerMonth ?? 0;
+
+  const planPart = `$${trimMoney(planDollars)} ${planName}`;
+  if (!config || packCount <= 0) return planPart;
+
+  const packTotal = packUnitDollars * packCount;
+  const extraSites = packCount * config.sitesPerPack;
+  if (packCount === 1) {
+    return `${planPart} + $${trimMoney(packTotal)} for the extra sites`;
+  }
+  return `${planPart} + $${trimMoney(packTotal)} for ${extraSites} extra sites`;
+}
+
+function trimMoney(n: number): string {
+  return Number.isInteger(n) ? String(n) : n.toFixed(2);
+}
+
 export function monthlyTotalDollars(
   plan: PlanId,
   sitePackCount: number,
@@ -79,6 +136,23 @@ export function monthlyTotalDollars(
   if (!config) return base;
   const packs = Math.max(0, Math.min(sitePackCount, config.maxPacks));
   return base + packs * config.pricePerMonth;
+}
+
+/** Prefer Stripe unit amounts; fall back to catalog prices. */
+export function monthlyTotalCentsFromItems(
+  plan: PlanId,
+  packCount: number,
+  planUnitCents: number | null,
+  packUnitCents: number | null,
+): number {
+  const config = getPackConfig(plan);
+  const planCents =
+    planUnitCents ??
+    (plan === "pro" || plan === "business" ? PLANS[plan].price * 100 : 0);
+  const packUnit =
+    packUnitCents ?? (config ? config.pricePerMonth * 100 : 0);
+  const packs = config ? Math.max(0, Math.min(packCount, config.maxPacks)) : 0;
+  return planCents + packs * packUnit;
 }
 
 export function formatStripeAmount(
@@ -116,7 +190,6 @@ export function subscriptionNeedsPaymentAction(
         return true;
       }
     }
-    // Open invoice with hosted URL often means customer must complete payment
     if (invoice.hosted_invoice_url && invoice.status === "open") {
       const amountDue = invoice.amount_due ?? 0;
       if (amountDue > 0) return true;
