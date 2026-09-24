@@ -17,6 +17,7 @@ type Site = {
   lastLatencyMs: number | null;
   sslDaysLeft: number | null;
   domainDaysLeft: number | null;
+  locked?: boolean;
 };
 
 function DaysPill({ days, label, warnAt = 30 }: { days: number | null; label: string; warnAt?: number }) {
@@ -52,20 +53,24 @@ function DaysPill({ days, label, warnAt = 30 }: { days: number | null; label: st
 export function SiteCard({
   site,
   showAnalyticsLink = false,
+  siteLimit = 1,
+  canUnlock = false,
 }: {
   site: Site;
   showAnalyticsLink?: boolean;
+  siteLimit?: number;
+  canUnlock?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
 
   async function remove() {
-    if (!confirm(`Delete “${site.name}”? This cannot be undone.`)) return;
+    if (!confirm(`Delete ${site.name}? This cannot be undone.`)) return;
     setBusy(true);
     await fetch(`/api/sites/${site.id}`, { method: "DELETE" });
     router.refresh();
-    setBusy(false);
   }
 
   async function recheck() {
@@ -75,16 +80,74 @@ export function SiteCard({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "check" }),
     });
-    router.refresh();
     setBusy(false);
+    router.refresh();
+  }
+
+  async function unlock() {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/sites/${site.id}/unlock`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setMsg(data.error || "Could not unlock.");
+        return;
+      }
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (site.locked) {
+    return (
+      <div className="border border-rule bg-rule/20 p-5 opacity-90">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <span aria-hidden className="text-muted">
+                🔒
+              </span>
+              <h3 className="font-display text-lg font-medium text-muted">{site.name}</h3>
+            </div>
+            <p className="mt-1 truncate text-sm text-muted">{site.url}</p>
+            <p className="mt-2 text-sm text-muted">
+              Locked. Your plan includes {siteLimit} site{siteLimit === 1 ? "" : "s"}.
+            </p>
+            {msg && <p className="mt-2 text-xs text-amber-800">{msg}</p>}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {canUnlock && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={unlock}
+                className="rounded-none border border-rule bg-bg px-3 py-1.5 text-sm font-medium text-ink hover:bg-accent-soft disabled:opacity-60"
+              >
+                Unlock
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={busy}
+              onClick={remove}
+              className="rounded-none border border-rule bg-bg px-3 py-1.5 text-sm text-rose-700 hover:bg-rose-50 disabled:opacity-60"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <article className="rounded-none border border-rule bg-bg p-5 transition hover:border-ink/20">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+    <div className="border border-rule bg-bg p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="truncate font-display text-lg font-medium text-ink">{site.name}</h3>
+            <h3 className="font-display text-lg font-medium text-ink">{site.name}</h3>
             <StatusBadge status={site.status} />
           </div>
           <a
@@ -95,62 +158,56 @@ export function SiteCard({
           >
             {site.url}
           </a>
-        </div>
-      </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <div className="rounded-none border border-rule bg-bg px-3 py-2">
-          <p className="text-xs text-muted">Last check</p>
-          <p className="text-sm font-medium text-ink">{formatDate(site.lastCheckedAt)}</p>
-        </div>
-        <div className="rounded-none border border-rule bg-bg px-3 py-2">
-          <p className="text-xs text-muted">Latency / code</p>
-          <p className="text-sm font-medium text-ink">
-            {site.lastLatencyMs != null ? `${site.lastLatencyMs}ms` : "—"}
-            {site.lastStatusCode != null ? ` · ${site.lastStatusCode}` : ""}
+          <p className="mt-2 text-xs text-muted">
+            Last checked: {formatDate(site.lastCheckedAt)}
+            {site.lastLatencyMs != null ? ` · ${site.lastLatencyMs}ms` : ""}
+            {site.lastStatusCode != null ? ` · HTTP ${site.lastStatusCode}` : ""}
           </p>
         </div>
-        <DaysPill days={site.sslDaysLeft} label="SSL left" />
-        <DaysPill days={site.domainDaysLeft} label="Domain left" />
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button
-          onClick={recheck}
-          disabled={busy}
-          className="rounded-none bg-ink px-3 py-1.5 text-xs font-medium text-bg hover:opacity-90 disabled:opacity-50"
-        >
-          Recheck
-        </button>
-        {showAnalyticsLink && (
-          <Link
-            href={`/dashboard/sites/${site.id}`}
-            className="rounded-none bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover"
+        <div className="flex flex-wrap gap-2">
+          {showAnalyticsLink && (
+            <Link
+              href={`/dashboard/sites/${site.id}`}
+              className="rounded-none border border-rule px-3 py-1.5 text-sm text-ink hover:bg-accent-soft"
+            >
+              Analytics →
+            </Link>
+          )}
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => setEditOpen(true)}
+            className="rounded-none border border-rule px-3 py-1.5 text-sm text-ink hover:bg-accent-soft disabled:opacity-60"
           >
-            Analytics →
-          </Link>
-        )}
-        <button
-          type="button"
-          onClick={() => setEditOpen(true)}
-          className="rounded-none border border-rule px-3 py-1.5 text-xs font-medium text-ink hover:bg-accent-soft"
-        >
-          Edit
-        </button>
-        <button
-          onClick={remove}
-          disabled={busy}
-          className="rounded-none border border-rose-200 px-3 py-1.5 text-xs font-medium text-ink hover:bg-rose-50 disabled:opacity-50"
-        >
-          Delete
-        </button>
+            Edit
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={recheck}
+            className="rounded-none border border-rule px-3 py-1.5 text-sm text-ink hover:bg-accent-soft disabled:opacity-60"
+          >
+            Recheck
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={remove}
+            className="rounded-none border border-rule px-3 py-1.5 text-sm text-rose-700 hover:bg-rose-50 disabled:opacity-60"
+          >
+            Delete
+          </button>
+        </div>
       </div>
-
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        <DaysPill days={site.sslDaysLeft} label="SSL expires in" />
+        <DaysPill days={site.domainDaysLeft} label="Domain expires in" />
+      </div>
       <EditSiteModal
         open={editOpen}
         onClose={() => setEditOpen(false)}
         site={{ id: site.id, name: site.name, url: site.url }}
       />
-    </article>
+    </div>
   );
 }
