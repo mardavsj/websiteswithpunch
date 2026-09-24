@@ -1,8 +1,9 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toast";
+import { normalizeSiteUrl } from "@/lib/url";
 
 type Site = {
   id: string;
@@ -49,6 +50,16 @@ export function EditSiteModal({ open, onClose, site }: Props) {
     };
   }, [open, onClose]);
 
+  const pathHint = useMemo(() => {
+    try {
+      const n = normalizeSiteUrl(url);
+      if (n.pathWasStripped) return `We monitor the whole site: ${n.hostKey}`;
+    } catch {
+      /* ignore */
+    }
+    return null;
+  }, [url]);
+
   if (!open) return null;
 
   async function onSubmit(e: FormEvent) {
@@ -64,11 +75,14 @@ export function EditSiteModal({ open, onClose, site }: Props) {
       const data = await res.json();
       if (!res.ok) {
         const msg = data.error || "Something went wrong";
-        if (res.status === 409 || data.code === "DUPLICATE_URL") {
-          toast("Site already added");
+        if (data.code === "DUPLICATE_SITE" || data.code === "DUPLICATE_URL") {
+          toast(msg, "error");
         }
         setError(msg);
         return;
+      }
+      if (data.hint || data.pathWasStripped) {
+        toast(data.hint || `We monitor the whole site: ${data.hostKey}`, "success");
       }
       router.refresh();
       onClose();
@@ -115,7 +129,11 @@ export function EditSiteModal({ open, onClose, site }: Props) {
               placeholder="https://example.com"
               className="mt-1.5 w-full rounded-none border border-rule bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
             />
-            <p className="mt-1 text-xs text-muted">HTTPS recommended for SSL expiry checks.</p>
+            {pathHint ? (
+              <p className="mt-1 text-xs text-muted">{pathHint}</p>
+            ) : (
+              <p className="mt-1 text-xs text-muted">HTTPS recommended for SSL expiry checks.</p>
+            )}
           </div>
           {error && (
             <div className="rounded-none bg-rose-50 dark:bg-rose-400/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-300">{error}</div>
