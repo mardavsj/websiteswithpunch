@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { normalizeUrl } from "@/lib/utils";
 import { runFullSiteCheck } from "@/lib/checks";
+import { applyDuePendingAndEnforce, toClientSite } from "@/lib/site-limits";
 
 const schema = z.object({
   name: z.string().min(1).max(120).optional(),
@@ -17,8 +18,19 @@ async function ownedSite(userId: string, id: string) {
 export async function GET(_: Request, { params }: { params: { id: string } }) {
   const session = await getSession();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await applyDuePendingAndEnforce(session.user.id);
   const site = await ownedSite(session.user.id, params.id);
   if (!site) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (site.locked) {
+    return NextResponse.json(
+      {
+        error: "This site is locked on your current plan.",
+        code: "SITE_LOCKED",
+        site: toClientSite(site as unknown as Record<string, unknown>),
+      },
+      { status: 403 },
+    );
+  }
   const history = await prisma.checkResult.findMany({
     where: { siteId: site.id },
     orderBy: { checkedAt: "desc" },
@@ -32,6 +44,12 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const site = await ownedSite(session.user.id, params.id);
   if (!site) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (site.locked) {
+    return NextResponse.json(
+      { error: "Locked sites can't be edited. Unlock or upgrade first.", code: "SITE_LOCKED" },
+      { status: 403 },
+    );
+  }
 
   const body = await req.json();
   const parsed = schema.safeParse(body);
@@ -54,11 +72,17 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
           url: data.url,
           NOT: { id: site.id },
         },
-        select: { id: true },
+        select: { id: true, locked: true },
       });
       if (duplicate) {
         return NextResponse.json(
-          { error: "Site already added", code: "DUPLICATE_URL" },
+          {
+            error: duplicate.locked
+              ? "This site is already in your list but locked."
+              : "Site already added",
+            code: duplicate.locked ? "LOCKED_DUPLICATE" : "DUPLICATE_URL",
+            siteId: duplicate.id,
+          },
           { status: 409 },
         );
       }
@@ -87,7 +111,7 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
   const site = await ownedSite(session.user.id, params.id);
   if (!site) return NextResponse.json({ error: "Not found" }, { status: 404 });
   await prisma.site.delete({ where: { id: site.id } });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, freedSlot: !site.locked });
 }
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
@@ -95,6 +119,12 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const site = await ownedSite(session.user.id, params.id);
   if (!site) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (site.locked) {
+    return NextResponse.json(
+      { error: "Locked sites are not checked.", code: "SITE_LOCKED" },
+      { status: 403 },
+    );
+  }
 
   const body = await req.json().catch(() => ({}));
   if (body?.action !== "check") {
