@@ -31,6 +31,12 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   if (!site) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+  if (site.locked) {
+    return NextResponse.json(
+      { error: "This site is locked on your current plan.", code: "SITE_LOCKED" },
+      { status: 403 },
+    );
+  }
 
   const { searchParams } = new URL(req.url);
   const requestedRange = parseRange(searchParams.get("range"));
