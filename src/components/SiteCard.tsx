@@ -55,11 +55,14 @@ export function SiteCard({
   showAnalyticsLink = false,
   siteLimit = 1,
   canUnlock = false,
+  hasLockedSites = false,
 }: {
   site: Site;
   showAnalyticsLink?: boolean;
   siteLimit?: number;
   canUnlock?: boolean;
+  /** True when the account has any locked sites (affects active-site delete copy). */
+  hasLockedSites?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -67,7 +70,15 @@ export function SiteCard({
   const [msg, setMsg] = useState<string | null>(null);
 
   async function remove() {
-    if (!confirm(`Delete ${site.name}? This cannot be undone.`)) return;
+    let message: string;
+    if (site.locked) {
+      message = `Delete ${site.name}? This removes it and its saved history for good.`;
+    } else if (hasLockedSites) {
+      message = `Delete ${site.name}? This removes the site and all its history for good. You'll get 1 free slot to add a new site or unlock one of your locked sites.`;
+    } else {
+      message = `Delete ${site.name}? This cannot be undone.`;
+    }
+    if (!confirm(message)) return;
     setBusy(true);
     await fetch(`/api/sites/${site.id}`, { method: "DELETE" });
     router.refresh();
@@ -115,6 +126,11 @@ export function SiteCard({
             <p className="mt-2 text-sm text-muted">
               Locked. Your plan includes {siteLimit} site{siteLimit === 1 ? "" : "s"}.
             </p>
+            {!canUnlock && (
+              <p className="mt-1 text-xs text-muted">
+                To use this site, delete an active site or upgrade.
+              </p>
+            )}
             {msg && <p className="mt-2 text-xs text-amber-800">{msg}</p>}
           </div>
           <div className="flex flex-wrap gap-2">
