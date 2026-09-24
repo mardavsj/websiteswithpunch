@@ -2,10 +2,10 @@
 
 /** Polished SVG analytics primitives — no chart libraries. On-brand: sharp corners, ink/accent/rule. */
 
-const ACCENT = "hsl(216 84% 53%)";
-const INK = "hsl(216 35% 6%)";
-const MUTED = "hsl(220 9% 46%)";
-const RULE = "hsl(216 35% 6% / 0.12)";
+const ACCENT = "hsl(var(--accent))";
+const INK = "hsl(var(--ink))";
+const MUTED = "hsl(var(--muted))";
+const RULE = "hsl(var(--rule))";
 const EMERALD = "hsl(160 84% 39%)";
 const AMBER = "hsl(38 92% 50%)";
 const ROSE = "hsl(350 89% 60%)";
@@ -22,7 +22,7 @@ function statusColor(status: string): string {
   if (status === "down") return ROSE;
   if (status === "error") return AMBER;
   if (status === "mixed") return "hsl(38 92% 65%)";
-  return "hsl(216 35% 6% / 0.18)";
+  return "hsl(var(--ink) / 0.18)";
 }
 
 function codeFamilyColor(code: string): string {
@@ -240,7 +240,7 @@ export function LatencyAreaChart({
             cx={p.x}
             cy={p.y}
             r="3"
-            fill="hsl(45 14% 96%)"
+            fill="hsl(var(--bg))"
             stroke={ACCENT}
             strokeWidth="1.75"
           >
@@ -457,7 +457,7 @@ export function ExpiryRingCard({
   const offset = circ - (pct / 100) * circ;
 
   return (
-    <div className="rounded-none border border-rule bg-bg p-4">
+    <div className="rounded-none border border-rule bg-surface p-4">
       <p className="label-caps text-muted">{title}</p>
       <div className="mt-3 flex items-center gap-4">
         <svg
@@ -504,7 +504,7 @@ export function ExpiryRingCard({
         <div className="min-w-0">
           <p
             className={`font-display text-2xl font-medium ${
-              critical ? "text-rose-700" : warn ? "text-amber-800" : "text-ink"
+              critical ? "text-rose-700 dark:text-rose-300" : warn ? "text-amber-800 dark:text-amber-200" : "text-ink"
             }`}
           >
             {days == null ? "—" : `${days} days`}
@@ -630,16 +630,16 @@ export function DomainExpiryMeter({
         : `${pct}% of watch window remaining · ${formatMonthsDays(days)}`;
 
   return (
-    <div className="rounded-none border border-rule bg-bg p-4">
+    <div className="rounded-none border border-rule bg-surface p-4">
       <p className="label-caps text-muted">Domain registration</p>
 
       <div className="mt-3 flex flex-wrap items-baseline justify-between gap-2">
         <p
           className={`font-display text-3xl font-medium tabular-nums ${
             critical
-              ? "text-rose-700"
+              ? "text-rose-700 dark:text-rose-300"
               : warn
-                ? "text-amber-800"
+                ? "text-amber-800 dark:text-amber-200"
                 : "text-ink"
           }`}
         >
