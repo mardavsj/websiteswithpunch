@@ -2,9 +2,13 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { normalizeUrl } from "@/lib/utils";
 import { runFullSiteCheck } from "@/lib/checks";
 import { applyDuePendingAndEnforce, toClientSite } from "@/lib/site-limits";
+import {
+  SiteUrlError,
+  findSiteByHostKey,
+  normalizeSiteUrl,
+} from "@/lib/url";
 
 const schema = z.object({
   name: z.string().min(1).max(120).optional(),
@@ -56,32 +60,36 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
   const data: { name?: string; url?: string } = {};
+  let pathWasStripped = false;
+  let hostKey: string | undefined;
   if (parsed.data.name) data.name = parsed.data.name.trim();
   if (parsed.data.url) {
+    let normalized;
     try {
-      data.url = normalizeUrl(parsed.data.url);
-      new URL(data.url);
-    } catch {
-      return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
+      normalized = normalizeSiteUrl(parsed.data.url);
+    } catch (err) {
+      const msg = err instanceof SiteUrlError ? err.message : "Invalid URL";
+      return NextResponse.json({ error: msg }, { status: 400 });
     }
+    data.url = normalized.url;
+    pathWasStripped = normalized.pathWasStripped;
+    hostKey = normalized.hostKey;
 
     if (data.url !== site.url) {
-      const duplicate = await prisma.site.findFirst({
-        where: {
-          userId: session.user.id,
-          url: data.url,
-          NOT: { id: site.id },
-        },
-        select: { id: true, locked: true },
+      const userSites = await prisma.site.findMany({
+        where: { userId: session.user.id },
+        select: { id: true, url: true, locked: true },
       });
+      const duplicate = findSiteByHostKey(userSites, normalized.hostKey, site.id);
       if (duplicate) {
         return NextResponse.json(
           {
             error: duplicate.locked
               ? "This site is already in your list but locked."
-              : "Site already added",
-            code: duplicate.locked ? "LOCKED_DUPLICATE" : "DUPLICATE_URL",
+              : `You're already monitoring ${normalized.hostKey}.`,
+            code: duplicate.locked ? "LOCKED_DUPLICATE" : "DUPLICATE_SITE",
             siteId: duplicate.id,
+            hostKey: normalized.hostKey,
           },
           { status: 409 },
         );
@@ -91,13 +99,22 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
   try {
     const updated = await prisma.site.update({ where: { id: site.id }, data });
-    return NextResponse.json({ site: updated });
+    return NextResponse.json({
+      site: updated,
+      pathWasStripped,
+      hostKey,
+      hint: pathWasStripped && hostKey ? `We monitor the whole site: ${hostKey}` : undefined,
+    });
   } catch (err: unknown) {
     const code =
       typeof err === "object" && err && "code" in err ? (err as { code?: string }).code : undefined;
     if (code === "P2002") {
       return NextResponse.json(
-        { error: "Site already added", code: "DUPLICATE_URL" },
+        {
+          error: hostKey ? `You're already monitoring ${hostKey}.` : "Site already added",
+          code: "DUPLICATE_SITE",
+          hostKey,
+        },
         { status: 409 },
       );
     }
