@@ -72,7 +72,7 @@ export function SiteForm({
         setError(
           data.error ||
             (lockedDup.limit
-              ? `Your plan includes ${lockedDup.limit} active sites. Remove or lock one first, or upgrade.`
+              ? `Your plan includes ${lockedDup.limit} active sites. Delete an active site or upgrade to free a slot.`
               : "Could not unlock."),
         );
         return;
