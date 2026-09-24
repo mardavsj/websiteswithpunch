@@ -110,7 +110,7 @@ export function AddPackModal({ open, plan, loading, message, onClose, onConfirm 
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-pack-title"
-        className="w-full max-w-lg rounded-none border border-rule bg-bg p-6 shadow-lg"
+        className="w-full max-w-lg rounded-none border border-rule bg-surface p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="add-pack-title" className="font-display text-xl font-medium text-ink">
@@ -119,7 +119,7 @@ export function AddPackModal({ open, plan, loading, message, onClose, onConfirm 
 
         <div className="mt-4 space-y-3">
           {previewLoading && <PreviewSkeleton />}
-          {previewError && <p className="text-sm text-rose-700">{previewError}</p>}
+          {previewError && <p className="text-sm text-rose-700 dark:text-rose-300">{previewError}</p>}
           {preview && !previewLoading && (
             <>
               {todayZero || preview.isUndo ? (
@@ -162,7 +162,7 @@ export function AddPackModal({ open, plan, loading, message, onClose, onConfirm 
           )}
         </div>
 
-        {message && <p className="mt-3 text-xs text-amber-700">{message}</p>}
+        {message && <p className="mt-3 text-xs text-amber-700 dark:text-amber-300">{message}</p>}
         <div className="mt-5 flex gap-3">
           <button
             type="button"
@@ -247,7 +247,7 @@ export function RemovePackModal({ open, plan, loading, message, onClose, onConfi
         role="dialog"
         aria-modal="true"
         aria-labelledby="remove-pack-title"
-        className="w-full max-w-lg rounded-none border border-rule bg-bg p-6 shadow-lg"
+        className="w-full max-w-lg rounded-none border border-rule bg-surface p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="remove-pack-title" className="font-display text-xl font-medium text-ink">
@@ -256,7 +256,7 @@ export function RemovePackModal({ open, plan, loading, message, onClose, onConfi
 
         <div className="mt-4 space-y-3">
           {previewLoading && <PreviewSkeleton />}
-          {previewError && <p className="text-sm text-rose-700">{previewError}</p>}
+          {previewError && <p className="text-sm text-rose-700 dark:text-rose-300">{previewError}</p>}
           {preview && !previewLoading && (
             <>
               <p className="text-sm leading-relaxed text-muted">
@@ -275,7 +275,7 @@ export function RemovePackModal({ open, plan, loading, message, onClose, onConfi
           )}
         </div>
 
-        {message && <p className="mt-3 text-xs text-amber-700">{message}</p>}
+        {message && <p className="mt-3 text-xs text-amber-700 dark:text-amber-300">{message}</p>}
         <div className="mt-5 flex gap-3">
           <button
             type="button"
