@@ -49,7 +49,7 @@ export function PlanSummaryCard({
   onCancel,
 }: Props) {
   return (
-    <div className="rounded-none border border-rule bg-bg px-4 py-4">
+    <div className="rounded-none border border-rule bg-surface px-4 py-4">
       <p className="label-caps text-muted">Your plan</p>
       <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -67,7 +67,7 @@ export function PlanSummaryCard({
             <p className="mt-0.5 text-sm text-muted">{nextPaymentLine}</p>
           )}
           {cancelAtPeriodEnd && pendingPlanDate && (
-            <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-amber-900">
+            <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-amber-900 dark:text-amber-100">
               <span>
                 Your {PLANS[plan].name} plan ends on {pendingPlanDate}. {chooseMax} site
                 {chooseMax === 1 ? "" : "s"} will stay active.
@@ -75,7 +75,7 @@ export function PlanSummaryCard({
               <button
                 type="button"
                 onClick={onChooseActive}
-                className="rounded-none border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium"
+                className="rounded-none border border-amber-300 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100 px-2 py-0.5 text-xs font-medium"
               >
                 Change which sites stay active
               </button>
@@ -83,35 +83,35 @@ export function PlanSummaryCard({
                 type="button"
                 onClick={onResume}
                 disabled={loading}
-                className="rounded-none border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium disabled:opacity-60"
+                className="rounded-none border border-amber-300 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100 px-2 py-0.5 text-xs font-medium disabled:opacity-60"
               >
                 {loading ? "Working…" : "Resume plan"}
               </button>
             </p>
           )}
           {!cancelAtPeriodEnd && pendingPlan === "pro" && pendingPlanDate && (
-            <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-amber-900">
+            <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-amber-900 dark:text-amber-100">
               <span>
                 Switching to Pro on {pendingPlanDate}. {chooseMax} sites will stay active.
               </span>
               <button
                 type="button"
                 onClick={onChooseActive}
-                className="rounded-none border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium"
+                className="rounded-none border border-amber-300 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100 px-2 py-0.5 text-xs font-medium"
               >
                 Change which sites stay active
               </button>
             </p>
           )}
           {hasPendingRemoval && pendingSites > 0 && pendingDate && (
-            <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-amber-900">
+            <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-amber-900 dark:text-amber-100">
               <span>
                 {pendingSites} site{pendingSites === 1 ? "" : "s"} will be locked on {pendingDate}
               </span>
               <button
                 type="button"
                 onClick={onChooseActive}
-                className="rounded-none border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium"
+                className="rounded-none border border-amber-300 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100 px-2 py-0.5 text-xs font-medium"
               >
                 Change which sites stay active
               </button>
@@ -119,7 +119,7 @@ export function PlanSummaryCard({
                 type="button"
                 onClick={onUndoPack}
                 disabled={loading}
-                className="rounded-none border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium disabled:opacity-60"
+                className="rounded-none border border-amber-300 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100 px-2 py-0.5 text-xs font-medium disabled:opacity-60"
               >
                 {loading ? "Working…" : "Undo"}
               </button>
