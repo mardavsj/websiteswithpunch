@@ -73,7 +73,7 @@ export function DashboardPackCta({
         type="button"
         onClick={() => setOpen(true)}
         disabled={loading}
-        className="rounded-none border border-rule bg-bg px-4 py-2 text-sm font-medium text-ink hover:bg-accent-soft disabled:opacity-60"
+        className="rounded-none border border-rule bg-surface px-4 py-2 text-sm font-medium text-ink hover:bg-accent-soft disabled:opacity-60"
       >
         {label}
       </button>

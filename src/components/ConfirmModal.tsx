@@ -51,7 +51,7 @@ export function ConfirmModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-modal-title"
-        className="w-full max-w-lg rounded-none border border-rule bg-bg p-6 shadow-lg"
+        className="w-full max-w-lg rounded-none border border-rule bg-surface p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <h2
@@ -62,7 +62,7 @@ export function ConfirmModal({
         </h2>
         <div className="text-sm text-muted">{children}</div>
         {error && (
-          <div className="mt-3 rounded-none bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <div className="mt-3 rounded-none bg-rose-50 dark:bg-rose-400/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-300">
             {error}
           </div>
         )}
