@@ -12,9 +12,11 @@ export type NormalizedSiteUrl = {
 };
 
 export class SiteUrlError extends Error {
-  constructor(message: string) {
+  code: string;
+  constructor(message: string, code = "INVALID_URL") {
     super(message);
     this.name = "SiteUrlError";
+    this.code = code;
   }
 }
 
@@ -35,6 +37,28 @@ function isBlockedHostname(hostname: string): string | null {
     return "Enter a full domain (e.g. example.com).";
   }
   return null;
+}
+
+/**
+ * Require a known ICANN public suffix (client + server safe).
+ * Throws SiteUrlError with code INVALID_DOMAIN when the host is not a real domain.
+ */
+export function validateSiteHost(hostname: string): void {
+  const h = hostname.toLowerCase().replace(/^www\./, "");
+  if (!h.includes(".")) {
+    throw new SiteUrlError("That doesn't look like a real domain.", "INVALID_DOMAIN");
+  }
+  if (h === "localhost" || h.endsWith(".localhost")) {
+    throw new SiteUrlError("That doesn't look like a real domain.", "INVALID_DOMAIN");
+  }
+  const parsed = parseTld(h);
+  if (
+    parsed.isIp ||
+    !parsed.domain ||
+    parsed.isIcann !== true
+  ) {
+    throw new SiteUrlError("That doesn't look like a real domain.", "INVALID_DOMAIN");
+  }
 }
 
 /**
@@ -78,6 +102,7 @@ export function normalizeSiteUrl(input: string): NormalizedSiteUrl {
 
   // Prefer https origin; strip leading www for storage.
   const hostKey = hostname.replace(/^www\./, "");
+  validateSiteHost(hostKey);
   const storedHost = hostKey;
   const url = `https://${storedHost}`;
 
