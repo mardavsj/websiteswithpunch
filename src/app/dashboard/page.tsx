@@ -2,8 +2,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getEffectivePlan, getEffectiveSiteLimit, PLANS } from "@/lib/plans";
-import { monthlyTotalDollars } from "@/lib/stripe-subscription";
+import {
+  getEffectivePlan,
+  getUserEffectiveSiteLimit,
+  PLANS,
+  resolvePackCountForLimit,
+} from "@/lib/plans";
 import { SiteCard } from "@/components/SiteCard";
 import { SiteAnalytics } from "@/components/SiteAnalytics";
 import { UpgradeCTA } from "@/components/UpgradeCTA";
@@ -29,13 +33,35 @@ export default async function DashboardPage({
   });
 
   const plan = getEffectivePlan(user.plan, user.stripeStatus);
-  const packCount = user.sitePackCount ?? 0;
-  const limit = getEffectiveSiteLimit(plan, packCount);
+  const resolved = resolvePackCountForLimit({
+    sitePackCount: user.sitePackCount,
+    pendingSitePackCount: user.pendingSitePackCount,
+    pendingPackChangeAt: user.pendingPackChangeAt,
+  });
+
+  if (resolved.shouldApplyPending) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        sitePackCount: resolved.packCount,
+        pendingSitePackCount: null,
+        pendingPackChangeAt: null,
+      },
+    });
+  }
+
+  const packCount = resolved.packCount;
+  const limit = getUserEffectiveSiteLimit(
+    plan,
+    resolved.shouldApplyPending ? resolved.packCount : user.sitePackCount,
+    resolved.shouldApplyPending ? null : user.pendingSitePackCount,
+    resolved.shouldApplyPending ? null : user.pendingPackChangeAt,
+  );
   const atLimit = sites.length >= limit;
+  const overLimit = sites.length > limit;
   const remaining = Math.max(0, limit - sites.length);
   const showInlineAnalytics = sites.length === 1;
   const planLabel = PLANS[plan].name;
-  const monthlyTotal = monthlyTotalDollars(plan, packCount);
 
   const downNow = sites.filter((s) => s.status === "down" || s.status === "error").length;
   const sslSoon = sites
@@ -72,7 +98,7 @@ export default async function DashboardPage({
             </Link>
           ) : (
             <span className="rounded-none border border-rule bg-accent-soft px-4 py-2 text-sm text-muted">
-              Site limit reached
+              {overLimit ? "Over site limit" : "Site limit reached"}
             </span>
           )}
         </div>
@@ -99,9 +125,10 @@ export default async function DashboardPage({
         plan={plan}
         sitePackCount={packCount}
         siteCount={sites.length}
+        siteLimit={limit}
         atLimit={atLimit}
         remaining={remaining}
-        monthlyTotal={monthlyTotal}
+        overLimit={overLimit}
       />
 
       {sites.length > 1 && (
