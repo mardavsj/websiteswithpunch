@@ -68,7 +68,7 @@ export function PricingSection() {
               <div
                 key={plan.id}
                 className={`relative flex h-full min-w-0 flex-col p-8 sm:p-9 ${
-                  featured ? "bg-ink text-bg" : "border border-rule bg-bg text-ink"
+                  featured ? "bg-solid text-solid-fg" : "border border-rule bg-surface text-ink"
                 }`}
               >
                 {featured && (
@@ -76,24 +76,24 @@ export function PricingSection() {
                     Popular
                   </span>
                 )}
-                <p className={`label-caps ${featured ? "!text-bg/55" : ""}`}>
+                <p className={`label-caps ${featured ? "!text-solid-fg/55" : ""}`}>
                   {plan.id === "free" ? "Starter" : plan.id === "pro" ? "Grow" : "Scale"}
                 </p>
                 <h3 className="mt-2 font-display text-2xl font-medium">{plan.name}</h3>
                 <p className="mt-4 font-display text-5xl font-medium">
                   ${plan.price}
                   <span
-                    className={`text-lg font-normal ${featured ? "text-bg/55" : "text-muted"}`}
+                    className={`text-lg font-normal ${featured ? "text-solid-fg/55" : "text-muted"}`}
                   >
                     /mo
                   </span>
                 </p>
-                <p className={`mt-3 text-sm ${featured ? "text-bg/70" : "text-muted"}`}>
+                <p className={`mt-3 text-sm ${featured ? "text-solid-fg/70" : "text-muted"}`}>
                   {plan.description}
                 </p>
                 <ul
                   className={`mt-8 space-y-3 border-t pt-8 text-sm ${
-                    featured ? "border-bg/15" : "border-rule"
+                    featured ? "border-solid-fg/15" : "border-rule"
                   }`}
                 >
                   <li className="flex gap-3">
