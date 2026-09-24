@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { runFullSiteCheck } from "@/lib/checks";
 import { applyDuePendingAndEnforce, toClientSite } from "@/lib/site-limits";
+import { assertHostnameResolves } from "@/lib/dns-check";
 import {
   SiteUrlError,
   findSiteByHostKey,
@@ -64,18 +65,22 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   let hostKey: string | undefined;
   if (parsed.data.name) data.name = parsed.data.name.trim();
   if (parsed.data.url) {
+    // 1) normalize (+ ICANN suffix)
     let normalized;
     try {
       normalized = normalizeSiteUrl(parsed.data.url);
     } catch (err) {
-      const msg = err instanceof SiteUrlError ? err.message : "Invalid URL";
-      return NextResponse.json({ error: msg }, { status: 400 });
+      if (err instanceof SiteUrlError) {
+        return NextResponse.json({ error: err.message, code: err.code }, { status: 400 });
+      }
+      return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
     }
     data.url = normalized.url;
     pathWasStripped = normalized.pathWasStripped;
     hostKey = normalized.hostKey;
 
     if (data.url !== site.url) {
+      // 2) duplicate
       const userSites = await prisma.site.findMany({
         where: { userId: session.user.id },
         select: { id: true, url: true, locked: true },
@@ -94,9 +99,23 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
           { status: 409 },
         );
       }
+
+      // 3) DNS
+      const dns = await assertHostnameResolves(normalized.hostKey);
+      if (!dns.ok) {
+        return NextResponse.json(
+          {
+            error: `We couldn't find ${dns.host}. Check the spelling.`,
+            code: "DOMAIN_NOT_FOUND",
+            hostKey: dns.host,
+          },
+          { status: 400 },
+        );
+      }
     }
   }
 
+  // 4) update
   try {
     const updated = await prisma.site.update({ where: { id: site.id }, data });
     return NextResponse.json({
