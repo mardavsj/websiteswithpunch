@@ -24,7 +24,7 @@ export function AudienceSection() {
                 <p className="mt-4 max-w-sm text-base leading-relaxed text-muted">{a.body}</p>
               </div>
             ) : (
-              <div key={a.title} className="border border-rule p-6 sm:p-8">
+              <div key={a.title} className="border border-rule bg-surface p-6 sm:p-8">
                 <h3 className="font-display text-xl font-medium text-ink">{a.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted">{a.body}</p>
               </div>

@@ -35,8 +35,22 @@ export function Navbar() {
             </>
           ) : (
             <>
+              <Link
+                href="/login"
+                className="hidden rounded-none px-3 py-1.5 text-ink hover:bg-accent-soft md:inline-flex"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/signup"
+                className="hidden rounded-none bg-accent px-3 py-1.5 font-medium text-white hover:bg-accent-hover md:inline-flex"
+              >
+                Start free
+              </Link>
               <ThemeToggle />
-              <GuestMenu />
+              <div className="md:hidden">
+                <GuestMenu />
+              </div>
             </>
           )}
         </nav>
