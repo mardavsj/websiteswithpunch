@@ -117,7 +117,7 @@ export const faqs = [
   },
   {
     q: "Can I switch which site stays active?",
-    a: "Yes. From the dashboard, use Choose active sites. You can swap once every 24 hours. Unlocking into a free slot (after deleting a site or upgrading) isn't limited by that cooldown.",
+    a: "Before your plan changes, yes, as often as you like. After that, the active sites are fixed. To use a different one, delete an active site to free a slot, then add a new site or unlock a locked one.",
   },
   {
     q: "Can I cancel anytime?",
