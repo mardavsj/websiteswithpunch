@@ -93,11 +93,11 @@ export const faqs = [
   },
   {
     q: "What’s free vs Pro vs Business?",
-    a: `Free monitors ${PLANS.free.siteLimit} site. Pro ($${PLANS.pro.price}/mo) covers up to ${PLANS.pro.siteLimit} sites. Business ($${PLANS.business.price}/mo) covers up to ${PLANS.business.siteLimit} sites. On Pro or Business, you can add optional site packs from the dashboard when you need a few more slots.`,
+    a: `Free monitors ${PLANS.free.siteLimit} site. Pro ($${PLANS.pro.price}/mo) covers up to ${PLANS.pro.siteLimit} sites. Business ($${PLANS.business.price}/mo) covers up to ${PLANS.business.siteLimit} sites. On Pro or Business, add optional site packs from the dashboard — they join your existing subscription.`,
   },
   {
     q: "What if I need more than 10 or 50 sites?",
-    a: `On Pro, buy optional +${SITE_PACKS.pro.sitesPerPack} site packs for $${SITE_PACKS.pro.pricePerMonth}/mo each (up to ${PLANS.pro.siteLimit + SITE_PACKS.pro.maxPacks * SITE_PACKS.pro.sitesPerPack} sites), then upgrade to Business. On Business, buy +${SITE_PACKS.business.sitesPerPack} packs for $${SITE_PACKS.business.pricePerMonth}/mo each (up to ${PLANS.business.siteLimit + SITE_PACKS.business.maxPacks * SITE_PACKS.business.sitesPerPack} sites). Need more than that? Email hello@websiteswithpunch.com for a custom limit.`,
+    a: `On Pro, add optional +${SITE_PACKS.pro.sitesPerPack} site packs for $${SITE_PACKS.pro.pricePerMonth}/mo each (up to ${PLANS.pro.siteLimit + SITE_PACKS.pro.maxPacks * SITE_PACKS.pro.sitesPerPack} sites), then upgrade to Business. On Business, add +${SITE_PACKS.business.sitesPerPack} packs for $${SITE_PACKS.business.pricePerMonth}/mo each (up to ${PLANS.business.siteLimit + SITE_PACKS.business.maxPacks * SITE_PACKS.business.sitesPerPack} sites). Packs are billed on your existing subscription: a prorated charge today, then one monthly bill on the same renewal date. Remove packs anytime from the dashboard. Need more than that? Email hello@websiteswithpunch.com for a custom limit.`,
   },
   {
     q: "Do I need a card to start?",
@@ -113,7 +113,7 @@ export const faqs = [
   },
   {
     q: "Can I cancel anytime?",
-    a: "Yes. Paid plans are month-to-month. Downgrade or cancel when you don’t need the extra site slots; your free site stays available within Free limits.",
+    a: "Yes. Paid plans are month-to-month. Cancel from Manage billing — your subscription (plan + packs) ends together. Your free site stays available within Free limits.",
   },
 ];
 
