@@ -51,8 +51,8 @@ export function PricingSection() {
         <div className="max-w-xl">
           <h2 className="font-display text-3xl font-medium text-ink sm:text-4xl">Simple pricing</h2>
           <p className="mt-3 text-muted">
-            Three plans. Need a few more sites? Add packs from the dashboard — no confusing
-            per-site pricing.
+            Three plans. Need a few more sites? Add packs from the dashboard — they join your
+            existing subscription.
           </p>
         </div>
 
@@ -169,7 +169,8 @@ export function PricingSection() {
             {SITE_PACKS.business.pricePerMonth}/mo (up to{" "}
             {PLANS.business.siteLimit +
               SITE_PACKS.business.maxPacks * SITE_PACKS.business.sitesPerPack}{" "}
-            sites). Need more?{" "}
+            sites). Packs join your existing subscription (prorated today, one renewal date). Need
+            more?{" "}
             <a
               href="mailto:hello@websiteswithpunch.com?subject=Custom%20site%20limit"
               className="font-semibold text-ink underline-offset-2 hover:underline"
