@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { PLANS, SITE_PACKS, canBuySitePack } from "@/lib/plans";
+import { SITE_PACKS, canBuySitePack } from "@/lib/plans";
 import { useToast } from "@/components/Toast";
 import { PlanSummaryCard } from "@/components/billing/PlanSummaryCard";
 import { PackActions } from "@/components/billing/PackActions";
 import { CancelPlanFlow } from "@/components/billing/CancelPlanFlow";
 import { DowngradeFlow } from "@/components/billing/DowngradeFlow";
-import { ChooseActiveSitesFlow } from "@/components/billing/ChooseActiveSitesFlow";
+import { PendingKeepSitesFlow } from "@/components/billing/PendingKeepSitesFlow";
 import { useBillingSummary } from "@/components/billing/useBillingSummary";
 import { useBillingActions } from "@/components/billing/useBillingActions";
 import type { SiteCapacityProps } from "@/components/billing/types";
@@ -22,7 +22,7 @@ export function SiteCapacityActions({
   atLimit,
   remaining,
   keepOptions,
-  allSiteOptions,
+  allSiteOptions: _allSiteOptions,
   cancelAtPeriodEnd: cancelProp,
   pendingPlan: pendingPlanProp,
 }: SiteCapacityProps) {
@@ -32,7 +32,7 @@ export function SiteCapacityActions({
   const { summary, loadSummary } = useBillingSummary(showBilling, sitePackCount);
   const actions = useBillingActions({ plan, loadSummary, toast });
   const [busy, setBusy] = useState(false);
-  const [flow, setFlow] = useState<"cancel" | "downgrade" | "choose" | null>(null);
+  const [flow, setFlow] = useState<"cancel" | "downgrade" | "pending-keep" | null>(null);
 
   const hasPending = summary?.hasPendingRemoval ?? false;
   const pendingSites = summary?.pendingSitesToRemove ?? 0;
@@ -49,8 +49,6 @@ export function SiteCapacityActions({
     hasPending && pendingSites >= effectivePacks * (pack?.sitesPerPack || 5);
   const canBuy = showBilling && (hasPending || canBuySitePack(plan, effectivePacks));
   const canRemove = showBilling && effectivePacks > 0 && !allPacksAway;
-  const lockedCount = allSiteOptions.filter((s) => s.locked).length;
-  const showChooseOnly = !showBilling && lockedCount > 0;
   const nextPaymentLine =
     summary?.nextPaymentDateFormatted && summary.monthlyTotalFormatted
       ? `Next payment: ${summary.monthlyTotalFormatted.replace("/month", "")} on ${summary.nextPaymentDateFormatted}`
@@ -86,46 +84,7 @@ export function SiteCapacityActions({
       });
   }
 
-  if (showChooseOnly) {
-    return (
-      <div className="mt-6 space-y-3">
-        <div className="rounded-none border border-rule bg-bg px-4 py-4">
-          <p className="label-caps text-muted">Your plan</p>
-          <p className="mt-2 font-display text-lg font-medium text-ink">{PLANS[plan].name}</p>
-          <p className="mt-0.5 text-sm text-muted">
-            {siteCount}/{siteLimit} active sites
-            {lockedCount > 0 ? ` · ${lockedCount} locked` : ""}
-          </p>
-          <button
-            type="button"
-            onClick={() => setFlow("choose")}
-            disabled={busy}
-            className="mt-3 rounded-none border border-rule bg-bg px-3 py-1.5 text-sm font-medium text-ink hover:bg-accent-soft disabled:opacity-60"
-          >
-            Choose active sites
-          </button>
-        </div>
-        <ChooseActiveSitesFlow
-          open={flow === "choose"}
-          maxKeep={siteLimit}
-          allSiteOptions={allSiteOptions}
-          keepOptions={keepOptions}
-          loading={busy}
-          cooldownMs={summary?.swapCooldownMs ?? 0}
-          onClose={() => setFlow(null)}
-          onConfirm={async (ids) => {
-            await run(async () => {
-              if (await actions.confirmChooseActive(ids, false)) setFlow(null);
-            });
-          }}
-        />
-      </div>
-    );
-  }
-
   if (!showBilling) return null;
-
-  const pendingOnly = Boolean(pendingPlan || hasPending);
 
   return (
     <div className="mt-6 space-y-3">
@@ -144,8 +103,7 @@ export function SiteCapacityActions({
         pendingSites={pendingSites}
         pendingDate={pendingDate}
         loading={busy}
-        showChooseActive={allSiteOptions.length > effectiveLimit}
-        onChooseActive={() => setFlow("choose")}
+        onChooseActive={() => setFlow("pending-keep")}
         onResume={() => run(actions.resumePlan)}
         onUndoPack={() => run(actions.undoPendingRemoval)}
         onDowngrade={onDowngrade}
@@ -189,17 +147,15 @@ export function SiteCapacityActions({
           });
         }}
       />
-      <ChooseActiveSitesFlow
-        open={flow === "choose"}
-        maxKeep={Math.min(chooseMax, allSiteOptions.length || 1)}
-        allSiteOptions={allSiteOptions}
+      <PendingKeepSitesFlow
+        open={flow === "pending-keep"}
+        maxKeep={Math.min(chooseMax, keepOptions.length || 1)}
         keepOptions={keepOptions}
         loading={busy}
-        cooldownMs={summary?.swapCooldownMs ?? 0}
         onClose={() => setFlow(null)}
         onConfirm={async (ids) => {
           await run(async () => {
-            if (await actions.confirmChooseActive(ids, pendingOnly)) setFlow(null);
+            if (await actions.confirmPendingKeep(ids)) setFlow(null);
           });
         }}
       />

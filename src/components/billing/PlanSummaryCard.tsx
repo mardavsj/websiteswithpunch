@@ -19,7 +19,6 @@ type Props = {
   pendingDate: string | null;
   loading: boolean;
   packSlot?: ReactNode;
-  showChooseActive: boolean;
   onChooseActive: () => void;
   onResume: () => void;
   onUndoPack: () => void;
@@ -43,7 +42,6 @@ export function PlanSummaryCard({
   pendingDate,
   loading,
   packSlot,
-  showChooseActive,
   onChooseActive,
   onResume,
   onUndoPack,
@@ -112,6 +110,13 @@ export function PlanSummaryCard({
               </span>
               <button
                 type="button"
+                onClick={onChooseActive}
+                className="rounded-none border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium"
+              >
+                Change which sites stay active
+              </button>
+              <button
+                type="button"
                 onClick={onUndoPack}
                 disabled={loading}
                 className="rounded-none border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium disabled:opacity-60"
@@ -119,18 +124,6 @@ export function PlanSummaryCard({
                 {loading ? "Working…" : "Undo"}
               </button>
             </p>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {showChooseActive && (
-            <button
-              type="button"
-              onClick={onChooseActive}
-              disabled={loading}
-              className="rounded-none border border-rule bg-bg px-3 py-1.5 text-sm font-medium text-ink hover:bg-accent-soft disabled:opacity-60"
-            >
-              Choose active sites
-            </button>
           )}
         </div>
       </div>
