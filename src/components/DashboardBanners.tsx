@@ -48,7 +48,7 @@ export function DashboardBanners({
         <div className="flex flex-wrap items-start justify-between gap-3 rounded-none border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
           <p>
             Your plan now includes {siteLimit} site{siteLimit === 1 ? "" : "s"}. We kept your oldest
-            site{activeCount === 1 ? "" : "s"} active. Choose different ones anytime.
+            site{activeCount === 1 ? "" : "s"} active. Upgrade anytime to unlock the rest.
           </p>
           <button
             type="button"
