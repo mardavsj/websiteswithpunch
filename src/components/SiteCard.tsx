@@ -188,7 +188,7 @@ export function SiteCard({
           <button
             onClick={recheck}
             disabled={busy}
-            className="rounded-none bg-ink px-3 py-1.5 text-xs font-medium text-bg hover:opacity-90 disabled:opacity-50"
+            className="rounded-none bg-solid px-3 py-1.5 text-xs font-medium text-solid-fg hover:opacity-90 disabled:opacity-50"
           >
             Recheck
           </button>
