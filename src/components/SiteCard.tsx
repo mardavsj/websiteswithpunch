@@ -100,12 +100,21 @@ export function SiteCard({
     return (
       <article className="rounded-none border border-rule bg-rule/20 p-5 opacity-90">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span aria-hidden className="text-muted">🔒</span>
-              <h3 className="truncate font-display text-lg font-medium text-muted">{site.name}</h3>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <span aria-hidden className="text-muted">
+                  🔒
+                </span>
+                <h3 className="truncate font-display text-lg font-medium text-muted">{site.name}</h3>
+              </div>
+              <p
+                title={site.url}
+                className="min-w-0 max-w-[50%] shrink truncate text-right text-sm text-muted"
+              >
+                {site.url}
+              </p>
             </div>
-            <p className="mt-1 truncate text-sm text-muted">{site.url}</p>
             <p className="mt-2 text-sm text-muted">
               Locked. Your plan includes {siteLimit} site{siteLimit === 1 ? "" : "s"}.
             </p>
@@ -142,21 +151,20 @@ export function SiteCard({
 
   return (
     <article className="rounded-none border border-rule bg-bg p-5 transition hover:border-ink/20">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="truncate font-display text-lg font-medium text-ink">{site.name}</h3>
-            <StatusBadge status={site.status} />
-          </div>
-          <a
-            href={site.url}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-1 block truncate text-sm text-accent hover:underline"
-          >
-            {site.url}
-          </a>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <h3 className="truncate font-display text-lg font-medium text-ink">{site.name}</h3>
+          <StatusBadge status={site.status} />
         </div>
+        <a
+          href={site.url}
+          target="_blank"
+          rel="noreferrer"
+          title={site.url}
+          className="min-w-0 max-w-[50%] shrink truncate text-right text-sm text-accent hover:underline"
+        >
+          {site.url}
+        </a>
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -175,35 +183,39 @@ export function SiteCard({
         <DaysPill days={site.domainDaysLeft} label="Domain left" />
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button
-          onClick={recheck}
-          disabled={busy}
-          className="rounded-none bg-ink px-3 py-1.5 text-xs font-medium text-bg hover:opacity-90 disabled:opacity-50"
-        >
-          Recheck
-        </button>
-        {showAnalyticsLink && (
-          <Link
-            href={`/dashboard/sites/${site.id}`}
-            className="rounded-none bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover"
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={recheck}
+            disabled={busy}
+            className="rounded-none bg-ink px-3 py-1.5 text-xs font-medium text-bg hover:opacity-90 disabled:opacity-50"
           >
-            Analytics →
-          </Link>
-        )}
-        <button
-          type="button"
-          onClick={() => setEditOpen(true)}
-          className="rounded-none border border-rule px-3 py-1.5 text-xs font-medium text-ink hover:bg-accent-soft"
-        >
-          Edit
-        </button>
-        <DeleteSiteButton
-          siteId={site.id}
-          siteName={site.name}
-          hasLockedSites={hasLockedSites}
-          disabled={busy}
-        />
+            Recheck
+          </button>
+          {showAnalyticsLink && (
+            <Link
+              href={`/dashboard/sites/${site.id}`}
+              className="rounded-none bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover"
+            >
+              Analytics →
+            </Link>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setEditOpen(true)}
+            className="rounded-none border border-rule px-3 py-1.5 text-xs font-medium text-ink hover:bg-accent-soft"
+          >
+            Edit
+          </button>
+          <DeleteSiteButton
+            siteId={site.id}
+            siteName={site.name}
+            hasLockedSites={hasLockedSites}
+            disabled={busy}
+          />
+        </div>
       </div>
 
       <EditSiteModal
