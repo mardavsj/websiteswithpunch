@@ -21,6 +21,7 @@
     "react": "^18",
     "react-dom": "^18",
     "stripe": "^22.6.2",
+    "tldts": "^7.4.15",
     "zod": "^4.6.5"
   },
   "devDependencies": {

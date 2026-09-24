@@ -1,40 +1,28 @@
+import { normalizeSiteUrl, registrableDomain } from "./url";
+
 export function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
+/** @deprecated Prefer normalizeSiteUrl — kept for callers that only need the stored URL string. */
 export function normalizeUrl(input: string): string {
-  let url = input.trim();
-  if (!/^https?:\/\//i.test(url)) {
-    url = `https://${url}`;
-  }
-  const parsed = new URL(url);
-  parsed.hostname = parsed.hostname.toLowerCase();
-  parsed.hash = "";
-  // Drop trailing slash so example.com and example.com/ match
-  return parsed.toString().replace(/\/$/, "");
+  return normalizeSiteUrl(input).url;
 }
 
 export function extractHostname(url: string): string {
   try {
-    return new URL(normalizeUrl(url)).hostname;
+    return normalizeSiteUrl(url).hostname;
   } catch {
-    return url;
+    try {
+      return new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`).hostname.toLowerCase();
+    } catch {
+      return url;
+    }
   }
 }
 
 export function extractRootDomain(hostname: string): string {
-  const parts = hostname.toLowerCase().replace(/^www\./, "").split(".");
-  if (parts.length <= 2) return parts.join(".");
-  const multi = ["co.uk", "com.au", "co.in", "com.br", "co.jp", "co.nz"];
-  const lastTwo = parts.slice(-2).join(".");
-  const lastThree = parts.slice(-3).join(".");
-  if (multi.includes(lastTwo) && parts.length >= 3) {
-    return parts.slice(-3).join(".");
-  }
-  if (multi.some((t) => lastThree.endsWith(t))) {
-    return parts.slice(-3).join(".");
-  }
-  return lastTwo;
+  return registrableDomain(hostname) || hostname.toLowerCase().replace(/^www\./, "");
 }
 
 export function daysUntil(date: Date | null | undefined): number | null {
