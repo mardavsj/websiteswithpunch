@@ -13,6 +13,11 @@ import { SiteAnalytics } from "@/components/SiteAnalytics";
 import { UpgradeCTA } from "@/components/UpgradeCTA";
 import { SignOutButton } from "@/components/SignOutButton";
 import { SiteCapacityActions } from "@/components/SiteCapacityActions";
+import { DashboardBanners } from "@/components/DashboardBanners";
+import {
+  applyDuePendingAndEnforce,
+  toClientSite,
+} from "@/lib/site-limits";
 
 export const dynamic = "force-dynamic";
 
@@ -24,10 +29,12 @@ export default async function DashboardPage({
   const session = await getSession();
   if (!session?.user?.id) redirect("/login");
 
+  await applyDuePendingAndEnforce(session.user.id);
+
   const user = await prisma.user.findUnique({ where: { id: session.user.id } });
   if (!user) redirect("/login");
 
-  const sites = await prisma.site.findMany({
+  const sitesRaw = await prisma.site.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },
   });
@@ -39,35 +46,56 @@ export default async function DashboardPage({
     pendingPackChangeAt: user.pendingPackChangeAt,
   });
 
-  if (resolved.shouldApplyPending) {
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        sitePackCount: resolved.packCount,
-        pendingSitePackCount: null,
-        pendingPackChangeAt: null,
-      },
-    });
-  }
-
   const packCount = resolved.packCount;
   const limit = getUserEffectiveSiteLimit(
     plan,
-    resolved.shouldApplyPending ? resolved.packCount : user.sitePackCount,
-    resolved.shouldApplyPending ? null : user.pendingSitePackCount,
-    resolved.shouldApplyPending ? null : user.pendingPackChangeAt,
+    user.sitePackCount,
+    user.pendingSitePackCount,
+    user.pendingPackChangeAt,
   );
-  const atLimit = sites.length >= limit;
-  const overLimit = sites.length > limit;
-  const remaining = Math.max(0, limit - sites.length);
-  const showInlineAnalytics = sites.length === 1;
+
+  const activeSites = sitesRaw.filter((s) => !s.locked);
+  const lockedSites = sitesRaw.filter((s) => s.locked);
+  const atLimit = activeSites.length >= limit;
+  const remaining = Math.max(0, limit - activeSites.length);
+  const canUnlock = remaining > 0;
+  const showInlineAnalytics = activeSites.length === 1 && lockedSites.length === 0;
   const planLabel = PLANS[plan].name;
 
-  const downNow = sites.filter((s) => s.status === "down" || s.status === "error").length;
-  const sslSoon = sites
+  const clientSites = sitesRaw.map((site) => {
+    const stripped = toClientSite(site as unknown as Record<string, unknown>);
+    return {
+      ...stripped,
+      lastCheckedAt:
+        site.locked || !site.lastCheckedAt
+          ? null
+          : site.lastCheckedAt.toISOString(),
+      locked: site.locked,
+      createdAt: site.createdAt.toISOString(),
+    };
+  });
+
+  const downNow = activeSites.filter(
+    (s) => s.status === "down" || s.status === "error",
+  ).length;
+  const sslSoon = activeSites
     .map((s) => s.sslDaysLeft)
     .filter((d): d is number => d != null)
     .sort((a, b) => a - b)[0];
+
+  const keepOptions = activeSites.map((s) => ({
+    id: s.id,
+    name: s.name,
+    url: s.url,
+    createdAt: s.createdAt.toISOString(),
+  }));
+  const allOptions = sitesRaw.map((s) => ({
+    id: s.id,
+    name: s.name,
+    url: s.url,
+    createdAt: s.createdAt.toISOString(),
+    locked: s.locked,
+  }));
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -76,8 +104,14 @@ export default async function DashboardPage({
           <h1 className="font-display text-2xl font-medium text-ink">Dashboard</h1>
           <p className="mt-1 text-sm text-muted">
             Welcome{user.name ? `, ${user.name}` : ""}. Plan:{" "}
-            <span className="font-medium text-ink">{planLabel}</span> · {sites.length}/{limit}{" "}
-            sites
+            <span className="font-medium text-ink">{planLabel}</span> ·{" "}
+            {activeSites.length}/{limit} active
+            {lockedSites.length > 0 ? (
+              <span>
+                {" "}
+                · {lockedSites.length} locked
+              </span>
+            ) : null}
             {packCount > 0 ? (
               <span>
                 {" "}
@@ -98,7 +132,7 @@ export default async function DashboardPage({
             </Link>
           ) : (
             <span className="rounded-none border border-rule bg-accent-soft px-4 py-2 text-sm text-muted">
-              {overLimit ? "Over site limit" : "Site limit reached"}
+              Site limit reached
             </span>
           )}
         </div>
@@ -121,21 +155,34 @@ export default async function DashboardPage({
         </div>
       )}
 
+      <DashboardBanners
+        showDefaultLockNotice={user.showDefaultLockNotice}
+        paymentFailed={user.stripeStatus === "past_due"}
+        siteLimit={limit}
+        activeCount={activeSites.length}
+      />
+
       <SiteCapacityActions
         plan={plan}
         sitePackCount={packCount}
-        siteCount={sites.length}
+        siteCount={activeSites.length}
         siteLimit={limit}
         atLimit={atLimit}
         remaining={remaining}
-        overLimit={overLimit}
+        keepOptions={keepOptions}
+        allSiteOptions={allOptions}
+        cancelAtPeriodEnd={user.cancelAtPeriodEnd}
+        pendingPlan={user.pendingPlan}
+        pendingPlanAt={user.pendingPlanAt?.toISOString() ?? null}
       />
 
-      {sites.length > 1 && (
+      {activeSites.length > 1 && (
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           <div className="border border-rule p-4">
             <p className="label-caps text-muted">Sites monitored</p>
-            <p className="mt-1 font-display text-2xl font-medium text-ink">{sites.length}</p>
+            <p className="mt-1 font-display text-2xl font-medium text-ink">
+              {activeSites.length}
+            </p>
           </div>
           <div className="border border-rule p-4">
             <p className="label-caps text-muted">Down / error now</p>
@@ -156,7 +203,7 @@ export default async function DashboardPage({
         </div>
       )}
 
-      {sites.length === 0 ? (
+      {sitesRaw.length === 0 ? (
         <div className="mt-12 rounded-none border border-dashed border-rule bg-bg p-12 text-center">
           <h2 className="font-display text-lg font-medium text-ink">No sites yet</h2>
           <p className="mt-2 text-sm text-muted">
@@ -171,21 +218,31 @@ export default async function DashboardPage({
         </div>
       ) : (
         <div className="mt-8 space-y-5">
-          {sites.map((site) => (
+          {clientSites.map((site) => (
             <SiteCard
-              key={site.id}
-              showAnalyticsLink={!showInlineAnalytics}
+              key={site.id as string}
+              showAnalyticsLink={!showInlineAnalytics && !site.locked}
+              siteLimit={limit}
+              canUnlock={Boolean(site.locked) && canUnlock}
               site={{
-                ...site,
-                lastCheckedAt: site.lastCheckedAt?.toISOString() ?? null,
+                id: site.id as string,
+                name: site.name as string,
+                url: site.url as string,
+                status: site.status as string,
+                lastCheckedAt: (site.lastCheckedAt as string | null) ?? null,
+                lastStatusCode: (site.lastStatusCode as number | null) ?? null,
+                lastLatencyMs: (site.lastLatencyMs as number | null) ?? null,
+                sslDaysLeft: (site.sslDaysLeft as number | null) ?? null,
+                domainDaysLeft: (site.domainDaysLeft as number | null) ?? null,
+                locked: Boolean(site.locked),
               }}
             />
           ))}
-          {showInlineAnalytics && <SiteAnalytics siteId={sites[0].id} />}
-          {!showInlineAnalytics && (
+          {showInlineAnalytics && <SiteAnalytics siteId={activeSites[0].id} />}
+          {!showInlineAnalytics && activeSites.length > 1 && (
             <p className="text-center text-sm text-muted">
-              Open <span className="font-medium text-ink">Analytics →</span> on any site for the full
-              breakdown with range filters.
+              Open <span className="font-medium text-ink">Analytics →</span> on any active site for
+              the full breakdown with range filters.
             </p>
           )}
         </div>
