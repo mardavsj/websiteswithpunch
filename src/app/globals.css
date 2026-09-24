@@ -80,4 +80,8 @@ h6 {
     text-transform: uppercase;
     color: hsl(var(--muted));
   }
+  /* Shared outer card / panel border (SiteCard, analytics, dashboard stats) */
+  .card-border {
+    @apply border border-ink/35;
+  }
 }
