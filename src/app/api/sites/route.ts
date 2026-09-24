@@ -9,13 +9,17 @@ import {
   SITE_PACKS,
   resolvePackCountForLimit,
 } from "@/lib/plans";
-import { normalizeUrl } from "@/lib/utils";
 import { runFullSiteCheck } from "@/lib/checks";
 import {
   applyDuePendingAndEnforce,
   currentEffectiveLimit,
   toClientSite,
 } from "@/lib/site-limits";
+import {
+  SiteUrlError,
+  findSiteByHostKey,
+  normalizeSiteUrl,
+} from "@/lib/url";
 
 const schema = z.object({
   name: z.string().min(1).max(120),
@@ -87,18 +91,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid name or URL" }, { status: 400 });
   }
 
-  let url: string;
+  let normalized;
   try {
-    url = normalizeUrl(parsed.data.url);
-    new URL(url);
-  } catch {
-    return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
+    normalized = normalizeSiteUrl(parsed.data.url);
+  } catch (err) {
+    const msg = err instanceof SiteUrlError ? err.message : "Invalid URL";
+    return NextResponse.json({ error: msg }, { status: 400 });
   }
+  const { url, hostKey, pathWasStripped } = normalized;
 
-  const existing = await prisma.site.findFirst({
-    where: { userId: user.id, url },
-    select: { id: true, locked: true },
+  const userSites = await prisma.site.findMany({
+    where: { userId: user.id },
+    select: { id: true, url: true, locked: true },
   });
+  const existing = findSiteByHostKey(userSites, hostKey);
   if (existing) {
     if (existing.locked) {
       return NextResponse.json(
@@ -112,7 +118,11 @@ export async function POST(req: Request) {
       );
     }
     return NextResponse.json(
-      { error: "Site already added", code: "DUPLICATE_URL" },
+      {
+        error: `You're already monitoring ${hostKey}.`,
+        code: "DUPLICATE_SITE",
+        hostKey,
+      },
       { status: 409 },
     );
   }
@@ -133,7 +143,11 @@ export async function POST(req: Request) {
       typeof err === "object" && err && "code" in err ? (err as { code?: string }).code : undefined;
     if (code === "P2002") {
       return NextResponse.json(
-        { error: "Site already added", code: "DUPLICATE_URL" },
+        {
+          error: `You're already monitoring ${hostKey}.`,
+          code: "DUPLICATE_SITE",
+          hostKey,
+        },
         { status: 409 },
       );
     }
@@ -170,7 +184,12 @@ export async function POST(req: Request) {
 
   const refreshed = await prisma.site.findUnique({ where: { id: site.id } });
   return NextResponse.json(
-    { site: refreshed ? toClientSite(refreshed as unknown as Record<string, unknown>) : refreshed },
+    {
+      site: refreshed ? toClientSite(refreshed as unknown as Record<string, unknown>) : refreshed,
+      pathWasStripped,
+      hostKey,
+      hint: pathWasStripped ? `We monitor the whole site: ${hostKey}` : undefined,
+    },
     { status: 201 },
   );
 }
