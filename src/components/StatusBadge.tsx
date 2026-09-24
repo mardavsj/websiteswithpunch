@@ -2,9 +2,9 @@ import { cn } from "@/lib/utils";
 
 export function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    up: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-    down: "bg-rose-50 text-rose-700 ring-rose-600/20",
-    error: "bg-amber-50 text-amber-800 ring-amber-600/20",
+    up: "bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-400/15 dark:text-emerald-300 dark:ring-emerald-400/30",
+    down: "bg-rose-50 text-rose-700 ring-rose-600/20 dark:bg-rose-400/15 dark:text-rose-300 dark:ring-rose-400/30",
+    error: "bg-amber-50 text-amber-800 ring-amber-600/20 dark:bg-amber-400/15 dark:text-amber-200 dark:ring-amber-400/30",
     pending: "bg-accent-soft text-muted ring-rule",
   };
   return (
