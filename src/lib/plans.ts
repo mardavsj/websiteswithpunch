@@ -108,6 +108,60 @@ export function isPro(
   return isPaidPlan(plan, stripeStatus);
 }
 
+
+/** Resolve which pack count applies to site limits right now. */
+export function resolvePackCountForLimit(opts: {
+  sitePackCount: number | null | undefined;
+  pendingSitePackCount?: number | null;
+  pendingPackChangeAt?: Date | string | null;
+  now?: Date;
+}): {
+  packCount: number;
+  /** True when a pending removal was due and should be written back to DB. */
+  shouldApplyPending: boolean;
+  /** True when a removal is scheduled for the future. */
+  hasPendingRemoval: boolean;
+} {
+  const paid = Math.max(0, opts.sitePackCount ?? 0);
+  const pending = opts.pendingSitePackCount;
+  const atRaw = opts.pendingPackChangeAt;
+  const at = atRaw ? new Date(atRaw) : null;
+  const now = opts.now ?? new Date();
+
+  if (pending != null && at && !Number.isNaN(at.getTime())) {
+    if (now >= at) {
+      return {
+        packCount: Math.max(0, pending),
+        shouldApplyPending: true,
+        hasPendingRemoval: false,
+      };
+    }
+    // Still in the paid-through period — keep the higher count
+    return {
+      packCount: paid,
+      shouldApplyPending: false,
+      hasPendingRemoval: pending < paid,
+    };
+  }
+
+  return { packCount: paid, shouldApplyPending: false, hasPendingRemoval: false };
+}
+
+/** Site limit using paid-through packs until a pending removal date passes. */
+export function getUserEffectiveSiteLimit(
+  plan: string | null | undefined,
+  sitePackCount: number | null | undefined,
+  pendingSitePackCount?: number | null,
+  pendingPackChangeAt?: Date | string | null,
+): number {
+  const { packCount } = resolvePackCountForLimit({
+    sitePackCount,
+    pendingSitePackCount,
+    pendingPackChangeAt,
+  });
+  return getEffectiveSiteLimit(plan, packCount);
+}
+
 export function stripePriceIdForPlan(planId: "pro" | "business"): string | null {
   if (planId === "business") {
     return process.env.STRIPE_PRICE_ID_BUSINESS || null;
