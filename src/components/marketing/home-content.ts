@@ -88,6 +88,10 @@ export const audiences = [
 
 export const faqs = [
   {
+    q: "What counts as one site?",
+    a: "One site = one host. www and bare domains are the same (www.example.com and example.com). Paths like /topics are dropped — we monitor the whole origin. Other subdomains (blog.example.com, app.example.com) are separate sites.",
+  },
+  {
     q: "How often do checks run?",
     a: "Uptime checks run on a regular schedule so you see recent status and latency on the dashboard. SSL and domain expiry are refreshed so days-remaining stay useful — not stale.",
   },

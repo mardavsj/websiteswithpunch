@@ -9,6 +9,7 @@
 - **Domain expiry** — best-effort RDAP / WHOIS for the root domain
 - **Dashboard** — list sites with status, last check, SSL days, domain days
 - **CRUD** — add / edit / delete monitored sites
+- **One site = one host** — www and paths count as the same site; other subdomains are separate
 - **Auth** — email/password signup + login (NextAuth credentials)
 - **Plans** — Free = 1 site; Pro = 10 sites at **$12/mo**; Business = 50 sites at **$42/mo**
 - **Stripe-ready** — Checkout, Customer Portal, webhook route
