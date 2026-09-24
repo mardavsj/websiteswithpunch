@@ -98,7 +98,7 @@ export function SiteCard({
 
   if (site.locked) {
     return (
-      <article className="rounded-none border border-rule bg-rule/20 p-5 opacity-90">
+      <article className="rounded-none border border-rule bg-surface p-5 opacity-90">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-3">
