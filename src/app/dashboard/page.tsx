@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -11,6 +10,7 @@ import {
 import { SiteCard } from "@/components/SiteCard";
 import { SiteAnalytics } from "@/components/SiteAnalytics";
 import { DashboardPackCta } from "@/components/DashboardPackCta";
+import { DashboardAddSiteButton } from "@/components/DashboardAddSiteButton";
 import { DashboardBanners } from "@/components/DashboardBanners";
 import { DashboardPendingBanner } from "@/components/DashboardPendingBanner";
 import {
@@ -103,18 +103,7 @@ export default async function DashboardPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          {!atLimit ? (
-            <Link
-              href="/dashboard/sites/new"
-              className="rounded-none bg-ink px-4 py-2 text-sm font-medium text-bg hover:opacity-90"
-            >
-              Add site
-            </Link>
-          ) : (
-            <span className="rounded-none border border-rule bg-accent-soft px-4 py-2 text-sm text-muted">
-              Site limit reached
-            </span>
-          )}
+          <DashboardAddSiteButton atLimit={atLimit} />
           <DashboardPackCta plan={plan} sitePackCount={packCount} />
         </div>
       </div>
@@ -178,12 +167,13 @@ export default async function DashboardPage({
           <p className="mt-2 text-sm text-muted">
             Add your first URL to start uptime, SSL, and domain monitoring.
           </p>
-          <Link
-            href="/dashboard/sites/new"
-            className="mt-6 inline-flex rounded-none bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
-          >
-            Add your first site
-          </Link>
+          <div className="mt-6">
+            <DashboardAddSiteButton
+              atLimit={atLimit}
+              label="Add your first site"
+              variant="accent"
+            />
+          </div>
         </div>
       ) : (
         <div className="mt-8 space-y-5">
