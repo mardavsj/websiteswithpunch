@@ -1,157 +1,129 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/components/Toast";
-import { normalizeSiteUrl } from "@/lib/url";
-
-type Site = {
-  id: string;
-  name: string;
-  url: string;
-};
+import { SiteUrlError, normalizeSiteUrl } from "@/lib/url";
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  site: Site;
+  site: { id: string; name: string; url: string } | null;
 };
 
 export function EditSiteModal({ open, onClose, site }: Props) {
   const router = useRouter();
-  const { toast } = useToast();
-  const [name, setName] = useState(site.name);
-  const [url, setUrl] = useState(site.url);
+  const [name, setName] = useState("");
+  const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [hint, setHint] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (open) {
+    if (site) {
       setName(site.name);
       setUrl(site.url);
       setError(null);
+      setHint(null);
     }
-  }, [open, site.name, site.url]);
+  }, [site]);
 
-  useEffect(() => {
-    if (!open) return;
-
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", onKeyDown);
-
-    return () => {
-      document.body.style.overflow = prevOverflow;
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open, onClose]);
-
-  const pathHint = useMemo(() => {
-    try {
-      const n = normalizeSiteUrl(url);
-      if (n.pathWasStripped) return `We monitor the whole site: ${n.hostKey}`;
-    } catch {
-      /* ignore */
-    }
-    return null;
-  }, [url]);
-
-  if (!open) return null;
+  if (!open || !site) return null;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    setLoading(true);
+    if (!site) return;
     setError(null);
+    setHint(null);
+    setLoading(true);
     try {
+      // Cheap client-side suffix / host check before hitting the API.
+      let normalizedUrl = url;
+      try {
+        normalizedUrl = normalizeSiteUrl(url).url;
+      } catch (err) {
+        if (err instanceof SiteUrlError) {
+          setError(err.message);
+          return;
+        }
+        setError("That doesn't look like a real domain.");
+        return;
+      }
+
       const res = await fetch(`/api/sites/${site.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, url }),
+        body: JSON.stringify({ name, url: normalizedUrl }),
       });
       const data = await res.json();
       if (!res.ok) {
-        const msg = data.error || "Something went wrong";
-        if (data.code === "DUPLICATE_SITE" || data.code === "DUPLICATE_URL") {
-          toast(msg, "error");
-        }
-        setError(msg);
+        setError(data.error || "Failed to update");
         return;
       }
-      if (data.hint || data.pathWasStripped) {
-        toast(data.hint || `We monitor the whole site: ${data.hostKey}`, "success");
-      }
-      router.refresh();
+      if (data.hint) setHint(data.hint);
       onClose();
+      router.refresh();
     } catch {
-      setError("Network error");
+      setError("Something went wrong");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-solid/40 p-4"
-      onClick={onClose}
-      role="presentation"
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="edit-site-title"
-        className="w-full max-w-lg rounded-none border border-rule bg-surface p-6 shadow-lg"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 id="edit-site-title" className="mb-5 font-display text-xl font-medium text-ink">
-          Edit site
-        </h2>
-        <form onSubmit={onSubmit} className="space-y-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-xl">
+        <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <label className="block text-sm font-medium text-ink">Site name</label>
+            <h2 className="text-lg font-semibold">Edit site</h2>
+            <p className="mt-1 text-sm text-muted">Update the display name or URL.</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg px-2 py-1 text-sm text-muted hover:bg-bg"
+          >
+            ✕
+          </button>
+        </div>
+
+        <form onSubmit={onSubmit} className="space-y-3">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted">Name</label>
             <input
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Marketing site"
-              className="mt-1.5 w-full rounded-none border border-rule bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm outline-none ring-accent focus:ring-2"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink">URL</label>
+            <label className="mb-1 block text-xs font-medium text-muted">URL</label>
             <input
               required
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://example.com"
-              className="mt-1.5 w-full rounded-none border border-rule bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm outline-none ring-accent focus:ring-2"
             />
-            {pathHint ? (
-              <p className="mt-1 text-xs text-muted">{pathHint}</p>
-            ) : (
-              <p className="mt-1 text-xs text-muted">HTTPS recommended for SSL expiry checks.</p>
-            )}
+            <p className="mt-1 text-[11px] text-muted">
+              Paths are dropped — we monitor the whole site.
+            </p>
           </div>
-          {error && (
-            <div className="rounded-none bg-rose-50 dark:bg-rose-400/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-300">{error}</div>
-          )}
-          <div className="flex gap-3">
-            <button
-              type="submit"
-              disabled={loading}
-              className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-60"
-            >
-              {loading ? "Saving…" : "Save changes"}
-            </button>
+          {error && <p className="text-sm text-down">{error}</p>}
+          {hint && !error && <p className="text-sm text-muted">{hint}</p>}
+          <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-none border border-rule px-4 py-2 text-sm text-ink hover:bg-accent-soft"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-bg"
             >
               Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-60"
+            >
+              {loading ? "Saving…" : "Save"}
             </button>
           </div>
         </form>
