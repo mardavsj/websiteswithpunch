@@ -15,6 +15,7 @@
   /* Always-black band/buttons (hero, CTA, Recheck) — same in light and dark */
   --solid: 216 35% 6%;
   --solid-fg: 45 14% 96%;
+  --danger: 0 72% 45%;
   --background: var(--bg);
   --foreground: var(--ink);
   --border: var(--rule);
@@ -37,6 +38,7 @@
   /* Always-black bands/buttons — identical to light mode */
   --solid: 216 35% 6%;
   --solid-fg: 45 14% 96%;
+  --danger: 0 85% 70%;
   --background: var(--bg);
   --foreground: var(--ink);
   --border: var(--rule);

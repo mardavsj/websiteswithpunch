@@ -24,6 +24,7 @@ const config: Config = {
           soft: "hsl(var(--accent-soft))",
           hover: "hsl(var(--accent-hover))",
         },
+        danger: "hsl(var(--danger))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         border: "hsl(var(--border))",
