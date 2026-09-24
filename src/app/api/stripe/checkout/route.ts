@@ -159,6 +159,8 @@ export async function POST(req: Request) {
         data: {
           plan: planId,
           sitePackCount: 0,
+          pendingSitePackCount: null,
+          pendingPackChangeAt: null,
           stripeStatus: updated.status,
           stripeSubscriptionId: updated.id,
           stripeCustomerId:
