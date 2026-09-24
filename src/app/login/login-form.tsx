@@ -67,7 +67,7 @@ export function LoginForm() {
             className="mt-1.5 w-full rounded-none border border-rule bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           />
         </div>
-        {error && <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
         <button
           type="submit"
           disabled={loading}

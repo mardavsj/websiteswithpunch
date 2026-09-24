@@ -62,7 +62,7 @@ export function ConfirmModal({
         </h2>
         <div className="text-sm text-muted">{children}</div>
         {error && (
-          <div className="mt-3 rounded-none bg-rose-50 dark:bg-rose-400/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-300">
+          <div className="mt-3 rounded-none bg-danger/10 px-3 py-2 text-sm text-danger">
             {error}
           </div>
         )}

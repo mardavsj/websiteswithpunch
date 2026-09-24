@@ -104,7 +104,7 @@ export function ProfileForm({
           className="mt-1 w-full border border-rule bg-bg px-3 py-2 text-sm"
         />
       </div>
-      {error && <p className="text-sm text-rose-700 dark:text-rose-300">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
       <button
         type="submit"
         disabled={busy}
