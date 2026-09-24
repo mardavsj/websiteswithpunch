@@ -10,17 +10,18 @@ import {
 } from "@/lib/plans";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import {
-  derivePlanAndPacks,
   findPackItem,
+  subscriptionPeriodEnd,
 } from "@/lib/stripe-subscription";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Remove one site pack from the existing subscription.
- * No proration / no refund — bill drops from the next renewal.
- * sitePackCount (and site limit) drops immediately.
+ * Schedule removal of one site pack:
+ * - Stripe qty drops now with proration_behavior none (bill drops next renewal)
+ * - sitePackCount stays (paid-through) until pendingPackChangeAt
+ * - pendingSitePackCount = new lower target
  */
 export async function POST() {
   const session = await getSession();
@@ -29,10 +30,7 @@ export async function POST() {
   }
 
   if (!isStripeConfigured()) {
-    return NextResponse.json(
-      { error: "Billing is not configured." },
-      { status: 503 },
-    );
+    return NextResponse.json({ error: "Billing is not configured." }, { status: 503 });
   }
 
   const stripe = getStripe();
@@ -63,75 +61,65 @@ export async function POST() {
 
   const packPlan = plan as PackPlanId;
   const config = getPackConfig(packPlan)!;
-  const currentPacks = user.sitePackCount ?? 0;
-  if (currentPacks <= 0) {
-    return NextResponse.json(
-      { error: "You have no site packs to remove." },
-      { status: 400 },
-    );
+  const paidPacks = user.sitePackCount ?? 0;
+  const currentTarget =
+    user.pendingSitePackCount != null && user.pendingPackChangeAt
+      ? user.pendingSitePackCount
+      : paidPacks;
+
+  if (paidPacks <= 0 && currentTarget <= 0) {
+    return NextResponse.json({ error: "You have no site packs to remove." }, { status: 400 });
   }
 
-  const newPackCount = currentPacks - 1;
-  const newLimit = getEffectiveSiteLimit(packPlan, newPackCount);
-  const siteCount = user._count.sites;
-  if (siteCount > newLimit) {
-    return NextResponse.json(
-      {
-        error: `You have ${siteCount} sites but removing a pack lowers your limit to ${newLimit}. Remove ${siteCount - newLimit} site${siteCount - newLimit === 1 ? "" : "s"} first.`,
-        code: "SITES_EXCEED_LIMIT",
-        siteCount,
-        newLimit,
-      },
-      { status: 409 },
-    );
-  }
+  const nextPending = Math.max(0, currentTarget - 1);
 
   try {
-    const subscription = await stripe.subscriptions.retrieve(
-      user.stripeSubscriptionId,
-    );
+    const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
     const packItem = findPackItem(subscription);
-    if (!packItem) {
-      // Stripe has no pack item — sync local count down anyway
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { sitePackCount: 0 },
-      });
-      return NextResponse.json({ ok: true, sitePackCount: 0 });
+    const periodEnd = subscriptionPeriodEnd(subscription);
+    if (!periodEnd) {
+      return NextResponse.json(
+        { error: "Could not determine your renewal date. Try again or open Manage billing." },
+        { status: 500 },
+      );
     }
 
-    const qty = packItem.quantity ?? 0;
-    const items: Stripe.SubscriptionUpdateParams.Item[] =
-      qty <= 1
-        ? [{ id: packItem.id, deleted: true }]
-        : [{ id: packItem.id, quantity: qty - 1 }];
+    if (packItem) {
+      const qty = packItem.quantity ?? 0;
+      const items: Stripe.SubscriptionUpdateParams.Item[] =
+        qty <= 1
+          ? [{ id: packItem.id, deleted: true }]
+          : [{ id: packItem.id, quantity: qty - 1 }];
 
-    const updated = await stripe.subscriptions.update(subscription.id, {
-      items,
-      proration_behavior: "none",
-    });
+      await stripe.subscriptions.update(subscription.id, {
+        items,
+        proration_behavior: "none",
+      });
+    }
 
-    const derived = derivePlanAndPacks(updated);
+    // Keep sitePackCount (paid-through). Store lower target as pending.
+    const paidThrough = Math.max(paidPacks, currentTarget);
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        sitePackCount: derived.sitePackCount,
-        stripeStatus: updated.status,
+        sitePackCount: paidThrough,
+        pendingSitePackCount: nextPending,
+        pendingPackChangeAt: new Date(periodEnd * 1000),
       },
     });
 
     return NextResponse.json({
       ok: true,
-      sitePackCount: derived.sitePackCount,
+      sitePackCount: paidThrough,
+      pendingSitePackCount: nextPending,
+      pendingPackChangeAt: new Date(periodEnd * 1000).toISOString(),
       sitesPerPack: config.sitesPerPack,
-      message:
-        "Removing a pack lowers your limit now and your bill from the next renewal. No refund for the current month.",
+      keepSiteLimit: getEffectiveSiteLimit(packPlan, paidThrough),
+      newSiteLimitFromRenewal: getEffectiveSiteLimit(packPlan, nextPending),
+      siteCount: user._count.sites,
     });
   } catch (err) {
     console.error("remove-pack error", err);
-    return NextResponse.json(
-      { error: "Could not remove site pack." },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Could not remove site pack." }, { status: 500 });
   }
 }
