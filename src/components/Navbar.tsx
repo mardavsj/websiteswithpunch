@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { GuestMenu } from "@/components/GuestMenu";
 import { NavUpgradeButtons } from "@/components/NavUpgradeButtons";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -34,16 +35,8 @@ export function Navbar() {
             </>
           ) : (
             <>
-              <Link href="/login" className="rounded-none px-3 py-1.5 text-ink hover:bg-accent-soft">
-                Log in
-              </Link>
-              <Link
-                href="/signup"
-                className="rounded-none bg-accent px-3 py-1.5 font-medium text-white hover:bg-accent-hover"
-              >
-                Start free
-              </Link>
               <ThemeToggle />
+              <GuestMenu />
             </>
           )}
         </nav>
