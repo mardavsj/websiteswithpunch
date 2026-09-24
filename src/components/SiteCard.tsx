@@ -98,7 +98,7 @@ export function SiteCard({
 
   if (site.locked) {
     return (
-      <article className="rounded-none border border-rule bg-rule/20 p-5 opacity-90">
+      <article className="rounded-none border border-ink/20 bg-rule/20 p-5 opacity-90">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-3">
@@ -150,7 +150,7 @@ export function SiteCard({
   }
 
   return (
-    <article className="rounded-none border border-rule bg-bg p-5 transition hover:border-ink/20">
+    <article className="rounded-none border border-ink/20 bg-bg p-5 transition hover:border-ink/30">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <h3 className="truncate font-display text-lg font-medium text-ink">{site.name}</h3>

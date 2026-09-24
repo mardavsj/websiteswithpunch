@@ -41,19 +41,9 @@ export function AddSiteModal({ open, onClose }: Props) {
         className="w-full max-w-lg rounded-none border border-rule bg-bg p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-5 flex items-start justify-between gap-3">
-          <h2 id="add-site-title" className="font-display text-xl font-medium text-ink">
-            Add site
-          </h2>
-          <button
-            type="button"
-            aria-label="Close"
-            onClick={onClose}
-            className="rounded-none border border-rule px-2 py-0.5 text-sm text-muted hover:bg-accent-soft"
-          >
-            ×
-          </button>
-        </div>
+        <h2 id="add-site-title" className="mb-5 font-display text-xl font-medium text-ink">
+          Add site
+        </h2>
         <SiteForm
           key="add-site-form"
           mode="create"
