@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getEffectivePlan, getEffectiveSiteLimit, PLANS } from "@/lib/plans";
+import { monthlyTotalDollars } from "@/lib/stripe-subscription";
 import { SiteCard } from "@/components/SiteCard";
 import { SiteAnalytics } from "@/components/SiteAnalytics";
 import { UpgradeCTA } from "@/components/UpgradeCTA";
@@ -34,6 +35,7 @@ export default async function DashboardPage({
   const remaining = Math.max(0, limit - sites.length);
   const showInlineAnalytics = sites.length === 1;
   const planLabel = PLANS[plan].name;
+  const monthlyTotal = monthlyTotalDollars(plan, packCount);
 
   const downNow = sites.filter((s) => s.status === "down" || s.status === "error").length;
   const sslSoon = sites
@@ -84,8 +86,7 @@ export default async function DashboardPage({
       )}
       {searchParams.pack && (
         <div className="mt-6 rounded-none border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-          Site pack purchased. Refresh if your site limit has not updated yet — billing webhooks
-          apply the pack.
+          If you completed a pack payment, your site limit updates automatically — refresh if needed.
         </div>
       )}
       {searchParams.canceled && (
@@ -97,8 +98,10 @@ export default async function DashboardPage({
       <SiteCapacityActions
         plan={plan}
         sitePackCount={packCount}
+        siteCount={sites.length}
         atLimit={atLimit}
         remaining={remaining}
+        monthlyTotal={monthlyTotal}
       />
 
       {sites.length > 1 && (
