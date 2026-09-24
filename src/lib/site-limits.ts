@@ -7,8 +7,6 @@ import {
   type PlanId,
 } from "@/lib/plans";
 
-const SWAP_COOLDOWN_MS = 24 * 60 * 60 * 1000;
-
 export type EnforceResult = {
   limit: number;
   activeCount: number;
@@ -267,85 +265,7 @@ export async function setKeepOnDowngrade(
   return { ok: true };
 }
 
-export function swapCooldownRemaining(
-  lastSiteSwapAt: Date | null | undefined,
-  now = new Date(),
-): number {
-  if (!lastSiteSwapAt) return 0;
-  const elapsed = now.getTime() - lastSiteSwapAt.getTime();
-  return Math.max(0, SWAP_COOLDOWN_MS - elapsed);
-}
-
-/**
- * Immediately change which sites are active (within current limit).
- * Subject to 24h cooldown. Unlocking into a free slot after delete is NOT this path.
- */
-export async function swapActiveSites(
-  userId: string,
-  keepSiteIds: string[],
-): Promise<{ ok: true } | { ok: false; error: string; code?: string; nextAt?: string }> {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) return { ok: false, error: "Unauthorized" };
-
-  const remaining = swapCooldownRemaining(user.lastSiteSwapAt);
-  if (remaining > 0) {
-    const nextAt = new Date(Date.now() + remaining);
-    return {
-      ok: false,
-      error: `You can change this again tomorrow at ${nextAt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}.`,
-      code: "SWAP_COOLDOWN",
-      nextAt: nextAt.toISOString(),
-    };
-  }
-
-  const limit = currentEffectiveLimit(user);
-  const all = await prisma.site.findMany({
-    where: { userId },
-    orderBy: { createdAt: "asc" },
-  });
-  if (all.length === 0) return { ok: true };
-
-  const maxKeep = Math.min(limit, all.length);
-  if (keepSiteIds.length !== maxKeep) {
-    return {
-      ok: false,
-      error: `Select exactly ${maxKeep} site${maxKeep === 1 ? "" : "s"} to keep active.`,
-    };
-  }
-
-  const idSet = new Set(all.map((s) => s.id));
-  for (const id of keepSiteIds) {
-    if (!idSet.has(id)) return { ok: false, error: "Invalid site selection." };
-  }
-
-  const keep = new Set(keepSiteIds);
-  const now = new Date();
-  for (const s of all) {
-    const shouldLock = !keep.has(s.id);
-    if (s.locked !== shouldLock) {
-      await prisma.site.update({
-        where: { id: s.id },
-        data: shouldLock
-          ? { locked: true, lockedAt: now, keepOnDowngrade: false }
-          : { locked: false, lockedAt: null, keepOnDowngrade: false },
-      });
-    } else if (!shouldLock) {
-      await prisma.site.update({
-        where: { id: s.id },
-        data: { keepOnDowngrade: false },
-      });
-    }
-  }
-
-  await prisma.user.update({
-    where: { id: userId },
-    data: { lastSiteSwapAt: now, showDefaultLockNotice: false },
-  });
-
-  return { ok: true };
-}
-
-/** Unlock a single locked site if a free slot exists (no swap cooldown). */
+/** Unlock a single locked site if a free slot exists (delete an active site first if at limit). */
 export async function unlockSiteIfSlot(
   userId: string,
   siteId: string,
@@ -362,7 +282,7 @@ export async function unlockSiteIfSlot(
   if (active >= limit) {
     return {
       ok: false,
-      error: `Your plan includes ${limit} active site${limit === 1 ? "" : "s"}. Remove or lock one first, or upgrade.`,
+      error: `Your plan includes ${limit} active site${limit === 1 ? "" : "s"}. Delete an active site or upgrade to free a slot.`,
       code: "NO_SLOT",
       limit,
     };
