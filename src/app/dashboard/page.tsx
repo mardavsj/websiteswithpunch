@@ -224,6 +224,7 @@ export default async function DashboardPage({
               showAnalyticsLink={!showInlineAnalytics && !site.locked}
               siteLimit={limit}
               canUnlock={Boolean(site.locked) && canUnlock}
+              hasLockedSites={lockedSites.length > 0}
               site={{
                 id: site.id as string,
                 name: site.name as string,
