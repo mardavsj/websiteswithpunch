@@ -38,7 +38,7 @@ export function AddSiteModal({ open, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-site-title"
-        className="w-full max-w-lg rounded-none border border-rule bg-bg p-6 shadow-lg"
+        className="w-full max-w-lg rounded-none border border-rule bg-surface p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="add-site-title" className="mb-5 font-display text-xl font-medium text-ink">

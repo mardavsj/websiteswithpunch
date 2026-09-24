@@ -51,10 +51,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             role="status"
             className={
               t.kind === "success"
-                ? "pointer-events-auto border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-md"
+                ? "pointer-events-auto border border-emerald-200 bg-emerald-50 dark:border-emerald-400/30 dark:bg-emerald-400/10 px-4 py-3 text-sm text-emerald-900 dark:text-emerald-100 shadow-md"
                 : t.kind === "info"
-                  ? "pointer-events-auto border border-rule bg-bg px-4 py-3 text-sm text-ink shadow-md"
-                  : "pointer-events-auto border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 shadow-md"
+                  ? "pointer-events-auto border border-rule bg-surface px-4 py-3 text-sm text-ink shadow-md"
+                  : "pointer-events-auto border border-rose-200 bg-rose-50 dark:border-rose-400/30 dark:bg-rose-400/10 px-4 py-3 text-sm text-rose-800 dark:text-rose-200 shadow-md"
             }
           >
             {t.message}
