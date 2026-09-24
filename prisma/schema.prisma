@@ -8,26 +8,36 @@ datasource db {
 }
 
 model User {
-  id                   String    @id @default(cuid())
-  name                 String?
-  email                String    @unique
-  password             String
-  emailVerified        DateTime?
-  image                String?
-  plan                 String    @default("free") // free | pro | business
-  sitePackCount        Int       @default(0)
+  id                      String    @id @default(cuid())
+  name                    String?
+  email                   String    @unique
+  password                String
+  emailVerified           DateTime?
+  image                   String?
+  plan                    String    @default("free") // free | pro | business (paid-through)
+  sitePackCount           Int       @default(0)
   /// Target pack count after a scheduled removal (applies at pendingPackChangeAt).
-  pendingSitePackCount Int?
+  pendingSitePackCount    Int?
   /// When pendingSitePackCount becomes the live limit (usually next renewal).
-  pendingPackChangeAt  DateTime?
-  stripeCustomerId     String?   @unique
-  stripeSubscriptionId String?   @unique
-  stripeStatus         String?   // active | canceled | past_due | etc
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
-  accounts             Account[]
-  sessions             Session[]
-  sites                Site[]
+  pendingPackChangeAt     DateTime?
+  /// Target plan after a scheduled downgrade/cancel (applies at pendingPlanAt).
+  pendingPlan             String?
+  /// When pendingPlan becomes live (usually next renewal / cancel date).
+  pendingPlanAt           DateTime?
+  /// Mirrors Stripe cancel_at_period_end for dashboard UI.
+  cancelAtPeriodEnd       Boolean   @default(false)
+  /// Last time the user swapped which sites are active (24h cooldown).
+  lastSiteSwapAt          DateTime?
+  /// Show the "we kept your oldest" banner until dismissed.
+  showDefaultLockNotice   Boolean   @default(false)
+  stripeCustomerId        String?   @unique
+  stripeSubscriptionId    String?   @unique
+  stripeStatus            String?   // active | canceled | past_due | etc
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  accounts                Account[]
+  sessions                Session[]
+  sites                   Site[]
 }
 
 model Account {
@@ -77,6 +87,11 @@ model Site {
   sslDaysLeft     Int?
   domainExpiresAt DateTime?
   domainDaysLeft  Int?
+  /// Not monitored; metrics hidden from client until unlocked.
+  locked          Boolean       @default(false)
+  lockedAt        DateTime?
+  /// Marked to stay active when a pending limit reduction applies.
+  keepOnDowngrade Boolean       @default(false)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -84,6 +99,7 @@ model Site {
 
   @@unique([userId, url])
   @@index([userId])
+  @@index([userId, locked])
 }
 
 model CheckResult {
