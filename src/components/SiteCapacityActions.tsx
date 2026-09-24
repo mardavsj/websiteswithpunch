@@ -1,40 +1,87 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PlanId } from "@/lib/plans";
-import { PLANS, SITE_PACKS, canBuySitePack, getEffectiveSiteLimit } from "@/lib/plans";
+import { PLANS, SITE_PACKS, canBuySitePack } from "@/lib/plans";
 import { useToast } from "@/components/Toast";
-import { AddPackModal, RemovePackModal } from "@/components/PackBillingModals";
+import {
+  AddPackModal,
+  RemovePackModal,
+  UpgradePlanModal,
+} from "@/components/PackBillingModals";
+
+type BillingSummary = {
+  plan: PlanId;
+  planName: string;
+  sitePackCount: number;
+  siteLimit: number;
+  monthlyTotalFormatted: string;
+  nextPaymentDateFormatted: string | null;
+  hasPendingRemoval: boolean;
+  pendingSitesToRemove: number;
+  pendingPackChangeAtFormatted: string | null;
+};
 
 type Props = {
   plan: PlanId;
   sitePackCount: number;
   siteCount: number;
+  siteLimit: number;
   atLimit: boolean;
   remaining: number;
-  monthlyTotal: number;
+  overLimit: boolean;
 };
 
 export function SiteCapacityActions({
   plan,
   sitePackCount,
   siteCount,
+  siteLimit,
   atLimit,
   remaining,
-  monthlyTotal,
+  overLimit,
 }: Props) {
   const router = useRouter();
   const { toast } = useToast();
-  const [loading, setLoading] = useState<"pack" | "business" | "remove" | null>(null);
+  const [loading, setLoading] = useState<"pack" | "business" | "remove" | "undo" | null>(
+    null,
+  );
   const [message, setMessage] = useState<string | null>(null);
-  const [modal, setModal] = useState<"add" | "remove" | null>(null);
+  const [modal, setModal] = useState<"add" | "remove" | "upgrade" | null>(null);
+  const [summary, setSummary] = useState<BillingSummary | null>(null);
 
   const showBilling = plan === "pro" || plan === "business";
   const pack = showBilling ? SITE_PACKS[plan] : null;
-  const canBuy = showBilling && canBuySitePack(plan, sitePackCount);
-  const showSoftBanner = showBilling && !atLimit && remaining <= 2;
-  const canRemove = showBilling && sitePackCount > 0;
+
+  const loadSummary = useCallback(async () => {
+    if (!showBilling) return;
+    try {
+      const res = await fetch("/api/stripe/billing-summary");
+      if (!res.ok) return;
+      const data = (await res.json()) as BillingSummary;
+      setSummary(data);
+    } catch {
+      // omit gracefully
+    }
+  }, [showBilling]);
+
+  useEffect(() => {
+    void loadSummary();
+  }, [loadSummary, sitePackCount]);
+
+  const hasPending = summary?.hasPendingRemoval ?? false;
+  const pendingSites = summary?.pendingSitesToRemove ?? 0;
+  const pendingDate = summary?.pendingPackChangeAtFormatted;
+  const effectivePacks = summary?.sitePackCount ?? sitePackCount;
+  const effectiveLimit = summary?.siteLimit ?? siteLimit;
+
+  // If we've scheduled all packs away, pendingSites === effectivePacks * sitesPerPack.
+  const allPacksScheduledAway =
+    hasPending && pendingSites >= effectivePacks * (pack?.sitesPerPack || 5);
+  const canBuy = showBilling && (hasPending || canBuySitePack(plan, effectivePacks));
+  const showSoftBanner = showBilling && !atLimit && !overLimit && remaining <= 2;
+  const canRemove = showBilling && effectivePacks > 0 && !allPacksScheduledAway;
 
   if (!showBilling) return null;
 
@@ -55,9 +102,12 @@ export function SiteCapacityActions({
       }
       setModal(null);
       toast(
-        `Site pack added (+${data.sitesPerPack ?? pack?.sitesPerPack ?? 5} sites).`,
+        data.undone
+          ? "Pack removal canceled. Your sites stay on your plan."
+          : `Added ${data.sitesPerPack ?? pack?.sitesPerPack ?? 5} sites.`,
         "success",
       );
+      await loadSummary();
       router.refresh();
     } catch {
       setMessage("Could not add site pack.");
@@ -79,7 +129,11 @@ export function SiteCapacityActions({
         return;
       }
       setModal(null);
-      toast("Site pack removed. Limit updated; bill updates next renewal.", "success");
+      toast(
+        `Removal scheduled. You keep your sites until the end of the month you've paid for.`,
+        "success",
+      );
+      await loadSummary();
       router.refresh();
     } catch {
       setMessage("Could not remove site pack.");
@@ -89,7 +143,27 @@ export function SiteCapacityActions({
     }
   }
 
-  async function upgradeBusiness() {
+  async function undoPendingRemoval() {
+    setLoading("undo");
+    setMessage(null);
+    try {
+      const res = await fetch("/api/stripe/checkout-pack", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        toast(data.error || "Could not undo.", "error");
+        return;
+      }
+      toast("Pack removal canceled.", "success");
+      await loadSummary();
+      router.refresh();
+    } catch {
+      toast("Could not undo.", "error");
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  async function confirmUpgrade() {
     setLoading("business");
     setMessage(null);
     try {
@@ -108,7 +182,9 @@ export function SiteCapacityActions({
         return;
       }
       if (data.ok) {
+        setModal(null);
         toast("Upgraded to Business.", "success");
+        await loadSummary();
         router.refresh();
         return;
       }
@@ -122,6 +198,11 @@ export function SiteCapacityActions({
     }
   }
 
+  const nextPaymentLine =
+    summary?.nextPaymentDateFormatted && summary.monthlyTotalFormatted
+      ? `Next payment: ${summary.monthlyTotalFormatted.replace("/month", "")} on ${summary.nextPaymentDateFormatted}`
+      : null;
+
   return (
     <div className="mt-6 space-y-3">
       <div className="rounded-none border border-rule bg-bg px-4 py-4">
@@ -130,14 +211,35 @@ export function SiteCapacityActions({
           <div>
             <p className="font-display text-lg font-medium text-ink">
               {PLANS[plan].name}
-              {sitePackCount > 0
-                ? ` · ${sitePackCount} pack${sitePackCount === 1 ? "" : "s"}`
+              {effectivePacks > 0
+                ? ` · ${effectivePacks} pack${effectivePacks === 1 ? "" : "s"}`
                 : ""}
             </p>
             <p className="mt-0.5 text-sm text-muted">
-              {siteCount}/{getEffectiveSiteLimit(plan, sitePackCount)} sites · ${monthlyTotal}/mo ·
-              one bill, same renewal date
+              {siteCount}/{effectiveLimit} sites
+              {summary?.monthlyTotalFormatted
+                ? ` · ${summary.monthlyTotalFormatted}`
+                : ""}
             </p>
+            {nextPaymentLine && (
+              <p className="mt-0.5 text-sm text-muted">{nextPaymentLine}</p>
+            )}
+            {hasPending && pendingSites > 0 && pendingDate && (
+              <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-amber-900">
+                <span>
+                  {pendingSites} site{pendingSites === 1 ? "" : "s"} will be removed on{" "}
+                  {pendingDate}
+                </span>
+                <button
+                  type="button"
+                  onClick={undoPendingRemoval}
+                  disabled={loading !== null}
+                  className="rounded-none border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-950 hover:bg-amber-100 disabled:opacity-60"
+                >
+                  {loading === "undo" ? "Working…" : "Undo"}
+                </button>
+              </p>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
             {canBuy && (
@@ -157,30 +259,39 @@ export function SiteCapacityActions({
                 disabled={loading !== null}
                 className="rounded-none border border-rule bg-bg px-3 py-1.5 text-sm font-medium text-ink hover:bg-accent-soft disabled:opacity-60"
               >
-                Remove a pack
+                Remove {pack!.sitesPerPack} sites
               </button>
             )}
           </div>
         </div>
       </div>
 
+      {overLimit && (
+        <div className="rounded-none border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          You have {siteCount} sites but your plan now includes {effectiveLimit}. Remove{" "}
+          {siteCount - effectiveLimit} site{siteCount - effectiveLimit === 1 ? "" : "s"} or
+          add a pack. Existing sites keep monitoring; you can&apos;t add new ones until
+          you&apos;re within your limit.
+        </div>
+      )}
+
       {showSoftBanner && (
         <div className="rounded-none border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Only {remaining} site slot{remaining === 1 ? "" : "s"} left on {PLANS[plan].name}.{" "}
           {canBuy
-            ? `Add a +${pack!.sitesPerPack} site pack for $${pack!.pricePerMonth}/mo when you need more — charged to your existing subscription.`
+            ? `Add a +${pack!.sitesPerPack} site pack for $${pack!.pricePerMonth}/mo when you need more.`
             : plan === "pro"
               ? "Upgrade to Business for more capacity."
               : "Contact hello@websiteswithpunch.com for custom limits."}
         </div>
       )}
 
-      {atLimit && (
+      {atLimit && !overLimit && (
         <div className="rounded-none border border-rule bg-accent-soft px-4 py-4">
           <p className="text-sm font-medium text-ink">Site limit reached ({PLANS[plan].name})</p>
           <p className="mt-1 text-sm text-muted">
             {canBuy
-              ? `Add a +${pack!.sitesPerPack} site pack ($${pack!.pricePerMonth}/mo) to your subscription — prorated today, then one monthly bill.`
+              ? `Add a +${pack!.sitesPerPack} site pack ($${pack!.pricePerMonth}/mo) to your subscription.`
               : plan === "pro"
                 ? "You've used all Pro packs (30 sites). Upgrade to Business for up to 50 sites plus packs."
                 : "You've used all Business packs (100 sites). Contact hello@websiteswithpunch.com for a custom limit."}
@@ -199,13 +310,11 @@ export function SiteCapacityActions({
             {plan === "pro" && (
               <button
                 type="button"
-                onClick={upgradeBusiness}
+                onClick={() => setModal("upgrade")}
                 disabled={loading !== null}
                 className="rounded-none border border-rule bg-bg px-4 py-2 text-sm font-medium text-ink hover:bg-white disabled:opacity-60"
               >
-                {loading === "business"
-                  ? "Working…"
-                  : `Upgrade to Business — $${PLANS.business.price}/mo`}
+                Upgrade to Business — ${PLANS.business.price}/mo
               </button>
             )}
             {plan === "business" && (
@@ -232,13 +341,17 @@ export function SiteCapacityActions({
       <RemovePackModal
         open={modal === "remove"}
         plan={plan}
-        sitePackCount={sitePackCount}
-        siteCount={siteCount}
-        monthlyTotal={monthlyTotal}
         loading={loading === "remove"}
         message={message}
         onClose={() => setModal(null)}
         onConfirm={confirmRemovePack}
+      />
+      <UpgradePlanModal
+        open={modal === "upgrade"}
+        loading={loading === "business"}
+        message={message}
+        onClose={() => setModal(null)}
+        onConfirm={confirmUpgrade}
       />
     </div>
   );
