@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 
 export function ProfileMenu() {
   const { data: session } = useSession();
@@ -95,8 +95,17 @@ export function ProfileMenu() {
             onClick={() => setOpen(false)}
             className="block px-3 py-2 text-sm text-ink hover:bg-accent-soft"
           >
-            Plan details
+            My Plan
           </Link>
+          <div className="my-1 border-t border-rule" role="separator" />
+          <button
+            role="menuitem"
+            type="button"
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="block w-full px-3 py-2 text-left text-sm text-ink hover:bg-accent-soft"
+          >
+            Sign out
+          </button>
         </div>
       )}
     </div>

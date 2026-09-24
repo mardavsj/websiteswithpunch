@@ -33,7 +33,7 @@ export function DashboardPendingBanner({
     <div className="mt-6 rounded-none border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
       <p>{lines.join(" ")}</p>
       <Link href="/plan" className="mt-2 inline-block font-medium underline underline-offset-2">
-        Manage on Plan details
+        Manage on My Plan
       </Link>
     </div>
   );

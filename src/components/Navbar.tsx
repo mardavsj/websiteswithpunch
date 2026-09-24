@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { NavUpgradeButtons } from "@/components/NavUpgradeButtons";
 import { ProfileMenu } from "@/components/ProfileMenu";
 
@@ -26,13 +26,6 @@ export function Navbar() {
           {status === "loading" ? null : session ? (
             <>
               <NavUpgradeButtons />
-              <button
-                type="button"
-                onClick={() => signOut({ callbackUrl: "/" })}
-                className="rounded-none border border-rule px-3 py-1.5 text-ink hover:bg-accent-soft"
-              >
-                Sign out
-              </button>
               <ProfileMenu />
             </>
           ) : (
