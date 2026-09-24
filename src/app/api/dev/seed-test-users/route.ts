@@ -40,6 +40,13 @@ export async function POST(req: Request) {
           password,
           plan: u.plan,
           stripeStatus: "active",
+          sitePackCount: 0,
+          pendingSitePackCount: null,
+          pendingPackChangeAt: null,
+          pendingPlan: null,
+          pendingPlanAt: null,
+          cancelAtPeriodEnd: false,
+          showDefaultLockNotice: false,
         },
         create: {
           email: u.email,

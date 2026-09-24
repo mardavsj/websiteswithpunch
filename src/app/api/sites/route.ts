@@ -149,6 +149,10 @@ export async function POST(req: Request) {
         lastCheckedAt: new Date(),
         lastStatusCode: result.uptime.statusCode,
         lastLatencyMs: result.uptime.latencyMs,
+        sslExpiresAt: result.ssl.expiresAt,
+        sslDaysLeft: result.ssl.daysLeft,
+        domainExpiresAt: result.domain.expiresAt,
+        domainDaysLeft: result.domain.daysLeft,
       },
     });
     await prisma.checkResult.create({
