@@ -21,6 +21,11 @@ import {
   formatMonthlyFromCents,
   formatShortDate,
 } from "@/lib/billing-format";
+import {
+  applyDuePendingAndEnforce,
+  pendingTargetLimit,
+  swapCooldownRemaining,
+} from "@/lib/site-limits";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,6 +37,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  await applyDuePendingAndEnforce(session.user.id);
   const user = await prisma.user.findUnique({ where: { id: session.user.id } });
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -162,5 +168,17 @@ export async function GET() {
       ? formatShortDate(user.pendingPackChangeAt)
       : null,
     pendingSitesToRemove: pendingSites,
+    cancelAtPeriodEnd: user.cancelAtPeriodEnd,
+    pendingPlan: user.pendingPlan,
+    pendingPlanAt: user.pendingPlanAt?.toISOString() ?? null,
+    pendingPlanAtFormatted: user.pendingPlanAt
+      ? formatShortDate(user.pendingPlanAt)
+      : null,
+    pendingTargetLimit: pendingTargetLimit(user),
+    showDefaultLockNotice: user.showDefaultLockNotice,
+    stripeStatus: user.stripeStatus,
+    paymentFailed: user.stripeStatus === "past_due",
+    swapCooldownMs: swapCooldownRemaining(user.lastSiteSwapAt),
+    lastSiteSwapAt: user.lastSiteSwapAt?.toISOString() ?? null,
   });
 }
