@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { PlanId } from "@/lib/plans";
 import { PLANS } from "@/lib/plans";
 import { useToast } from "@/components/Toast";
-import { UpgradePlanModal } from "@/components/PackBillingModals";
+import { UpgradePlanModal } from "@/components/UpgradePlanModal";
 
 export function UpgradeCTA({ plan }: { plan: PlanId | string }) {
   const router = useRouter();
