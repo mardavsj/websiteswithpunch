@@ -99,17 +99,20 @@ On Vercel, add a Cron Job hitting `/api/cron/check` with the secret header. Else
 
    Put the webhook signing secret in `STRIPE_WEBHOOK_SECRET`.
 
-4. Events handled: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`.
+4. Events handled: `checkout.session.completed`, `customer.subscription.created/updated/deleted`, `invoice.paid`, `invoice.payment_failed`.
 5. Enable Customer Portal in Stripe settings for “Manage billing”. Prefer **not** allowing customers to edit subscription item quantities in the portal (packs are managed in-app with site-limit checks).
 
 ### Billing model (single subscription)
 
 Each customer has **one** Stripe subscription with **one** renewal date:
 
-- **Plan** (Pro / Business) is the base subscription item.
-- **Site packs** are additional line items on the **same** subscription (quantity = pack count). Adding a pack prorates and invoices immediately; removing a pack uses `proration_behavior: none` (limit drops now, bill drops next renewal, no refund).
-- **Cancel** ends plan + packs together. Webhooks derive `plan` and `sitePackCount` from subscription items (idempotent), not increment/decrement counters.
-- First-time purchase and pay-before-signup still use Checkout Sessions; existing subscribers upgrading Pro → Business are updated **in place** (pack items removed, `sitePackCount` → 0).
+- **Upgrades** (Free→Pro/Business, Pro→Business, pack add) take effect **immediately** (Stripe charges the rest of the current month when applicable).
+- **Downgrades & cancel** take effect at **period end**: Business→Pro and cancel use `proration_behavior: none` / `cancel_at_period_end` so the bill drops next renewal with no refund. The user keeps their current site limit until then.
+- **Site packs** are line items on the same subscription. Removing a pack lowers Stripe quantity now (`proration_behavior: none`) but the paid-through pack count stays until renewal; over-limit sites are then **locked** (not deleted, not monitored).
+- **Site locking**: active (unlocked) sites count toward the limit. Locked sites keep history but skip cron checks; APIs hide metrics (`SITE_LOCKED`). Users choose which sites stay active when a reduction is scheduled; otherwise the oldest stay active.
+- **Cancel / Resume** are in-app (`cancel_at_period_end`). Portal cancels are mirrored via webhook. **past_due** keeps sites active (grace) with a dashboard banner.
+- Webhooks are idempotent: derive plan/packs from Stripe, apply due pending changes, then `enforceSiteLimit`.
+- Prefer **Customer Portal** settings: allow cancel at period end; **disable** plan switching and quantity edits in the portal (handled in-app with keep-site pickers).
 
 Without Stripe keys the product still demos fully for Free-plan monitoring.
 
