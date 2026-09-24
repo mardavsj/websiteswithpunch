@@ -65,7 +65,7 @@ export function DeleteSiteButton({
         }}
         className={
           className ||
-          "rounded-none border border-rose-200 px-3 py-1.5 text-xs font-medium text-ink hover:bg-rose-50 disabled:opacity-50"
+          "rounded-none bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:bg-red-400"
         }
       >
         Delete

@@ -75,7 +75,7 @@ export function ProfileMenu() {
             role="menuitem"
             href="/profile"
             onClick={() => setOpen(false)}
-            className="block px-3 py-2 text-sm text-ink hover:bg-accent-soft"
+            className="block px-3 py-2 text-sm text-ink hover:bg-accent-soft focus:bg-accent-soft"
           >
             Profile
           </Link>
@@ -84,7 +84,7 @@ export function ProfileMenu() {
               role="menuitem"
               type="button"
               onClick={openPortal}
-              className="block w-full px-3 py-2 text-left text-sm text-ink hover:bg-accent-soft"
+              className="block w-full px-3 py-2 text-left text-sm text-ink hover:bg-accent-soft focus:bg-accent-soft"
             >
               Manage billing
             </button>
@@ -93,7 +93,7 @@ export function ProfileMenu() {
             role="menuitem"
             href="/plan"
             onClick={() => setOpen(false)}
-            className="block px-3 py-2 text-sm text-ink hover:bg-accent-soft"
+            className="block px-3 py-2 text-sm text-ink hover:bg-accent-soft focus:bg-accent-soft"
           >
             My Plan
           </Link>
@@ -102,7 +102,7 @@ export function ProfileMenu() {
             role="menuitem"
             type="button"
             onClick={() => signOut({ callbackUrl: "/" })}
-            className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
+            className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 focus:bg-red-50 active:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40 dark:focus:bg-red-950/40 dark:active:bg-red-950/40"
           >
             Sign out
           </button>
