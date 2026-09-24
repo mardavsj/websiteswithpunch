@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { StatusBadge } from "./StatusBadge";
 import { EditSiteModal } from "./EditSiteModal";
+import { DeleteSiteButton } from "./DeleteSiteButton";
 import { formatDate } from "@/lib/utils";
 
 type Site = {
@@ -68,22 +69,6 @@ export function SiteCard({
   const [editOpen, setEditOpen] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  async function remove() {
-    let message: string;
-    if (site.locked) {
-      message = `Delete ${site.name}? This removes it and its saved history for good.`;
-    } else if (hasLockedSites) {
-      message = `Delete ${site.name}? This removes the site and all its history for good. You'll get 1 free slot to add a new site or unlock one of your locked sites.`;
-    } else {
-      message = `Delete ${site.name}? This cannot be undone.`;
-    }
-    if (!confirm(message)) return;
-    setBusy(true);
-    await fetch(`/api/sites/${site.id}`, { method: "DELETE" });
-    router.refresh();
-    setBusy(false);
-  }
-
   async function recheck() {
     setBusy(true);
     await fetch(`/api/sites/${site.id}`, {
@@ -142,14 +127,13 @@ export function SiteCard({
                 Unlock
               </button>
             )}
-            <button
-              type="button"
+            <DeleteSiteButton
+              siteId={site.id}
+              siteName={site.name}
+              locked
+              hasLockedSites={hasLockedSites}
               disabled={busy}
-              onClick={remove}
-              className="rounded-none border border-rose-200 px-3 py-1.5 text-xs font-medium text-ink hover:bg-rose-50 disabled:opacity-50"
-            >
-              Delete
-            </button>
+            />
           </div>
         </div>
       </article>
@@ -214,13 +198,12 @@ export function SiteCard({
         >
           Edit
         </button>
-        <button
-          onClick={remove}
+        <DeleteSiteButton
+          siteId={site.id}
+          siteName={site.name}
+          hasLockedSites={hasLockedSites}
           disabled={busy}
-          className="rounded-none border border-rose-200 px-3 py-1.5 text-xs font-medium text-ink hover:bg-rose-50 disabled:opacity-50"
-        >
-          Delete
-        </button>
+        />
       </div>
 
       <EditSiteModal
