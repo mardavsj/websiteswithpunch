@@ -15,6 +15,7 @@ import {
   currentEffectiveLimit,
   toClientSite,
 } from "@/lib/site-limits";
+import { assertHostnameResolves } from "@/lib/dns-check";
 import {
   SiteUrlError,
   findSiteByHostKey,
@@ -91,15 +92,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid name or URL" }, { status: 400 });
   }
 
+  // 1) normalize (+ ICANN suffix check)
   let normalized;
   try {
     normalized = normalizeSiteUrl(parsed.data.url);
   } catch (err) {
-    const msg = err instanceof SiteUrlError ? err.message : "Invalid URL";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    if (err instanceof SiteUrlError) {
+      return NextResponse.json({ error: err.message, code: err.code }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
   }
   const { url, hostKey, pathWasStripped } = normalized;
 
+  // 2) duplicate by hostKey
   const userSites = await prisma.site.findMany({
     where: { userId: user.id },
     select: { id: true, url: true, locked: true },
@@ -127,6 +132,20 @@ export async function POST(req: Request) {
     );
   }
 
+  // 3) DNS existence (block only on definitive NXDOMAIN)
+  const dns = await assertHostnameResolves(hostKey);
+  if (!dns.ok) {
+    return NextResponse.json(
+      {
+        error: `We couldn't find ${dns.host}. Check the spelling.`,
+        code: "DOMAIN_NOT_FOUND",
+        hostKey: dns.host,
+      },
+      { status: 400 },
+    );
+  }
+
+  // 4) create
   let site;
   try {
     site = await prisma.site.create({
