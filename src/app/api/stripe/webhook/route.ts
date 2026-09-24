@@ -3,36 +3,26 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
-import {
-  getPackConfig,
-  isPackPriceId,
-  planIdFromStripePriceId,
-  type PlanId,
-} from "@/lib/plans";
+import type { PlanId } from "@/lib/plans";
 import { upsertUserFromPaidSignupSession } from "@/lib/complete-paid-signup";
+import {
+  derivePlanAndPacks,
+  isLegacyPackOnlySubscription,
+} from "@/lib/stripe-subscription";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function isSitePackSubscription(subscription: Stripe.Subscription): boolean {
-  if (subscription.metadata?.type === "site_pack") return true;
-  const priceId = subscription.items.data[0]?.price?.id;
-  return isPackPriceId(priceId);
-}
-
-function resolvePlanId(subscription: Stripe.Subscription): PlanId {
-  const fromMeta = subscription.metadata?.planId;
-  if (fromMeta === "business" || fromMeta === "pro") return fromMeta;
-  const priceId = subscription.items.data[0]?.price?.id;
-  return planIdFromStripePriceId(priceId);
-}
-
-async function setPaid(userId: string, subscription: Stripe.Subscription) {
-  const plan = resolvePlanId(subscription);
+async function syncFromSubscription(
+  userId: string,
+  subscription: Stripe.Subscription,
+) {
+  const { plan, sitePackCount } = derivePlanAndPacks(subscription);
   await prisma.user.update({
     where: { id: userId },
     data: {
       plan,
+      sitePackCount,
       stripeSubscriptionId: subscription.id,
       stripeStatus: subscription.status,
       stripeCustomerId:
@@ -48,40 +38,33 @@ async function setFree(userId: string, status?: string) {
     where: { id: userId },
     data: {
       plan: "free",
+      sitePackCount: 0,
       stripeStatus: status || "canceled",
       stripeSubscriptionId: null,
     },
   });
 }
 
-async function incrementSitePack(userId: string, packPlan: string | undefined) {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) return;
+async function resolveUserId(
+  subscription: Stripe.Subscription,
+): Promise<string | undefined> {
+  if (subscription.metadata?.userId) return subscription.metadata.userId;
 
-  const planKey =
-    packPlan === "business" || packPlan === "pro"
-      ? packPlan
-      : user.plan === "business" || user.plan === "pro"
-        ? user.plan
-        : null;
-  const config = getPackConfig(planKey);
-  const maxPacks = config?.maxPacks ?? 0;
-  const next = Math.min((user.sitePackCount ?? 0) + 1, maxPacks);
-
-  await prisma.user.update({
-    where: { id: userId },
-    data: { sitePackCount: next },
+  const byCustomer = await prisma.user.findFirst({
+    where: { stripeCustomerId: String(subscription.customer) },
   });
-}
+  if (byCustomer) return byCustomer.id;
 
-async function decrementSitePack(userId: string) {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) return;
-  const next = Math.max(0, (user.sitePackCount ?? 0) - 1);
-  await prisma.user.update({
-    where: { id: userId },
-    data: { sitePackCount: next },
-  });
+  if (subscription.metadata?.email) {
+    const byEmail = await prisma.user.findUnique({
+      where: {
+        email: subscription.metadata.email.toLowerCase().trim(),
+      },
+    });
+    return byEmail?.id;
+  }
+
+  return undefined;
 }
 
 export async function POST(req: Request) {
@@ -120,16 +103,12 @@ export async function POST(req: Request) {
           break;
         }
 
-        // Site pack add-on (does not change plan)
+        // Legacy pack-only Checkout — ignore counters; packs now live on the main sub
         if (session.metadata?.type === "site_pack") {
-          const userId = session.metadata.userId;
-          if (userId) {
-            await incrementSitePack(userId, session.metadata.packPlan);
-          }
           break;
         }
 
-        // Existing logged-in upgrade flow
+        // Existing logged-in upgrade / first Checkout purchase
         const userId = session.metadata?.userId;
         if (userId && session.subscription) {
           const subId =
@@ -137,75 +116,87 @@ export async function POST(req: Request) {
               ? session.subscription
               : session.subscription.id;
           const subscription = await stripe.subscriptions.retrieve(subId);
-          if (session.metadata?.planId === "business" || session.metadata?.planId === "pro") {
-            subscription.metadata = {
-              ...subscription.metadata,
-              planId: session.metadata.planId,
-            };
+          if (
+            session.metadata?.planId === "business" ||
+            session.metadata?.planId === "pro"
+          ) {
+            // Ensure metadata carries planId for future syncs
+            if (subscription.metadata?.planId !== session.metadata.planId) {
+              await stripe.subscriptions.update(subId, {
+                metadata: {
+                  ...subscription.metadata,
+                  userId,
+                  planId: session.metadata.planId,
+                },
+              });
+              subscription.metadata = {
+                ...subscription.metadata,
+                userId,
+                planId: session.metadata.planId,
+              };
+            }
           }
-          await setPaid(userId, subscription);
+          await syncFromSubscription(userId, subscription);
+          // Prefer explicit Checkout planId when present
+          if (
+            session.metadata?.planId === "business" ||
+            session.metadata?.planId === "pro"
+          ) {
+            await prisma.user.update({
+              where: { id: userId },
+              data: { plan: session.metadata.planId as PlanId },
+            });
+          }
         }
         break;
       }
+      case "customer.subscription.created":
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
 
-        // Pack subscriptions must never overwrite plan / stripeSubscriptionId
-        if (isSitePackSubscription(subscription)) {
+        // Legacy separate pack subscriptions must never overwrite plan / packs
+        if (isLegacyPackOnlySubscription(subscription)) {
           break;
         }
 
-        let userId =
-          subscription.metadata?.userId ||
-          (
-            await prisma.user.findFirst({
-              where: { stripeCustomerId: String(subscription.customer) },
-            })
-          )?.id;
+        const userId = await resolveUserId(subscription);
+        if (!userId) break;
 
-        // Signup flow may only have email on subscription metadata
-        if (!userId && subscription.metadata?.email) {
-          userId = (
-            await prisma.user.findUnique({
-              where: { email: subscription.metadata.email.toLowerCase().trim() },
-            })
-          )?.id;
-        }
-
-        if (userId) {
-          if (subscription.status === "active" || subscription.status === "trialing") {
-            await setPaid(userId, subscription);
-          } else if (
-            subscription.status === "canceled" ||
-            subscription.status === "unpaid" ||
-            subscription.status === "incomplete_expired"
+        if (subscription.status === "active" || subscription.status === "trialing") {
+          await syncFromSubscription(userId, subscription);
+        } else if (
+          subscription.status === "canceled" ||
+          subscription.status === "unpaid" ||
+          subscription.status === "incomplete_expired"
+        ) {
+          // Only wipe if this is the user's current main subscription
+          const user = await prisma.user.findUnique({ where: { id: userId } });
+          if (
+            !user?.stripeSubscriptionId ||
+            user.stripeSubscriptionId === subscription.id
           ) {
             await setFree(userId, subscription.status);
-          } else {
-            await prisma.user.update({
-              where: { id: userId },
-              data: {
-                stripeStatus: subscription.status,
-                stripeSubscriptionId: subscription.id,
-              },
-            });
           }
+        } else {
+          // past_due, incomplete, etc. — keep plan but sync status + packs from items
+          const { sitePackCount, plan } = derivePlanAndPacks(subscription);
+          await prisma.user.update({
+            where: { id: userId },
+            data: {
+              plan,
+              sitePackCount,
+              stripeStatus: subscription.status,
+              stripeSubscriptionId: subscription.id,
+            },
+          });
         }
         break;
       }
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
 
-        // Pack-only cancel: decrement pack count, never wipe plan
-        if (isSitePackSubscription(subscription)) {
-          const userId =
-            subscription.metadata?.userId ||
-            (
-              await prisma.user.findFirst({
-                where: { stripeCustomerId: String(subscription.customer) },
-              })
-            )?.id;
-          if (userId) await decrementSitePack(userId);
+        // Legacy pack-only cancel: ignore (do not wipe plan or decrement)
+        if (isLegacyPackOnlySubscription(subscription)) {
           break;
         }
 
@@ -217,7 +208,15 @@ export async function POST(req: Request) {
             ],
           },
         });
-        if (user) await setFree(user.id, "canceled");
+        if (!user) break;
+
+        // Only clear if this deleted sub is (or was) the user's main subscription
+        if (
+          !user.stripeSubscriptionId ||
+          user.stripeSubscriptionId === subscription.id
+        ) {
+          await setFree(user.id, "canceled");
+        }
         break;
       }
       default:
