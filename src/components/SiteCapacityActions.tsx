@@ -23,6 +23,8 @@ type BillingSummary = {
   pendingPackChangeAtFormatted: string | null;
 };
 
+type KeepSiteOption = { id: string; name: string; url: string; createdAt: string };
+
 type Props = {
   plan: PlanId;
   sitePackCount: number;
@@ -30,7 +32,12 @@ type Props = {
   siteLimit: number;
   atLimit: boolean;
   remaining: number;
-  overLimit: boolean;
+  overLimit?: boolean;
+  keepOptions?: KeepSiteOption[];
+  allSiteOptions?: (KeepSiteOption & { locked?: boolean })[];
+  cancelAtPeriodEnd?: boolean;
+  pendingPlan?: string | null;
+  pendingPlanAt?: string | null;
 };
 
 export function SiteCapacityActions({
@@ -40,7 +47,7 @@ export function SiteCapacityActions({
   siteLimit,
   atLimit,
   remaining,
-  overLimit,
+  overLimit = false,
 }: Props) {
   const router = useRouter();
   const { toast } = useToast();
@@ -76,7 +83,6 @@ export function SiteCapacityActions({
   const effectivePacks = summary?.sitePackCount ?? sitePackCount;
   const effectiveLimit = summary?.siteLimit ?? siteLimit;
 
-  // If we've scheduled all packs away, pendingSites === effectivePacks * sitesPerPack.
   const allPacksScheduledAway =
     hasPending && pendingSites >= effectivePacks * (pack?.sitesPerPack || 5);
   const canBuy = showBilling && (hasPending || canBuySitePack(plan, effectivePacks));
@@ -227,7 +233,7 @@ export function SiteCapacityActions({
             {hasPending && pendingSites > 0 && pendingDate && (
               <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-amber-900">
                 <span>
-                  {pendingSites} site{pendingSites === 1 ? "" : "s"} will be removed on{" "}
+                  {pendingSites} site{pendingSites === 1 ? "" : "s"} will be locked on{" "}
                   {pendingDate}
                 </span>
                 <button
@@ -270,8 +276,7 @@ export function SiteCapacityActions({
         <div className="rounded-none border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
           You have {siteCount} sites but your plan now includes {effectiveLimit}. Remove{" "}
           {siteCount - effectiveLimit} site{siteCount - effectiveLimit === 1 ? "" : "s"} or
-          add a pack. Existing sites keep monitoring; you can&apos;t add new ones until
-          you&apos;re within your limit.
+          add a pack. Extra sites are locked until you free a slot or upgrade.
         </div>
       )}
 
