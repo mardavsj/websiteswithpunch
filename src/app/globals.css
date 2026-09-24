@@ -5,18 +5,40 @@
 :root {
   color-scheme: light;
   --bg: 45 14% 96%;
+  --surface: 45 14% 96%;
   --ink: 216 35% 6%;
   --muted: 220 9% 46%;
   --rule: 216 35% 6% / 0.12;
   --accent: 216 84% 53%;
   --accent-soft: 216 60% 85% / 0.3;
   --accent-hover: 216 84% 45%;
+  /* Always-dark band (hero overlays, marketing CTA) */
+  --solid: 216 35% 6%;
+  --solid-fg: 45 14% 96%;
   --background: var(--bg);
   --foreground: var(--ink);
   --border: var(--rule);
   --radius: 0px;
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
+}
+
+.dark {
+  color-scheme: dark;
+  /* Medium charcoal grey — not near-black */
+  --bg: 220 8% 20%;
+  --surface: 220 7% 24%;
+  --ink: 220 10% 91%;
+  --muted: 220 6% 65%;
+  --rule: 220 10% 91% / 0.16;
+  --accent: 213 90% 62%;
+  --accent-soft: 213 70% 55% / 0.22;
+  --accent-hover: 213 90% 55%;
+  --solid: 220 10% 12%;
+  --solid-fg: 220 10% 92%;
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --border: var(--rule);
 }
 
 * {
@@ -53,11 +75,13 @@ h6 {
   color: hsl(var(--ink));
 }
 
-/* Black / ink surfaces: keep selected text light and readable */
+/* Solid / ink inverted surfaces: selection stays readable when tokens flip */
 .bg-ink ::selection,
-.bg-ink *::selection {
+.bg-ink *::selection,
+.bg-solid ::selection,
+.bg-solid *::selection {
   background: hsl(var(--accent) / 0.55);
-  color: #ffffff;
+  color: hsl(var(--solid-fg));
 }
 
 :focus-visible {
@@ -79,5 +103,9 @@ h6 {
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: hsl(var(--muted));
+  }
+  /* Dark logos on charcoal */
+  .logo-mark {
+    @apply dark:brightness-0 dark:invert;
   }
 }

@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -10,9 +11,14 @@ const config: Config = {
     extend: {
       colors: {
         bg: "hsl(var(--bg))",
+        surface: "hsl(var(--surface))",
         ink: "hsl(var(--ink))",
         muted: "hsl(var(--muted))",
         rule: "hsl(var(--rule))",
+        solid: {
+          DEFAULT: "hsl(var(--solid))",
+          fg: "hsl(var(--solid-fg))",
+        },
         accent: {
           DEFAULT: "hsl(var(--accent))",
           soft: "hsl(var(--accent-soft))",
