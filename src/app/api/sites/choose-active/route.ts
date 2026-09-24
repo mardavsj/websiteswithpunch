@@ -6,17 +6,18 @@ import {
   applyDuePendingAndEnforce,
   pendingTargetLimit,
   setKeepOnDowngrade,
-  swapActiveSites,
 } from "@/lib/site-limits";
 
 export const dynamic = "force-dynamic";
 
 const schema = z.object({
   siteIds: z.array(z.string().min(1)).max(200),
-  /** When true, only store keepOnDowngrade for a pending change (no immediate lock). */
-  pendingOnly: z.boolean().optional(),
 });
 
+/**
+ * Pending reductions only: update keepOnDowngrade flags.
+ * Never locks/unlocks sites now. Returns 403 when nothing is pending.
+ */
 export async function POST(req: Request) {
   const session = await getSession();
   if (!session?.user?.id) {
@@ -33,23 +34,18 @@ export async function POST(req: Request) {
   const user = await prisma.user.findUnique({ where: { id: session.user.id } });
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (parsed.data.pendingOnly) {
-    const target = pendingTargetLimit(user);
-    if (target == null) {
-      return NextResponse.json(
-        { error: "No pending plan change to choose sites for." },
-        { status: 400 },
-      );
-    }
-    const result = await setKeepOnDowngrade(session.user.id, parsed.data.siteIds, target);
-    if (!result.ok) return NextResponse.json(result, { status: 400 });
-    return NextResponse.json({ ok: true, pending: true, maxKeep: target });
+  const target = pendingTargetLimit(user);
+  if (target == null) {
+    return NextResponse.json(
+      {
+        error: "Active sites are fixed after your plan change. Delete an active site to free a slot, then unlock or add.",
+        code: "NO_PENDING_CHANGE",
+      },
+      { status: 403 },
+    );
   }
 
-  const result = await swapActiveSites(session.user.id, parsed.data.siteIds);
-  if (!result.ok) {
-    const status = result.code === "SWAP_COOLDOWN" ? 429 : 400;
-    return NextResponse.json(result, { status });
-  }
-  return NextResponse.json({ ok: true });
+  const result = await setKeepOnDowngrade(session.user.id, parsed.data.siteIds, target);
+  if (!result.ok) return NextResponse.json(result, { status: 400 });
+  return NextResponse.json({ ok: true, pending: true, maxKeep: target });
 }
