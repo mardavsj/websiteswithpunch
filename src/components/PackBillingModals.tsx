@@ -119,7 +119,7 @@ export function AddPackModal({ open, plan, loading, message, onClose, onConfirm 
 
         <div className="mt-4 space-y-3">
           {previewLoading && <PreviewSkeleton />}
-          {previewError && <p className="text-sm text-rose-700 dark:text-rose-300">{previewError}</p>}
+          {previewError && <p className="text-sm text-danger">{previewError}</p>}
           {preview && !previewLoading && (
             <>
               {todayZero || preview.isUndo ? (
@@ -256,7 +256,7 @@ export function RemovePackModal({ open, plan, loading, message, onClose, onConfi
 
         <div className="mt-4 space-y-3">
           {previewLoading && <PreviewSkeleton />}
-          {previewError && <p className="text-sm text-rose-700 dark:text-rose-300">{previewError}</p>}
+          {previewError && <p className="text-sm text-danger">{previewError}</p>}
           {preview && !previewLoading && (
             <>
               <p className="text-sm leading-relaxed text-muted">
