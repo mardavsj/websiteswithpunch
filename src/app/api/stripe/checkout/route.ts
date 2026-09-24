@@ -1,9 +1,26 @@
 import { NextResponse } from "next/server";
+import type Stripe from "stripe";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { stripePriceIdForPlan, type PlanId } from "@/lib/plans";
+import {
+  getEffectivePlan,
+  getEffectiveSiteLimit,
+  stripePriceIdForPlan,
+} from "@/lib/plans";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
+import {
+  derivePlanAndPacks,
+  findPackItem,
+  findPlanItem,
+  hostedInvoiceUrlFromSubscription,
+  subscriptionNeedsPaymentAction,
+} from "@/lib/stripe-subscription";
 
+/**
+ * First-time purchase → Stripe Checkout Session.
+ * Existing subscriber upgrading (e.g. Pro → Business) → update subscription in place
+ * (swap plan price, remove pack line items, set sitePackCount to 0).
+ */
 export async function POST(req: Request) {
   const session = await getSession();
   if (!session?.user?.id) {
@@ -48,9 +65,128 @@ export async function POST(req: Request) {
     );
   }
 
-  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    include: { _count: { select: { sites: true } } },
+  });
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const currentPlan = getEffectivePlan(user.plan, user.stripeStatus);
+  const hasActiveSub =
+    Boolean(user.stripeSubscriptionId) &&
+    (user.stripeStatus === "active" || user.stripeStatus === "trialing");
+
+  // In-place plan change for existing subscribers (avoids a second subscription)
+  if (hasActiveSub && user.stripeSubscriptionId) {
+    if (currentPlan === planId) {
+      return NextResponse.json(
+        { error: `You are already on the ${planId === "pro" ? "Pro" : "Business"} plan.` },
+        { status: 400 },
+      );
+    }
+
+    // Downgrade Business → Pro: only if sites fit under Pro base (no packs yet)
+    if (currentPlan === "business" && planId === "pro") {
+      const newLimit = getEffectiveSiteLimit("pro", 0);
+      if (user._count.sites > newLimit) {
+        return NextResponse.json(
+          {
+            error: `You have ${user._count.sites} sites. Remove sites down to ${newLimit} (or keep Business) before switching to Pro.`,
+            code: "SITES_EXCEED_LIMIT",
+          },
+          { status: 409 },
+        );
+      }
+    }
+
+    try {
+      const subscription = await stripe.subscriptions.retrieve(
+        user.stripeSubscriptionId,
+        { expand: ["latest_invoice.payment_intent"] },
+      );
+
+      const planItem = findPlanItem(subscription);
+      const packItem = findPackItem(subscription);
+      const items: Stripe.SubscriptionUpdateParams.Item[] = [];
+
+      if (planItem) {
+        items.push({ id: planItem.id, price: priceId });
+      } else {
+        items.push({ price: priceId, quantity: 1 });
+      }
+
+      // Always drop pack items when switching plans (Business includes 50 sites;
+      // Pro packs are a different price ID and must not carry over).
+      if (packItem) {
+        items.push({ id: packItem.id, deleted: true });
+      }
+
+      const updated = await stripe.subscriptions.update(subscription.id, {
+        items,
+        proration_behavior: "always_invoice",
+        payment_behavior: "pending_if_incomplete",
+        metadata: {
+          ...subscription.metadata,
+          userId: user.id,
+          planId,
+        },
+        expand: ["latest_invoice.payment_intent"],
+      });
+
+      if (subscriptionNeedsPaymentAction(updated)) {
+        const hostedUrl = hostedInvoiceUrlFromSubscription(updated);
+        if (hostedUrl) {
+          return NextResponse.json({
+            requiresAction: true,
+            hostedInvoiceUrl: hostedUrl,
+            code: "PAYMENT_REQUIRED",
+          });
+        }
+        return NextResponse.json(
+          {
+            error:
+              "Payment requires confirmation. Complete it from Manage billing, then refresh.",
+            code: "PAYMENT_FAILED",
+          },
+          { status: 402 },
+        );
+      }
+
+      const derived = derivePlanAndPacks(updated);
+      // Prefer requested planId; packs cleared on plan switch
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          plan: planId,
+          sitePackCount: 0,
+          stripeStatus: updated.status,
+          stripeSubscriptionId: updated.id,
+          stripeCustomerId:
+            typeof updated.customer === "string"
+              ? updated.customer
+              : updated.customer.id,
+        },
+      });
+
+      return NextResponse.json({
+        ok: true,
+        plan: planId,
+        sitePackCount: derived.sitePackCount,
+      });
+    } catch (err) {
+      console.error("in-place plan change error", err);
+      const stripeErr = err as { message?: string };
+      return NextResponse.json(
+        {
+          error: stripeErr.message || "Could not change plan.",
+          code: "PAYMENT_FAILED",
+        },
+        { status: 402 },
+      );
+    }
+  }
+
+  // First-time / no active subscription → Checkout Session
   let customerId = user.stripeCustomerId;
   if (!customerId) {
     const customer = await stripe.customers.create({
