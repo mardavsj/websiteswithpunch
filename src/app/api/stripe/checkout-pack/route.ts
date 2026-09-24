@@ -22,8 +22,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Add one site pack to the user's existing Pro/Business subscription.
- * Charges a prorated amount immediately on the saved payment method.
+ * Add one site pack, or undo a pending removal (raise qty back, $0, clear pending).
  */
 export async function POST() {
   const session = await getSession();
@@ -75,21 +74,11 @@ export async function POST() {
 
   const packPlan = plan as PackPlanId;
   const config = getPackConfig(packPlan)!;
-  if (!canBuySitePack(packPlan, user.sitePackCount)) {
-    const maxSites = getEffectiveSiteLimit(packPlan, config.maxPacks);
-    const hint =
-      packPlan === "pro"
-        ? `You've reached the max Pro packs (${maxSites} sites). Upgrade to Business for more capacity.`
-        : `You've reached the max Business packs (${maxSites} sites). Contact hello@websiteswithpunch.com for custom limits.`;
-    return NextResponse.json(
-      {
-        error: hint,
-        code: "PACK_LIMIT",
-        maxPacks: config.maxPacks,
-      },
-      { status: 403 },
-    );
-  }
+  const paidPacks = user.sitePackCount ?? 0;
+  const hasPendingRemoval =
+    user.pendingSitePackCount != null &&
+    user.pendingPackChangeAt != null &&
+    user.pendingSitePackCount < paidPacks;
 
   const priceId = stripePriceIdForPack(packPlan);
   if (!priceId) {
@@ -110,10 +99,7 @@ export async function POST() {
       { expand: ["latest_invoice.payment_intent"] },
     );
 
-    if (
-      subscription.status !== "active" &&
-      subscription.status !== "trialing"
-    ) {
+    if (subscription.status !== "active" && subscription.status !== "trialing") {
       return NextResponse.json(
         {
           error: "An active subscription is required to add a site pack.",
@@ -124,8 +110,56 @@ export async function POST() {
     }
 
     const existingPack = findPackItem(subscription);
-    const currentQty = existingPack?.quantity ?? 0;
-    if (currentQty >= config.maxPacks) {
+    const stripeQty = existingPack?.quantity ?? 0;
+
+    // Undo a pending removal: raise Stripe qty by 1 toward paid count, no charge
+    if (hasPendingRemoval && stripeQty < paidPacks) {
+      const nextQty = stripeQty + 1;
+      const items: Stripe.SubscriptionUpdateParams.Item[] = existingPack
+        ? [{ id: existingPack.id, quantity: nextQty }]
+        : [{ price: priceId, quantity: 1 }];
+
+      const updated = await stripe.subscriptions.update(subscription.id, {
+        items,
+        proration_behavior: "none",
+      });
+
+      const fullyRestored = nextQty >= paidPacks;
+      await prisma.user.update({
+        where: { id: user.id },
+        data: fullyRestored
+          ? {
+              pendingSitePackCount: null,
+              pendingPackChangeAt: null,
+              stripeStatus: updated.status,
+            }
+          : {
+              pendingSitePackCount: nextQty,
+              stripeStatus: updated.status,
+            },
+      });
+
+      return NextResponse.json({
+        ok: true,
+        undone: true,
+        sitePackCount: paidPacks,
+        sitesPerPack: config.sitesPerPack,
+      });
+    }
+
+    if (!canBuySitePack(packPlan, paidPacks)) {
+      const maxSites = getEffectiveSiteLimit(packPlan, config.maxPacks);
+      const hint =
+        packPlan === "pro"
+          ? `You've reached the max Pro packs (${maxSites} sites). Upgrade to Business for more capacity.`
+          : `You've reached the max Business packs (${maxSites} sites). Contact hello@websiteswithpunch.com for custom limits.`;
+      return NextResponse.json(
+        { error: hint, code: "PACK_LIMIT", maxPacks: config.maxPacks },
+        { status: 403 },
+      );
+    }
+
+    if (stripeQty >= config.maxPacks) {
       return NextResponse.json(
         {
           error: `You've reached the max packs (${config.maxPacks}).`,
@@ -137,13 +171,11 @@ export async function POST() {
     }
 
     const items: Stripe.SubscriptionUpdateParams.Item[] = existingPack
-      ? [{ id: existingPack.id, quantity: currentQty + 1 }]
+      ? [{ id: existingPack.id, quantity: stripeQty + 1 }]
       : [{ price: priceId, quantity: 1 }];
 
     let updated: Stripe.Subscription;
     try {
-      // pending_if_incomplete: apply only after payment; return hosted invoice for 3DS.
-      // error_if_incomplete would throw on soft declines without a redirect URL.
       updated = await stripe.subscriptions.update(subscription.id, {
         items,
         proration_behavior: "always_invoice",
@@ -183,9 +215,8 @@ export async function POST() {
       );
     }
 
-    // Confirm the pack item actually increased (pending update must not grant sites)
     const { sitePackCount } = derivePlanAndPacks(updated);
-    if (sitePackCount <= currentQty) {
+    if (sitePackCount <= paidPacks && sitePackCount <= stripeQty) {
       return NextResponse.json(
         {
           error:
@@ -200,6 +231,8 @@ export async function POST() {
       where: { id: user.id },
       data: {
         sitePackCount,
+        pendingSitePackCount: null,
+        pendingPackChangeAt: null,
         stripeStatus: updated.status,
         stripeSubscriptionId: updated.id,
       },
