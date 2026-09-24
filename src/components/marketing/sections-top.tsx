@@ -7,7 +7,7 @@ const HERO_POSTER = "https://assets.mixkit.co/videos/31590/31590-thumb-720-0.jpg
 
 export function HeroSection() {
   return (
-    <section className="relative isolate overflow-hidden border-b border-rule bg-ink text-bg">
+    <section className="relative isolate overflow-hidden border-b border-rule bg-solid text-solid-fg">
       <div className="absolute inset-0 -z-10" aria-hidden>
         <video
           className="h-full w-full object-cover opacity-55 motion-reduce:hidden"
@@ -24,13 +24,13 @@ export function HeroSection() {
           className="absolute inset-0 hidden bg-cover bg-center motion-reduce:block"
           style={{ backgroundImage: `url(${HERO_POSTER})` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/85 to-ink/55" />
-        <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-transparent to-ink/40" />
+        <div className="absolute inset-0 bg-gradient-to-r from-solid via-solid/85 to-solid/55" />
+        <div className="absolute inset-0 bg-gradient-to-t from-solid/90 via-transparent to-solid/40" />
       </div>
 
       <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28 lg:py-32">
         <div className="max-w-3xl">
-          <p className="inline-flex items-center gap-2 border border-bg/20 bg-bg/10 px-3 py-1.5 text-xs font-medium text-bg/90 backdrop-blur-sm">
+          <p className="inline-flex items-center gap-2 border border-solid-fg/20 bg-solid-fg/10 px-3 py-1.5 text-xs font-medium text-solid-fg/90 backdrop-blur-sm">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
@@ -38,11 +38,11 @@ export function HeroSection() {
             Live network pulse · uptime + SSL + domain
           </p>
 
-          <h1 className="mt-6 font-display text-4xl font-medium tracking-tight text-bg sm:text-5xl lg:text-[3.35rem] lg:leading-[1.08]">
+          <h1 className="mt-6 font-display text-4xl font-medium tracking-tight text-solid-fg sm:text-5xl lg:text-[3.35rem] lg:leading-[1.08]">
             Monitor uptime, SSL, and domain renewal{" "}
             <span className="text-accent">with punch</span>
           </h1>
-          <p className="mt-6 max-w-lg text-lg text-bg/70">
+          <p className="mt-6 max-w-lg text-lg text-solid-fg/70">
             For freelancers, founders, and small agencies who can’t afford surprise downtime — or
             finding out from a customer that the cert expired.
           </p>
@@ -55,12 +55,12 @@ export function HeroSection() {
             </Link>
             <Link
               href="/#how-it-works"
-              className="border border-bg/25 bg-bg/10 px-6 py-3 text-sm font-semibold text-bg backdrop-blur-sm hover:bg-bg/20"
+              className="border border-solid-fg/25 bg-solid-fg/10 px-6 py-3 text-sm font-semibold text-solid-fg backdrop-blur-sm hover:bg-solid-fg/20"
             >
               See how it works
             </Link>
           </div>
-          <p className="mt-6 text-sm text-bg/55">
+          <p className="mt-6 text-sm text-solid-fg/55">
             Free to start · Uptime + SSL + domain · Cancel anytime
           </p>
         </div>
@@ -73,12 +73,12 @@ export function HeroSection() {
           ].map((item) => (
             <div
               key={item.label}
-              className="border border-bg/15 bg-bg/10 px-3 py-4 backdrop-blur-sm sm:px-4"
+              className="border border-solid-fg/15 bg-solid-fg/10 px-3 py-4 backdrop-blur-sm sm:px-4"
             >
-              <dt className="text-[10px] font-medium uppercase tracking-wider text-bg/50">
+              <dt className="text-[10px] font-medium uppercase tracking-wider text-solid-fg/50">
                 {item.label}
               </dt>
-              <dd className="mt-1 font-display text-base font-medium text-bg sm:text-lg">
+              <dd className="mt-1 font-display text-base font-medium text-solid-fg sm:text-lg">
                 {item.value}
               </dd>
             </div>
@@ -91,15 +91,15 @@ export function HeroSection() {
 
 export function ProofStrip() {
   return (
-    <section className="bg-ink text-bg" aria-label="What we cover">
+    <section className="bg-solid text-solid-fg" aria-label="What we cover">
       <div className="mx-auto grid max-w-6xl grid-cols-2 gap-px sm:grid-cols-4">
         {proofMetrics.map((m, i) => (
           <div
             key={m.label}
-            className={`px-4 py-8 sm:px-6 sm:py-10 ${i > 0 ? "border-l border-bg/15" : ""} ${i >= 2 ? "border-t border-bg/15 sm:border-t-0" : ""}`}
+            className={`px-4 py-8 sm:px-6 sm:py-10 ${i > 0 ? "border-l border-solid-fg/15" : ""} ${i >= 2 ? "border-t border-solid-fg/15 sm:border-t-0" : ""}`}
           >
             <p className="font-display text-lg font-medium sm:text-xl">{m.label}</p>
-            <p className="mt-1 text-sm text-bg/65">{m.detail}</p>
+            <p className="mt-1 text-sm text-solid-fg/65">{m.detail}</p>
           </div>
         ))}
       </div>
@@ -121,7 +121,7 @@ export function IntroLine() {
             <img
               src="https://www.websiteswithpunch.com/logo.png"
               alt="Websites With Punch"
-              className="h-28 w-28 object-contain sm:h-36 sm:w-36 lg:h-44 lg:w-44"
+              className="logo-mark h-28 w-28 object-contain sm:h-36 sm:w-36 lg:h-44 lg:w-44"
             />
           </div>
         </div>
