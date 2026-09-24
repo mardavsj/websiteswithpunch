@@ -12,7 +12,7 @@
   --accent: 216 84% 53%;
   --accent-soft: 216 60% 85% / 0.3;
   --accent-hover: 216 84% 45%;
-  /* Always-dark band (hero overlays, marketing CTA) */
+  /* Always-black band/buttons (hero, CTA, Recheck) — same in light and dark */
   --solid: 216 35% 6%;
   --solid-fg: 45 14% 96%;
   --background: var(--bg);
@@ -34,8 +34,9 @@
   --accent: 213 90% 62%;
   --accent-soft: 213 70% 55% / 0.22;
   --accent-hover: 213 90% 55%;
-  --solid: 220 10% 12%;
-  --solid-fg: 220 10% 92%;
+  /* Always-black bands/buttons — identical to light mode */
+  --solid: 216 35% 6%;
+  --solid-fg: 45 14% 96%;
   --background: var(--bg);
   --foreground: var(--ink);
   --border: var(--rule);
@@ -103,9 +104,5 @@ h6 {
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: hsl(var(--muted));
-  }
-  /* Dark logos on charcoal */
-  .logo-mark {
-    @apply dark:brightness-0 dark:invert;
   }
 }

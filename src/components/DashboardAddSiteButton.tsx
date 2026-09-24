@@ -25,7 +25,7 @@ export function DashboardAddSiteButton({
   const btnClass =
     variant === "accent"
       ? "inline-flex rounded-none bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
-      : "rounded-none bg-ink px-4 py-2 text-sm font-medium text-bg hover:opacity-90";
+      : "rounded-none bg-solid px-4 py-2 text-sm font-medium text-solid-fg hover:opacity-90";
 
   return (
     <>

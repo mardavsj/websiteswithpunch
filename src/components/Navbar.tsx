@@ -19,7 +19,7 @@ export function Navbar() {
           <img
             src="https://websiteswithpunch.com/logo.png"
             alt="Websites With Punch"
-            className="logo-mark h-8 w-8 object-contain"
+            className="h-8 w-8 object-contain"
           />
           <span>Websites With Punch</span>
         </Link>

@@ -8,7 +8,7 @@ export function Footer() {
           <img
             src="https://websiteswithpunch.com/logo.png"
             alt="Websites With Punch"
-            className="logo-mark mt-0.5 h-8 w-8 object-contain"
+            className="mt-0.5 h-8 w-8 object-contain"
           />
           <div>
             <p className="font-display font-medium text-ink">Websites With Punch</p>
