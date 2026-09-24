@@ -102,7 +102,7 @@ export function AddPackModal({ open, plan, loading, message, onClose, onConfirm 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-solid/40 p-4"
       onClick={onClose}
       role="presentation"
     >
@@ -239,7 +239,7 @@ export function RemovePackModal({ open, plan, loading, message, onClose, onConfi
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-solid/40 p-4"
       onClick={onClose}
       role="presentation"
     >
@@ -281,7 +281,7 @@ export function RemovePackModal({ open, plan, loading, message, onClose, onConfi
             type="button"
             onClick={onConfirm}
             disabled={loading || previewLoading || Boolean(previewError) || !preview}
-            className="rounded-none bg-rose-700 px-4 py-2 text-sm font-medium text-white hover:bg-rose-800 disabled:opacity-60"
+            className="rounded-none bg-rose-700 px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-60"
           >
             {loading ? "Removing…" : `Remove ${pack.sitesPerPack} sites`}
           </button>
