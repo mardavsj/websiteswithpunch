@@ -20,7 +20,11 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const sites = await prisma.site.findMany({ orderBy: { lastCheckedAt: "asc" } });
+  // Locked sites are not monitored (history retained).
+  const sites = await prisma.site.findMany({
+    where: { locked: false },
+    orderBy: { lastCheckedAt: "asc" },
+  });
   const results: Array<{ id: string; status: string; error?: string }> = [];
 
   for (const site of sites) {
