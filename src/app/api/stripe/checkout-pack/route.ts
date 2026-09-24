@@ -17,6 +17,7 @@ import {
   hostedInvoiceUrlFromSubscription,
   subscriptionNeedsPaymentAction,
 } from "@/lib/stripe-subscription";
+import { enforceSiteLimit } from "@/lib/site-limits";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -139,6 +140,8 @@ export async function POST() {
             },
       });
 
+      await enforceSiteLimit(user.id);
+
       return NextResponse.json({
         ok: true,
         undone: true,
@@ -237,6 +240,8 @@ export async function POST() {
         stripeSubscriptionId: updated.id,
       },
     });
+
+    await enforceSiteLimit(user.id);
 
     return NextResponse.json({
       ok: true,
