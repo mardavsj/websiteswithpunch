@@ -26,12 +26,12 @@ export function FaqSection() {
 
 export function FinalCtaSection() {
   return (
-    <section className="bg-ink text-bg">
+    <section className="bg-solid text-solid-fg">
       <div className="mx-auto max-w-6xl px-4 py-24 text-center sm:px-6 sm:py-28">
         <h2 className="font-display text-4xl font-medium tracking-tight sm:text-5xl lg:text-6xl">
           Ready to punch downtime?
         </h2>
-        <p className="mx-auto mt-5 max-w-xl text-base text-bg/70 sm:text-lg">
+        <p className="mx-auto mt-5 max-w-xl text-base text-solid-fg/70 sm:text-lg">
           Create a free account, add your first URL, and see status, SSL days, and domain days in
           one dashboard.
         </p>
