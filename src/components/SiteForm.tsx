@@ -1,7 +1,9 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/Toast";
+import { normalizeSiteUrl } from "@/lib/url";
 
 type Props = {
   mode: "create" | "edit";
@@ -21,6 +23,7 @@ export function SiteForm({
   onCancel,
 }: Props) {
   const router = useRouter();
+  const { toast } = useToast();
   const [name, setName] = useState(initialName);
   const [url, setUrl] = useState(initialUrl);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +32,16 @@ export function SiteForm({
   );
   const [loading, setLoading] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
+
+  const pathHint = useMemo(() => {
+    try {
+      const n = normalizeSiteUrl(url);
+      if (n.pathWasStripped) return `We monitor the whole site: ${n.hostKey}`;
+    } catch {
+      /* ignore while typing */
+    }
+    return null;
+  }, [url]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -52,6 +65,9 @@ export function SiteForm({
           setError(data.error || "Something went wrong");
         }
         return;
+      }
+      if (data.hint || data.pathWasStripped) {
+        toast(data.hint || `We monitor the whole site: ${data.hostKey}`, "success");
       }
       if (onSuccess) onSuccess();
       else if (mode === "create") router.push("/dashboard");
@@ -110,6 +126,7 @@ export function SiteForm({
           className="mt-1 w-full border border-rule bg-bg px-3 py-2 text-sm"
           placeholder="https://example.com"
         />
+        {pathHint && <p className="mt-1 text-xs text-muted">{pathHint}</p>}
       </div>
       {error && <p className="text-sm text-rose-700 dark:text-rose-300">{error}</p>}
       {lockedDup && (
