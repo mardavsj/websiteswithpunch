@@ -28,7 +28,7 @@ export function PlanOverview({
     (planPrice + packSubtotal > 0 ? `$${planPrice + packSubtotal}/month` : "$0");
 
   return (
-    <div className="rounded-none border border-rule bg-bg px-4 py-4">
+    <div className="rounded-none border border-rule bg-surface px-4 py-4">
       <p className="label-caps text-muted">Current plan</p>
       <p className="mt-2 font-display text-xl font-medium text-ink">{PLANS[plan].name}</p>
       <p className="mt-1 text-sm text-muted">{PLANS[plan].description}</p>
@@ -75,7 +75,7 @@ export function PlanOverview({
           </>
         )}
         {summary?.paymentFailed && (
-          <div className="sm:col-span-2 text-amber-900">
+          <div className="sm:col-span-2 text-amber-900 dark:text-amber-100">
             Payment failed — update your card from Manage billing.
           </div>
         )}

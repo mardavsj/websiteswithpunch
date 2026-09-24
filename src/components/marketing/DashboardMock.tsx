@@ -7,7 +7,7 @@ type DashboardMockProps = {
 export function DashboardMock({ className = "", dense = false }: DashboardMockProps) {
   return (
     <div
-      className={`overflow-hidden rounded-none border border-rule bg-bg shadow-[8px_8px_0_0_hsl(var(--ink)/0.08)] ${className}`}
+      className={`overflow-hidden rounded-none border border-rule bg-surface shadow-[8px_8px_0_0_hsl(var(--ink)/0.08)] ${className}`}
       aria-hidden
     >
       <div
