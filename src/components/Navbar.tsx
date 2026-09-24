@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { NavUpgradeButtons } from "@/components/NavUpgradeButtons";
 import { ProfileMenu } from "@/components/ProfileMenu";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Navbar() {
   const { data: session, status } = useSession();
@@ -18,14 +19,17 @@ export function Navbar() {
           <img
             src="https://websiteswithpunch.com/logo.png"
             alt="Websites With Punch"
-            className="h-8 w-8 object-contain"
+            className="logo-mark h-8 w-8 object-contain"
           />
           <span>Websites With Punch</span>
         </Link>
         <nav className="flex items-center gap-2 text-sm sm:gap-3">
-          {status === "loading" ? null : session ? (
+          {status === "loading" ? (
+            <ThemeToggle />
+          ) : session ? (
             <>
               <NavUpgradeButtons />
+              <ThemeToggle />
               <ProfileMenu />
             </>
           ) : (
@@ -39,6 +43,7 @@ export function Navbar() {
               >
                 Start free
               </Link>
+              <ThemeToggle />
             </>
           )}
         </nav>
