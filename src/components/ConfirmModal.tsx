@@ -54,23 +54,12 @@ export function ConfirmModal({
         className="w-full max-w-lg rounded-none border border-rule bg-bg p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <h2
-            id="confirm-modal-title"
-            className="font-display text-xl font-medium text-ink"
-          >
-            {title}
-          </h2>
-          <button
-            type="button"
-            aria-label="Close"
-            disabled={loading}
-            onClick={onClose}
-            className="rounded-none border border-rule px-2 py-0.5 text-sm text-muted hover:bg-accent-soft disabled:opacity-50"
-          >
-            ×
-          </button>
-        </div>
+        <h2
+          id="confirm-modal-title"
+          className="mb-4 font-display text-xl font-medium text-ink"
+        >
+          {title}
+        </h2>
         <div className="text-sm text-muted">{children}</div>
         {error && (
           <div className="mt-3 rounded-none bg-rose-50 px-3 py-2 text-sm text-rose-700">
@@ -82,7 +71,7 @@ export function ConfirmModal({
             type="button"
             disabled={loading}
             onClick={onConfirm}
-            className="rounded-none bg-rose-700 px-4 py-2 text-sm font-medium text-white hover:bg-rose-800 disabled:opacity-60"
+            className="rounded-none bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:bg-red-400 disabled:hover:bg-red-400"
           >
             {loading ? "Deleting…" : confirmLabel}
           </button>

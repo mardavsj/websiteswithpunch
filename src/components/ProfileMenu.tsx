@@ -102,7 +102,7 @@ export function ProfileMenu() {
             role="menuitem"
             type="button"
             onClick={() => signOut({ callbackUrl: "/" })}
-            className="block w-full px-3 py-2 text-left text-sm text-ink hover:bg-accent-soft"
+            className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
           >
             Sign out
           </button>
