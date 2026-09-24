@@ -169,8 +169,9 @@ export function PricingSection() {
             {SITE_PACKS.business.pricePerMonth}/mo (up to{" "}
             {PLANS.business.siteLimit +
               SITE_PACKS.business.maxPacks * SITE_PACKS.business.sitesPerPack}{" "}
-            sites). Packs join your existing subscription (prorated today, one renewal date). Need
-            more?{" "}
+            sites). Packs join your existing subscription — pay for the rest of this month today,
+            then one bill on the same renewal date. Remove anytime; you keep them until the end of
+            the month you've paid for. Need more?{" "}
             <a
               href="mailto:hello@websiteswithpunch.com?subject=Custom%20site%20limit"
               className="font-semibold text-ink underline-offset-2 hover:underline"
