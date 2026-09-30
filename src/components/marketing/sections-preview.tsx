@@ -14,13 +14,14 @@ function Caption({ className }: { className: string }) {
 
 /**
  * "Inside the dashboard": an inert replica of /dashboard with example data and the three signals
- * called out. lg+: copy + key on the left, the window on the right, sized to fit one screen.
+ * called out. lg+: copy (top-aligned) + key on the left, the window on the right, sized to fit one screen.
  */
 export function ProductPreviewSection() {
   return (
     <section className="border-b border-rule bg-bg">
-      <div className="relative mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] px-4 py-20 sm:px-6 sm:py-24 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:[@media(min-height:1000px)]:grid-cols-[minmax(0,340px)_minmax(0,1fr)] lg:grid-rows-[1fr_auto_1fr] lg:gap-x-10">
-        <div className="lg:col-start-1 lg:row-start-2">
+      <div className="relative mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] px-4 py-20 sm:px-6 sm:py-24 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:[@media(min-height:1000px)]:grid-cols-[minmax(0,340px)_minmax(0,1fr)] lg:grid-rows-[auto_1fr_auto_1fr] lg:gap-x-10">
+        {/* lg: pt = stage border + padding, so the copy starts level with the window's top edge. */}
+        <div className="lg:col-start-1 lg:row-start-1 lg:pb-6 lg:pt-[13px]">
           <p className="label-caps">Inside the dashboard</p>
           <h2 className="mt-4 lg:mt-3 max-w-[18ch] font-display text-[2.1rem] font-medium leading-[1.05] tracking-[-0.03em] text-ink sm:text-5xl lg:text-[2.5rem]">
             One screen. Every site. <span className="text-accent">Three signals.</span>
@@ -29,16 +30,20 @@ export function ProductPreviewSection() {
             This is the dashboard you land on after signup. Each site gets its own card with status,
             SSL days left and domain days left, plus a manual recheck and a full analytics view.
           </p>
+        </div>
 
-          <ol data-key-list className="mt-6 hidden gap-3 lg:grid">
+        {/* lg: equal 1fr rows above and below (plus the matching 13px) keep the key where it sat
+            when the whole column was centred, so the leader lines stay put. */}
+        <div className="hidden lg:col-start-1 lg:row-start-3 lg:block lg:pb-[13px]">
+          <ol data-key-list className="grid gap-3">
             <KeyItems />
           </ol>
-          <Caption className="mt-5 hidden lg:flex" />
+          <Caption className="mt-5 flex" />
         </div>
 
         <div
           data-preview-stage
-          className="mt-12 border border-rule bg-[hsl(var(--ink)/0.03)] px-3 pb-8 pt-5 sm:mt-14 sm:px-8 sm:pb-12 sm:pt-6 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:mt-0 lg:self-center lg:p-3"
+          className="mt-12 border border-rule bg-[hsl(var(--ink)/0.03)] px-3 pb-8 pt-5 sm:mt-14 sm:px-8 sm:pb-12 sm:pt-6 lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:mt-0 lg:self-center lg:p-3"
         >
           <Caption className="mb-4 flex sm:mb-5 lg:hidden" />
           <FitWindow>
