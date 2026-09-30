@@ -3,7 +3,6 @@
 import { useEffect, useRef, type ReactNode } from "react";
 
 const NAV = 65; // sticky navbar height
-const CHROME = 60; // lg: section padding (2×16) + stage padding (2×12) + stage/section borders (3) + 1px slack
 const MIN_W = 790; // never lay the window out narrower than this (dates in the pills stay on one line)
 
 /**
@@ -17,6 +16,17 @@ export function FitWindow({ children }: { children: ReactNode }) {
     const el = ref.current;
     if (!el) return;
     const lg = window.matchMedia("(min-width: 1024px)");
+    const px = (n: Element | null | undefined, ...props: string[]) => {
+      const cs = n ? getComputedStyle(n) : null;
+      return props.reduce((sum, p) => sum + (cs ? parseFloat(cs.getPropertyValue(p)) || 0 : 0), 0);
+    };
+    /** Vertical space around the window: stage padding + borders, section padding, section border. */
+    const chrome = () => {
+      const stage = el.parentElement;
+      const wrap = stage?.parentElement;
+      const box = ["padding-top", "padding-bottom", "border-top-width", "border-bottom-width"];
+      return px(stage, ...box) + px(wrap, "padding-top", "padding-bottom") + px(wrap?.parentElement, "border-bottom-width") + 1;
+    };
 
     /** Scale that fits `avail`; iterated because zooming widens the layout, which changes its height. */
     const scaleFor = (avail: number, width: number) => {
@@ -32,7 +42,7 @@ export function FitWindow({ children }: { children: ReactNode }) {
     const fit = () => {
       el.style.zoom = "";
       if (lg.matches) {
-        const avail = window.innerHeight - NAV - CHROME;
+        const avail = window.innerHeight - NAV - chrome();
         const width = el.getBoundingClientRect().width; // unzoomed: the stage content width
         const s = scaleFor(avail, width);
         el.style.zoom = String(s);
