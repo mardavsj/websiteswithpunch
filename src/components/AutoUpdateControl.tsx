@@ -1,28 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { useAutoUpdate } from "./useAutoUpdate";
+import type { SiteRecheck } from "./useAutoUpdate";
 
-type AutoState = ReturnType<typeof useAutoUpdate>;
+const STOP_LABEL = "Stop auto refresh/recheck";
 
-/** "Auto update" button; while on: pulsing "Live" + seconds to next update. */
-export function AutoUpdateControl({ state }: { state: AutoState }) {
-  const [now, setNow] = useState(0);
+/** Neutral bordered button with danger text: readable in light and dark. */
+export function StopAutoButton({ onStop }: { onStop: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onStop}
+      className="rounded-none border border-rule px-3 py-1.5 text-xs font-medium text-danger hover:bg-accent-soft"
+    >
+      {STOP_LABEL}
+    </button>
+  );
+}
 
-  useEffect(() => {
-    if (!state.on) return;
-    setNow(Date.now());
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [state.on]);
-
-  const secs =
-    state.nextAt != null && now ? Math.max(0, Math.ceil((state.nextAt - now) / 1000)) : null;
-
+/** Analytics header control: start/stop + pulsing "Live" and the shared countdown. */
+export function AutoUpdateControl({ rc }: { rc: SiteRecheck }) {
+  const { auto } = rc;
   return (
     <div className="flex min-w-0 flex-col gap-1 sm:items-end">
       <div className="flex flex-wrap items-center gap-2">
-        {state.on && (
+        {auto.on && (
           <span
             role="status"
             aria-live="off"
@@ -34,27 +35,25 @@ export function AutoUpdateControl({ state }: { state: AutoState }) {
             </span>
             Live
             <span className="tabular-nums text-muted">
-              {state.running ? "checking…" : secs != null ? `${secs}s` : ""}
+              {auto.paused ? "Paused while in background" : rc.busy ? "checking…" : `${rc.secondsLeft}s`}
             </span>
           </span>
         )}
-        <button
-          type="button"
-          onClick={state.on ? state.stop : state.start}
-          aria-pressed={state.on}
-          title="Runs a live check every 1 minute while you stay on this page"
-          className="border border-rule px-3 py-1.5 text-xs font-medium text-ink hover:bg-accent-soft"
-        >
-          {state.on ? (
-            "Stop auto update"
-          ) : (
-            <>
-              Auto update <span className="font-normal text-muted">· every 1 min</span>
-            </>
-          )}
-        </button>
+        {auto.on ? (
+          <StopAutoButton onStop={auto.stop} />
+        ) : (
+          <button
+            type="button"
+            onClick={auto.start}
+            aria-pressed={false}
+            title="Rechecks this site every 1 minute while this page is open"
+            className="rounded-none border border-rule px-3 py-1.5 text-xs font-medium text-ink hover:bg-accent-soft"
+          >
+            Auto refresh/recheck
+          </button>
+        )}
       </div>
-      {state.error && <p className="text-xs text-danger">{state.error}</p>}
+      {auto.error && <p className="text-xs text-danger">{auto.error}</p>}
     </div>
   );
 }

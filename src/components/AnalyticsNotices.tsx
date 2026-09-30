@@ -6,23 +6,38 @@ type RecheckProps = {
   busy: boolean;
   /** Seconds until Recheck is allowed again (once per minute). */
   cooldown?: number;
+  /** Auto refresh on: the countdown is the next automatic recheck. */
+  auto?: boolean;
   onRecheck: () => void;
   error?: string | null;
 };
 
 /** Same black solid style as the Recheck button on the site card. */
-export function RecheckButton({ busy, cooldown = 0, onRecheck }: Omit<RecheckProps, "error">) {
-  const wait = cooldown > 0;
+export function RecheckButton({
+  busy,
+  cooldown = 0,
+  auto = false,
+  onRecheck,
+}: Omit<RecheckProps, "error">) {
+  const wait = cooldown > 0 || auto;
   return (
     <button
       type="button"
       onClick={onRecheck}
       disabled={busy || wait}
       aria-busy={busy || undefined}
-      title={wait ? "Recheck is limited to once per minute" : undefined}
+      title={
+        auto ? "Auto refresh/recheck is on" : wait ? "Recheck is limited to once per minute" : undefined
+      }
       className="shrink-0 self-start rounded-none bg-solid px-3 py-1.5 text-xs font-medium tabular-nums text-solid-fg hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-75 sm:self-center"
     >
-      {busy ? "Checking…" : wait ? `Recheck in ${cooldown}s` : "Recheck"}
+      {busy
+        ? "Checking…"
+        : auto
+          ? `Rechecking in ${cooldown}s`
+          : wait
+            ? `Recheck in ${cooldown}s`
+            : "Recheck"}
     </button>
   );
 }
@@ -52,6 +67,7 @@ export function StaleBanner({
   data,
   busy,
   cooldown,
+  auto,
   onRecheck,
   error,
 }: RecheckProps & { data: AnalyticsPayload }) {
@@ -70,7 +86,7 @@ export function StaleBanner({
           </p>
           <LatestKnown data={data} />
         </div>
-        <RecheckButton busy={busy} cooldown={cooldown} onRecheck={onRecheck} />
+        <RecheckButton busy={busy} cooldown={cooldown} auto={auto} onRecheck={onRecheck} />
       </div>
       {error && <p className="mt-2 text-xs text-danger">{error}</p>}
     </div>
@@ -81,6 +97,7 @@ export function EmptyHistory({
   data,
   busy,
   cooldown,
+  auto,
   onRecheck,
   error,
 }: RecheckProps & { data: AnalyticsPayload }) {
@@ -93,7 +110,7 @@ export function EmptyHistory({
           Run a check now to start building uptime and latency history.
         </p>
         <div className="mt-4 flex justify-center">
-          <RecheckButton busy={busy} cooldown={cooldown} onRecheck={onRecheck} />
+          <RecheckButton busy={busy} cooldown={cooldown} auto={auto} onRecheck={onRecheck} />
         </div>
         {error && <p className="mt-3 text-xs text-danger">{error}</p>}
         <div className="flex justify-center">

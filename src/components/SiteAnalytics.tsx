@@ -1,25 +1,33 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { lockedRangeNotice, type RangeKey } from "@/lib/analytics";
 import { SiteAnalyticsBody, type AnalyticsPayload } from "./SiteAnalyticsBody";
 import { EmptyHistory, StaleBanner } from "./AnalyticsNotices";
 import { AnalyticsHeader } from "./AnalyticsHeader";
 import { AutoUpdateControl } from "./AutoUpdateControl";
-import { useAutoUpdate } from "./useAutoUpdate";
-import { useRecheckCooldown } from "./useRecheckCooldown";
-import { RecheckError, onSiteChecked, recheckSite } from "@/lib/site-check-client";
+import { SiteRecheckProvider, useSiteRecheckContext } from "./SiteRecheckProvider";
+import { onSiteChecked } from "@/lib/site-check-client";
 
 type LoadOpts = { quiet?: boolean; signal?: AbortSignal };
 
-export function SiteAnalytics({
-  siteId,
-  compact = false,
-}: {
-  siteId: string;
-  compact?: boolean;
-}) {
+type Props = { siteId: string; compact?: boolean };
+
+/** Uses the page's shared Recheck controller, or brings its own. */
+export function SiteAnalytics(props: Props) {
+  const rc = useSiteRecheckContext(props.siteId);
+  if (!rc) {
+    return (
+      <SiteRecheckProvider siteId={props.siteId}>
+        <SiteAnalytics {...props} />
+      </SiteRecheckProvider>
+    );
+  }
+  return <SiteAnalyticsPanel {...props} />;
+}
+
+function SiteAnalyticsPanel({ siteId, compact = false }: Props) {
+  const rc = useSiteRecheckContext(siteId)!;
   // First fetch uses 24h (always unlocked once site exists); API clamps if needed.
   const [range, setRange] = useState<RangeKey>("24h");
   const [data, setData] = useState<AnalyticsPayload | null>(null);
@@ -28,9 +36,6 @@ export function SiteAnalytics({
   const [siteLocked, setSiteLocked] = useState(false);
   const [fade, setFade] = useState(true);
   const [lockNotice, setLockNotice] = useState<string | null>(null);
-  const [checking, setChecking] = useState(false);
-  const [checkError, setCheckError] = useState<string | null>(null);
-  const router = useRouter();
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rangeRef = useRef<RangeKey>(range);
   rangeRef.current = range;
@@ -106,35 +111,27 @@ export function SiteAnalytics({
   // Any successful manual Recheck (site card or banner) → refetch in place.
   useEffect(() => onSiteChecked(siteId, () => void load(rangeRef.current)), [siteId, load]);
 
-  // Opt-in Auto update: light server-throttled uptime check + quiet refetch.
-  const auto = useAutoUpdate({
-    allowed: Boolean(data) && !siteLocked,
-    lastCheckAt: data?.site?.lastSeenAt ?? data?.site?.lastCheckedAt ?? null,
-    run: async (signal) => {
-      await recheckSite(siteId, { live: true, signal, broadcast: false });
-      await load(rangeRef.current, { quiet: true, signal });
-      router.refresh(); // soft refresh: updates the site card, keeps state + scroll
-    },
-  });
+  // Rechecks from the shared controller (manual or auto) refetch in place.
+  const { addRefresher, noteServerCheck } = rc;
+  const stopAuto = rc.auto.stop;
+  useEffect(
+    () => addRefresher((signal) => load(rangeRef.current, { quiet: true, signal })),
+    [addRefresher, load]
+  );
+  // Keep the shared cooldown in step with the server's last recheck time.
+  useEffect(() => noteServerCheck(data?.site?.lastCheckedAt), [data?.site?.lastCheckedAt, noteServerCheck]);
+  // Locked site → auto refresh off.
+  useEffect(() => {
+    if (siteLocked) stopAuto();
+  }, [siteLocked, stopAuto]);
 
-  // Recheck: once per minute per site (server-enforced, survives refresh).
-  const cooldown = useRecheckCooldown(data?.site?.lastCheckedAt);
-
-  async function recheck() {
-    if (cooldown.secondsLeft > 0) return;
-    setChecking(true);
-    setCheckError(null);
-    try {
-      await recheckSite(siteId);
-      cooldown.startCooldown();
-      router.refresh();
-    } catch (e) {
-      if (e instanceof RecheckError && e.retryAfter) cooldown.startCooldown(e.retryAfter);
-      setCheckError(e instanceof Error ? e.message : "Recheck failed. Try again.");
-    } finally {
-      setChecking(false);
-    }
-  }
+  const recheckProps = {
+    busy: rc.busy,
+    cooldown: rc.secondsLeft,
+    auto: rc.auto.on,
+    onRecheck: () => void rc.recheck(),
+    error: rc.error,
+  };
 
   return (
     <section
@@ -152,7 +149,7 @@ export function SiteAnalytics({
         }}
         live={
           data && !siteLocked ? (
-            <AutoUpdateControl state={auto} />
+            <AutoUpdateControl rc={rc} />
           ) : null
         }
       />
@@ -185,25 +182,13 @@ export function SiteAnalytics({
         )}
 
         {data && !siteLocked && data.empty && (
-          <EmptyHistory
-            data={data}
-            busy={checking}
-            cooldown={cooldown.secondsLeft}
-            onRecheck={recheck}
-            error={checkError}
-          />
+          <EmptyHistory data={data} {...recheckProps} />
         )}
 
         {data && !siteLocked && !data.empty && (
           <>
             {data.stale && (
-              <StaleBanner
-                data={data}
-                busy={checking}
-                cooldown={cooldown.secondsLeft}
-                onRecheck={recheck}
-                error={checkError}
-              />
+              <StaleBanner data={data} {...recheckProps} />
             )}
             <SiteAnalyticsBody data={data} />
           </>

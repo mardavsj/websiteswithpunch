@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SiteAnalytics } from "@/components/SiteAnalytics";
 import { SiteCard } from "@/components/SiteCard";
+import { SiteRecheckProvider } from "@/components/SiteRecheckProvider";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export default async function SiteAnalyticsPage({ params }: { params: { id: stri
   });
   if (!site) notFound();
 
-  // Freshest check of any kind (auto update doesn't move lastCheckedAt).
+  // Freshest check of any kind (history row), for the "Last check" label.
   const latest = await prisma.checkResult.findFirst({
     where: { siteId: site.id },
     orderBy: [{ checkedAt: "desc" }, { id: "desc" }],
@@ -30,17 +31,23 @@ export default async function SiteAnalyticsPage({ params }: { params: { id: stri
           ← Dashboard
         </Link>
       </div>
-      <div className="space-y-5">
-        <SiteCard
-          showAnalyticsLink={false}
-          site={{
-            ...site,
-            lastCheckedAt: site.lastCheckedAt?.toISOString() ?? null,
-            lastSeenAt: latest?.checkedAt.toISOString() ?? null,
-          }}
-        />
-        <SiteAnalytics siteId={site.id} />
-      </div>
+      {/* One shared Recheck / auto refresh controller for the card + analytics. */}
+      <SiteRecheckProvider
+        siteId={site.id}
+        lastCheckedAt={site.lastCheckedAt?.toISOString() ?? null}
+      >
+        <div className="space-y-5">
+          <SiteCard
+            showAnalyticsLink={false}
+            site={{
+              ...site,
+              lastCheckedAt: site.lastCheckedAt?.toISOString() ?? null,
+              lastSeenAt: latest?.checkedAt.toISOString() ?? null,
+            }}
+          />
+          <SiteAnalytics siteId={site.id} />
+        </div>
+      </SiteRecheckProvider>
     </div>
   );
 }

@@ -17,28 +17,27 @@ export class RecheckError extends Error {
 }
 
 export type RecheckOptions = {
-  /** Light uptime-only check used by Auto update (server-throttled). */
-  live?: boolean;
+  /** Auto refresh tick: same once-per-minute slot, skips the domain lookup. */
+  auto?: boolean;
   signal?: AbortSignal;
   /** Broadcast SITE_CHECKED_EVENT on success (default true). */
   broadcast?: boolean;
 };
 
 /**
- * Runs a check (POST /api/sites/:id {action:"check"}), which updates the site
- * record and stores a CheckResult history row. Manual (full) checks are
- * limited to once per minute: the server answers 429 with `retryAfter`
- * seconds, surfaced here as RecheckError. Live checks may come back
- * `throttled: true` (the latest saved result is reused).
+ * Runs a recheck (POST /api/sites/:id {action:"check"}), which updates the
+ * site record and stores a CheckResult history row. Rechecks (manual or auto)
+ * are limited to once per minute per site: the server answers 429 with
+ * `retryAfter` seconds, surfaced here as RecheckError.
  */
 export async function recheckSite(
   siteId: string,
   opts: RecheckOptions = {}
-): Promise<{ throttled: boolean }> {
+): Promise<{ lastCheckedAt: string | null }> {
   const res = await fetch(`/api/sites/${siteId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "check", live: opts.live === true }),
+    body: JSON.stringify({ action: "check", auto: opts.auto === true }),
     signal: opts.signal,
   });
   const j = await res.json().catch(() => null);
@@ -52,7 +51,7 @@ export async function recheckSite(
   if (opts.broadcast !== false) {
     window.dispatchEvent(new CustomEvent(SITE_CHECKED_EVENT, { detail: { siteId } }));
   }
-  return { throttled: Boolean(j?.throttled) };
+  return { lastCheckedAt: typeof j?.site?.lastCheckedAt === "string" ? j.site.lastCheckedAt : null };
 }
 
 /** Subscribe to successful rechecks for one site. Returns an unsubscribe fn. */
