@@ -1,5 +1,6 @@
 import { formatDuration, type RangeKey } from "@/lib/analytics";
-import { AvailabilityStrip, DonutChart, LatencyAreaChart, RingGauge } from "./analytics-charts";
+import { AvailabilityStrip, DonutChart, RingGauge } from "./analytics-charts";
+import { LatencyAreaChart, seriesRange } from "./LatencyChart";
 import { DomainExpiryMeter, ExpiryRingCard } from "./expiry-meters";
 
 export type AnalyticsPayload = {
@@ -82,6 +83,8 @@ export function ExpiryCards({ data }: { data: AnalyticsPayload }) {
 
 export function SiteAnalyticsBody({ data }: { data: AnalyticsPayload }) {
   const stale = Boolean(data.stale);
+  // Header range comes from the plotted series, so it always matches the chart.
+  const plotted = seriesRange(data.latency.series);
   return (
     <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -126,8 +129,15 @@ export function SiteAnalyticsBody({ data }: { data: AnalyticsPayload }) {
         <div className="border border-rule bg-surface p-4">
           <div className="flex items-center justify-between">
             <p className="font-display text-sm font-medium text-ink">Latency trend</p>
-            <p className="text-xs text-muted">
-              {data.latency.min ?? "—"}–{data.latency.max ?? "—"} ms
+            <p
+              className="text-xs tabular-nums text-muted"
+              title={
+                data.latency.min != null
+                  ? `Fastest ${data.latency.min}ms · slowest ${data.latency.max}ms (single checks)`
+                  : undefined
+              }
+            >
+              {plotted ? `${plotted.min}–${plotted.max} ms` : "— ms"}
             </p>
           </div>
           <div className="mt-2">
