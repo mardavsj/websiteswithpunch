@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { barTone, daysTone, heroSites, type HeroSite } from "./hero-sites";
+import { daysTone, heroSites, type HeroSite } from "./hero-sites";
+import { HeroSparkline } from "./HeroSparkline";
 
 const TICK_MS = 1100;
 
@@ -69,10 +70,10 @@ export function HeroPreview() {
           </span>
         </div>
 
-        <div className="hidden grid-cols-[minmax(0,1.3fr)_8.5rem_minmax(0,1fr)_2.75rem_2.75rem] gap-4 border-b border-solid-fg/10 px-5 py-2 text-[10px] uppercase tracking-wider text-solid-fg/40 sm:grid">
+        <div className="hidden grid-cols-[minmax(0,1fr)_8.5rem_minmax(0,1.2fr)_2.75rem_2.75rem] gap-4 border-b border-solid-fg/10 px-5 py-2 text-[10px] uppercase tracking-wider text-solid-fg/40 sm:grid">
           <span>Site</span>
           <span>Status</span>
-          <span>Recent checks</span>
+          <span>Response time</span>
           <span>SSL</span>
           <span>Domain</span>
         </div>
@@ -81,7 +82,7 @@ export function HeroPreview() {
           {heroSites.map((s, i) => (
             <li
               key={s.host}
-              className={`relative grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-2 border-b border-solid-fg/10 px-4 py-3 transition-colors duration-500 last:border-b-0 motion-reduce:transition-none sm:grid-cols-[minmax(0,1.3fr)_8.5rem_minmax(0,1fr)_2.75rem_2.75rem] sm:items-center sm:gap-4 sm:px-5 ${
+              className={`relative grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-2 border-b border-solid-fg/10 px-4 py-3 transition-colors duration-500 last:border-b-0 motion-reduce:transition-none sm:grid-cols-[minmax(0,1fr)_8.5rem_minmax(0,1.2fr)_2.75rem_2.75rem] sm:items-center sm:gap-4 sm:px-5 ${
                 checking === i ? "bg-accent/[0.08]" : ""
               }`}
             >
@@ -91,11 +92,7 @@ export function HeroPreview() {
                 <span className="block truncate text-[11px] text-accent">{s.host}</span>
               </span>
               <Status site={s} checking={checking === i} />
-              <span className="col-span-2 flex h-3 items-stretch gap-[2px] sm:col-span-1 sm:h-5">
-                {s.bars.map((v, j) => (
-                  <span key={j} className={`min-w-0 flex-1 ${barTone(v)}`} />
-                ))}
-              </span>
+              <HeroSparkline site={s} />
               <span className="col-span-2 flex gap-1.5 sm:contents">
                 <Days label="SSL" days={s.ssl} />
                 <Days label="Domain" days={s.domain} />

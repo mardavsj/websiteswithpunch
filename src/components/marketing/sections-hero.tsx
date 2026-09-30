@@ -16,17 +16,9 @@ export function HeroSection() {
         <div className="absolute -right-40 top-1/4 h-[36rem] w-[36rem] rounded-full bg-accent/20 blur-[120px]" />
       </div>
 
-      <div className="mx-auto grid max-w-6xl items-center gap-14 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-12 lg:py-24">
+      <div className="mx-auto grid max-w-6xl items-center gap-14 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,0.77fr)_minmax(0,1fr)] lg:gap-12 lg:py-24">
         <div className="min-w-0">
-          <p className="inline-flex items-center gap-2 border border-solid-fg/20 bg-solid-fg/10 px-3 py-1.5 text-xs font-medium text-solid-fg/90">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-60 motion-safe:animate-ping" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
-            </span>
-            Website health monitoring
-          </p>
-
-          <h1 className="mt-6 font-display text-4xl font-medium tracking-tight text-solid-fg sm:text-5xl lg:text-[3.4rem] lg:leading-[1.05]">
+          <h1 className="max-w-[17ch] font-display text-4xl font-medium tracking-tight text-solid-fg sm:text-5xl lg:text-[3.1rem] lg:leading-[1.06]">
             Know <span className="text-accent">before</span> your site, SSL or domain lets you down.
           </h1>
           <p className="mt-5 max-w-lg text-lg leading-relaxed text-solid-fg/70">
@@ -60,7 +52,7 @@ export function HeroSection() {
           <p className="mt-5 text-sm text-solid-fg/55">Free for 1 site · No card needed</p>
         </div>
 
-        <div className="min-w-0 lg:pl-4">
+        <div className="min-w-0">
           <HeroPreview />
         </div>
       </div>
