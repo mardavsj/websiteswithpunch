@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HeroNetwork } from "./HeroNetwork";
 import { HeroStage } from "./HeroStage";
 import { IconGlobe, IconLock, IconPulse } from "./icons";
 
@@ -32,10 +33,7 @@ export function HeroSection() {
   // lg+: fill the viewport below the 65px sticky navbar, capped so tall screens don't balloon.
   return (
     <section className="relative isolate overflow-hidden border-b border-rule bg-bg lg:flex lg:min-h-[min(calc(100svh_-_65px),1024px)] lg:items-center">
-      <div
-        className="absolute inset-0 -z-10 bg-[radial-gradient(hsl(var(--ink)/0.09)_1px,transparent_1px)] [background-size:14px_14px] [mask-image:radial-gradient(ellipse_95%_90%_at_60%_45%,black_55%,transparent)]"
-        aria-hidden
-      />
+      <HeroNetwork />
       <div className="mx-auto grid w-full max-w-6xl items-center gap-14 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,1.38fr)_minmax(0,1fr)] lg:gap-10 lg:py-16">
         <div className="min-w-0">
           <Link
