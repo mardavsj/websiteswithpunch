@@ -70,7 +70,6 @@ export function ExpiryCards({ data }: { data: AnalyticsPayload }) {
         days={data.ssl.daysLeft}
         expiresAt={data.ssl.expiresAt}
         addedAt={data.siteCreatedAt}
-        warnAt={30}
       />
       <DomainExpiryMeter
         days={data.domain.daysLeft}
