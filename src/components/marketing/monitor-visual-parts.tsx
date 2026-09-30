@@ -9,10 +9,13 @@ export const fillX =
 export const riseIn =
   "translate-y-2 opacity-0 transition duration-700 ease-out group-data-[inview=true]:translate-y-0 group-data-[inview=true]:opacity-100 motion-reduce:transition-none";
 
-/** Dotted stage the product vignette sits on (replaces the old icon tile). */
-export function VisualStage({ children }: { children: ReactNode }) {
+/** Dotted stage the product vignette sits on. `compact` is the tighter How-it-works size. */
+export function VisualStage({ children, compact = false }: { children: ReactNode; compact?: boolean }) {
+  const size = compact
+    ? "px-3 py-6 sm:px-6 sm:py-8"
+    : "min-h-[220px] px-4 py-8 sm:min-h-[280px] sm:px-8 sm:py-10";
   return (
-    <InView className="relative flex h-full min-h-[220px] w-full items-center justify-center overflow-hidden border border-rule bg-bg px-4 py-8 sm:min-h-[280px] sm:px-8 sm:py-10">
+    <InView className={`relative flex h-full w-full items-center justify-center overflow-hidden border border-rule bg-bg ${size}`}>
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(hsl(var(--ink)/0.09)_1px,transparent_1px)] [background-size:14px_14px]"
         aria-hidden
