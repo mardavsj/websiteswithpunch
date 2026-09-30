@@ -6,10 +6,8 @@ import {
   FaqSection,
   FinalCtaSection,
 } from "@/components/marketing/sections-faq-cta";
-import {
-  FeaturesSection,
-  ProductPreviewSection,
-} from "@/components/marketing/sections-mid";
+import { FeaturesSection } from "@/components/marketing/sections-mid";
+import { ProductPreviewSection } from "@/components/marketing/sections-preview";
 import { WhyItMattersSection } from "@/components/marketing/sections-why";
 import { HowItWorksSection } from "@/components/marketing/sections-how";
 import { HeroSection } from "@/components/marketing/sections-hero";
