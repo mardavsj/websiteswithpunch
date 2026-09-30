@@ -9,6 +9,7 @@ import {
 } from "@/lib/plans";
 import { SiteCard } from "@/components/SiteCard";
 import { SiteAnalytics } from "@/components/SiteAnalytics";
+import { SiteRecheckScope } from "@/components/SiteRecheckProvider";
 import { DashboardPackCta } from "@/components/DashboardPackCta";
 import { DashboardAddSiteButton } from "@/components/DashboardAddSiteButton";
 import { DashboardBanners } from "@/components/DashboardBanners";
@@ -176,36 +177,44 @@ export default async function DashboardPage({
           </div>
         </div>
       ) : (
-        <div className="mt-8 space-y-5">
-          {clientSites.map((site) => (
-            <SiteCard
-              key={site.id as string}
-              showAnalyticsLink={!showInlineAnalytics && !site.locked}
-              siteLimit={limit}
-              canUnlock={Boolean(site.locked) && canUnlock}
-              hasLockedSites={lockedSites.length > 0}
-              site={{
-                id: site.id as string,
-                name: site.name as string,
-                url: site.url as string,
-                status: site.status as string,
-                lastCheckedAt: (site.lastCheckedAt as string | null) ?? null,
-                lastStatusCode: (site.lastStatusCode as number | null) ?? null,
-                lastLatencyMs: (site.lastLatencyMs as number | null) ?? null,
-                sslDaysLeft: (site.sslDaysLeft as number | null) ?? null,
-                domainDaysLeft: (site.domainDaysLeft as number | null) ?? null,
-                locked: Boolean(site.locked),
-              }}
-            />
-          ))}
-          {showInlineAnalytics && <SiteAnalytics siteId={activeSites[0].id} />}
-          {!showInlineAnalytics && activeSites.length > 1 && (
-            <p className="text-center text-sm text-muted">
-              Open <span className="font-medium text-ink">Analytics →</span> on any active site for
-              the full breakdown with range filters.
-            </p>
-          )}
-        </div>
+        // One site with inline analytics: its card shares the auto refresh timer.
+        <SiteRecheckScope
+          siteId={showInlineAnalytics ? activeSites[0].id : null}
+          lastCheckedAt={
+            showInlineAnalytics ? (activeSites[0].lastCheckedAt?.toISOString() ?? null) : null
+          }
+        >
+          <div className="mt-8 space-y-5">
+            {clientSites.map((site) => (
+              <SiteCard
+                key={site.id as string}
+                showAnalyticsLink={!showInlineAnalytics && !site.locked}
+                siteLimit={limit}
+                canUnlock={Boolean(site.locked) && canUnlock}
+                hasLockedSites={lockedSites.length > 0}
+                site={{
+                  id: site.id as string,
+                  name: site.name as string,
+                  url: site.url as string,
+                  status: site.status as string,
+                  lastCheckedAt: (site.lastCheckedAt as string | null) ?? null,
+                  lastStatusCode: (site.lastStatusCode as number | null) ?? null,
+                  lastLatencyMs: (site.lastLatencyMs as number | null) ?? null,
+                  sslDaysLeft: (site.sslDaysLeft as number | null) ?? null,
+                  domainDaysLeft: (site.domainDaysLeft as number | null) ?? null,
+                  locked: Boolean(site.locked),
+                }}
+              />
+            ))}
+            {showInlineAnalytics && <SiteAnalytics siteId={activeSites[0].id} />}
+            {!showInlineAnalytics && activeSites.length > 1 && (
+              <p className="text-center text-sm text-muted">
+                Open <span className="font-medium text-ink">Analytics →</span> on any active site for
+                the full breakdown with range filters.
+              </p>
+            )}
+          </div>
+        </SiteRecheckScope>
       )}
     </div>
   );

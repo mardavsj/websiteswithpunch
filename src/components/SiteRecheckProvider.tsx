@@ -28,3 +28,24 @@ export function useSiteRecheckContext(siteId: string): SiteRecheck | null {
   const value = useContext(RecheckContext);
   return value && value.siteId === siteId ? value : null;
 }
+
+/**
+ * Dashboard helper: shares the controller only when a site id is given (one
+ * site with inline analytics); otherwise renders children unchanged.
+ */
+export function SiteRecheckScope({
+  siteId,
+  lastCheckedAt,
+  children,
+}: {
+  siteId?: string | null;
+  lastCheckedAt?: string | null;
+  children: ReactNode;
+}) {
+  if (!siteId) return <>{children}</>;
+  return (
+    <SiteRecheckProvider siteId={siteId} lastCheckedAt={lastCheckedAt}>
+      {children}
+    </SiteRecheckProvider>
+  );
+}
