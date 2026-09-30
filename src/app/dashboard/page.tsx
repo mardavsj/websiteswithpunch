@@ -9,7 +9,6 @@ import {
 } from "@/lib/plans";
 import { SiteCard } from "@/components/SiteCard";
 import { SiteAnalytics } from "@/components/SiteAnalytics";
-import { TechStackCard } from "@/components/TechStackCard";
 import { SiteRecheckScope } from "@/components/SiteRecheckProvider";
 import { DashboardPackCta } from "@/components/DashboardPackCta";
 import { DashboardAddSiteButton } from "@/components/DashboardAddSiteButton";
@@ -208,7 +207,6 @@ export default async function DashboardPage({
               />
             ))}
             {showInlineAnalytics && <SiteAnalytics siteId={activeSites[0].id} />}
-            {showInlineAnalytics && <TechStackCard siteId={activeSites[0].id} />}
             {!showInlineAnalytics && activeSites.length > 1 && (
               <p className="text-center text-sm text-muted">
                 Open <span className="font-medium text-ink">Analytics →</span> on any active site for

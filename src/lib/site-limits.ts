@@ -29,8 +29,6 @@ export function toClientSite<T extends Record<string, unknown>>(site: T): T {
     sslDaysLeft: null,
     domainExpiresAt: null,
     domainDaysLeft: null,
-    techStack: null,
-    techStackAt: null,
   };
 }
 

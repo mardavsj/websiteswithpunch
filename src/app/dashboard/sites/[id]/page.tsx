@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SiteAnalytics } from "@/components/SiteAnalytics";
-import { TechStackCard } from "@/components/TechStackCard";
 import { SiteCard } from "@/components/SiteCard";
 import { SiteRecheckProvider } from "@/components/SiteRecheckProvider";
 
@@ -47,8 +46,6 @@ export default async function SiteAnalyticsPage({ params }: { params: { id: stri
             }}
           />
           <SiteAnalytics siteId={site.id} />
-          {/* Separate card: not tied to Recheck / auto refresh. Hidden when locked. */}
-          {!site.locked && <TechStackCard siteId={site.id} />}
         </div>
       </SiteRecheckProvider>
     </div>

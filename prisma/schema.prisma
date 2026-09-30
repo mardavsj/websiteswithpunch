@@ -87,10 +87,6 @@ model Site {
   sslDaysLeft     Int?
   domainExpiresAt DateTime?
   domainDaysLeft  Int?
-  /// Detected technologies (JSON array of TechItem, see src/lib/tech-types.ts).
-  techStack       String?
-  /// When techStack was last detected (add site, Recheck, or daily cron).
-  techStackAt     DateTime?
   /// Not monitored; metrics hidden from client until unlocked.
   locked          Boolean       @default(false)
   lockedAt        DateTime?
