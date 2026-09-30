@@ -6,13 +6,21 @@ import type { PreviewSite } from "./preview-data";
  * Static copy of the dashboard SiteCard (same markup and classes), with inert spans in place of
  * buttons/links. `callouts` tags the three signals so PreviewCallouts can point at them.
  */
-export function ReplicaSiteCard({ site, callouts = false }: { site: PreviewSite; callouts?: boolean }) {
+export function ReplicaSiteCard({
+  site,
+  callouts = false,
+  className = "",
+}: {
+  site: PreviewSite;
+  callouts?: boolean;
+  className?: string;
+}) {
   const tag = (key: string) => (callouts ? { "data-callout": key } : {});
   return (
     <article
       className={`rounded-none border border-rule bg-surface p-5 transition hover:border-ink/20 ${
         site.desktopOnly ? "hidden sm:block" : ""
-      }`}
+      } ${className}`}
       {...(callouts ? { "data-callout-card": "" } : {})}
     >
       <div className="flex items-center justify-between gap-3">

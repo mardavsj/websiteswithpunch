@@ -1,108 +1,94 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { previewCallouts } from "./preview-data";
 
-type Box = { x: number; y: number; w: number; h: number };
-type Geo = { fl: number; fr: number; cardTop: number; status: Box; ssl: Box; domain: Box };
+type Pt = { x: number; y: number };
+type Geo = { markers: Pt[] } | { lines: { d: string; start: Pt; end: Pt }[] };
 
 const LINE = "hsl(var(--accent) / 0.6)";
-const WIDE = 150; // px of stage gutter needed for side callouts with leader lines
+const chip = "flex h-[18px] w-[18px] items-center justify-center bg-accent text-[10px] font-semibold text-white";
 
 /**
- * Overlay for the dashboard preview stage (its parent). With room at the sides (xl) it draws the
- * three callouts with thin leader lines into the first card; otherwise numbered markers only
- * (the legend under the stage explains them). Purely decorative: aria-hidden, no pointer events.
+ * Overlay for the preview (its parent wraps the key and the stage). lg+: thin leader lines from
+ * each key item into the first card, routed through the gaps between rows. Smaller screens:
+ * numbered markers on the targets. Re-measures on resize and after FitWindow rescales.
  */
 export function PreviewCallouts() {
   const ref = useRef<HTMLDivElement>(null);
   const [geo, setGeo] = useState<Geo | null>(null);
 
   useEffect(() => {
-    const stage = ref.current?.parentElement;
-    if (!stage) return;
+    const root = ref.current?.parentElement;
+    if (!root) return;
     const measure = () => {
-      const s = stage.getBoundingClientRect();
-      const rect = (el: Element | null | undefined): Box | null => {
-        if (!el) return null;
-        const r = el.getBoundingClientRect();
-        return { x: r.left - s.left, y: r.top - s.top, w: r.width, h: r.height };
+      const o = root.getBoundingClientRect();
+      const box = (el: Element | null | undefined) => {
+        const b = el?.getBoundingClientRect();
+        return b && { l: b.left - o.left, t: b.top - o.top, r: b.right - o.left, b: b.bottom - o.top, w: b.width, h: b.height };
       };
-      const pick = (k: string) => rect(stage.querySelector(`[data-callout="${k}"]`)?.firstElementChild);
-      const frame = rect(stage.querySelector("[data-preview-frame]"));
-      const card = rect(stage.querySelector("[data-callout-card]"));
-      const [status, ssl, domain] = [pick("status"), pick("ssl"), pick("domain")];
-      if (!frame || !card || !status || !ssl || !domain) return setGeo(null);
-      setGeo({ fl: frame.x, fr: frame.x + frame.w, cardTop: card.y, status, ssl, domain });
+      const q = (sel: string) => root.querySelector(sel);
+      const card = q("[data-callout-card]");
+      const T = ["status", "ssl", "domain"].map((k) => box(q(`[data-callout="${k}"]`)?.firstElementChild));
+      if (!card || T.some((t) => !t)) return setGeo(null);
+      const t = T as NonNullable<(typeof T)[number]>[];
+      if (!window.matchMedia("(min-width: 1024px)").matches) {
+        return setGeo({ markers: t.map((b) => ({ x: b.r - 10, y: b.t - 9 })) });
+      }
+      const K = [1, 2, 3].map((i) => box(q(`[data-key-title="${i}"]`)));
+      const list = box(q("[data-key-list]"));
+      const stage = box(q("[data-preview-stage]"));
+      const kids = card.children;
+      const [prev, head, pills, btns] = [card.parentElement?.previousElementSibling, kids[0], kids[1], kids[2]].map(box);
+      const c = box(card);
+      if (K.some((k) => !k) || !list || !stage || !prev || !head || !pills || !btns || !c) return setGeo(null);
+      const k = K as NonNullable<(typeof K)[number]>[];
+      // Lanes: gap above the card, gap under its header row, gap under its pills.
+      const lanes = [(prev.b + c.t) / 2, (head.b + pills.t) / 2, (pills.b + btns.t) / 2];
+      const ends = [
+        { x: t[0].l + t[0].w / 2, y: t[0].t },
+        { x: t[1].l + t[1].w / 2, y: t[1].t },
+        { x: t[2].l + t[2].w / 2, y: t[2].b },
+      ];
+      // Order the vertical runs in the gutter so the three paths never cross.
+      const down = lanes.filter((y, i) => y > k[i].t + k[i].h / 2).length >= 2;
+      const gutter = (f: number) => list.r + (stage.l - list.r) * f;
+      setGeo({
+        lines: k.map((kb, i) => {
+          const start = { x: kb.r + 8, y: kb.t + kb.h / 2 };
+          const gx = gutter(down ? (3 - i) / 4 : (i + 1) / 4);
+          return { d: `M${start.x} ${start.y}H${gx}V${lanes[i]}H${ends[i].x}V${ends[i].y}`, start, end: ends[i] };
+        }),
+      });
     };
     const ro = new ResizeObserver(measure);
-    ro.observe(stage);
+    ro.observe(root);
+    window.addEventListener("preview-fit", measure);
     measure();
-    document.fonts?.ready.then(measure);
-    return () => ro.disconnect();
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("preview-fit", measure);
+    };
   }, []);
-
-  const wide = geo != null && geo.fl >= WIDE;
-  const chip = "flex h-[18px] w-[18px] items-center justify-center bg-accent text-[10px] font-semibold text-white";
 
   return (
     <div ref={ref} aria-hidden className="pointer-events-none absolute inset-0">
-      {geo && !wide &&
-        [geo.status, geo.ssl, geo.domain].map((b, i) => (
-          <span key={i} className={`absolute ${chip}`} style={{ left: b.x + b.w - 10, top: b.y - 9 }}>
+      {geo && "markers" in geo &&
+        geo.markers.map((m, i) => (
+          <span key={i} className={`absolute ${chip}`} style={{ left: m.x, top: m.y }}>
             {i + 1}
           </span>
         ))}
-      {geo && wide && <Wide g={geo} chip={chip} />}
+      {geo && "lines" in geo && (
+        <svg className="absolute inset-0 h-full w-full overflow-visible">
+          {geo.lines.map(({ d, start, end }) => (
+            <g key={d}>
+              <path d={d} fill="none" stroke={LINE} strokeWidth="1" />
+              <circle cx={start.x} cy={start.y} r="2" fill={LINE} />
+              <circle cx={end.x} cy={end.y} r="3" fill="hsl(var(--accent))" />
+            </g>
+          ))}
+        </svg>
+      )}
     </div>
-  );
-}
-
-function Wide({ g, chip }: { g: Geo; chip: string }) {
-  const y1 = g.cardTop - 16; // gap above the first card
-  const y2 = g.ssl.y - 8; // gap between the card header and its pills
-  const y3 = g.domain.y + g.domain.h / 2;
-  const top = [y1 - 9, y2 - 9, Math.max(y3 - 9, y2 + 72)];
-  const c3 = top[2] + 9;
-  const sx = g.status.x + g.status.w / 2;
-  const kx = g.ssl.x + g.ssl.w / 2;
-  const dx = g.domain.x + g.domain.w;
-  const paths = [
-    `M${g.fl - 14} ${y1}H${sx}V${g.status.y}`,
-    `M${g.fr + 14} ${y2}H${kx}V${g.ssl.y}`,
-    `M${g.fr + 14} ${c3}H${g.fr + 7}V${y3}H${dx}`,
-  ];
-  const ends = [
-    [sx, g.status.y],
-    [kx, g.ssl.y],
-    [dx, y3],
-  ];
-  return (
-    <>
-      <svg className="absolute inset-0 h-full w-full overflow-visible">
-        {paths.map((d) => (
-          <path key={d} d={d} fill="none" stroke={LINE} strokeWidth="1" />
-        ))}
-        {ends.map(([x, y]) => (
-          <circle key={`${x}-${y}`} cx={x} cy={y} r="3" fill="hsl(var(--accent))" />
-        ))}
-      </svg>
-      {previewCallouts.map((c, i) => {
-        const left = i === 0;
-        return (
-          <div
-            key={c.key}
-            className={`absolute w-[140px] ${left ? "text-right" : ""}`}
-            style={left ? { left: g.fl - 154, top: top[i] } : { left: g.fr + 20, top: top[i] }}
-          >
-            <p className={`flex items-center gap-2 text-sm font-medium text-ink ${left ? "flex-row-reverse" : ""}`}>
-              <span className={chip}>{i + 1}</span>
-              {c.title}
-            </p>
-            <p className="mt-1 text-xs leading-snug text-muted">{c.body}</p>
-          </div>
-        );
-      })}
-    </>
   );
 }
