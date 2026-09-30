@@ -19,7 +19,7 @@ function Caption({ className }: { className: string }) {
 export function ProductPreviewSection() {
   return (
     <section className="border-b border-rule bg-bg">
-      <div className="relative mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] px-4 py-20 sm:px-6 sm:py-24 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] lg:grid-rows-[1fr_auto_1fr] lg:gap-x-10 lg:py-6">
+      <div className="relative mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] px-4 py-20 sm:px-6 sm:py-24 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] lg:grid-rows-[1fr_auto_1fr] lg:gap-x-10 lg:py-4">
         <div className="lg:col-start-1 lg:row-start-2">
           <p className="label-caps">Inside the dashboard</p>
           <h2 className="mt-4 max-w-[18ch] font-display text-[2.1rem] font-medium leading-[1.05] tracking-[-0.03em] text-ink sm:text-5xl lg:text-[2.5rem]">
@@ -38,7 +38,7 @@ export function ProductPreviewSection() {
 
         <div
           data-preview-stage
-          className="mt-12 border border-rule bg-[hsl(var(--ink)/0.03)] px-3 pb-8 pt-5 sm:mt-14 sm:px-8 sm:pb-12 sm:pt-6 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:mt-0 lg:self-center lg:p-4"
+          className="mt-12 border border-rule bg-[hsl(var(--ink)/0.03)] px-3 pb-8 pt-5 sm:mt-14 sm:px-8 sm:pb-12 sm:pt-6 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:mt-0 lg:self-center lg:p-3"
         >
           <Caption className="mb-4 flex sm:mb-5 lg:hidden" />
           <FitWindow>

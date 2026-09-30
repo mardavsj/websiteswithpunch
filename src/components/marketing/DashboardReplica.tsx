@@ -57,8 +57,8 @@ function ReplicaNav() {
 }
 
 const box = "border border-rule bg-surface p-4";
-/** lg+: the whole window is shown (no fade). Cards 1-3, or 1-2 when FitWindow sets .fit-2 on short screens. */
-const lgCards = ["", "", "lg:[.fit-2_&]:hidden"];
+/** Two full cards, then only the top of the third (its title row) fading into the page; the 4th only counts. */
+const cardClass = ["", "", "max-h-[52px] overflow-hidden [mask-image:linear-gradient(black_55%,transparent)]", "hidden"];
 
 /** Static, inert replica of /dashboard with example data (same classes as the real page). */
 export function DashboardReplica() {
@@ -72,9 +72,9 @@ export function DashboardReplica() {
       className="relative border border-rule bg-bg shadow-[10px_10px_0_0_hsl(var(--accent)/0.14)]"
     >
       <WindowBar />
-      <div className="pointer-events-none max-h-[1060px] select-none overflow-hidden [mask-image:linear-gradient(black_calc(100%_-_96px),transparent)] sm:max-h-[780px] lg:max-h-none lg:[mask-image:none]">
+      <div className="pointer-events-none select-none overflow-hidden">
         <ReplicaNav />
-        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:pb-6">
+        <div className="mx-auto max-w-6xl px-4 pt-10 sm:px-6 lg:pt-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="font-display text-2xl font-medium text-ink">Welcome, {u.name}</p>
@@ -107,7 +107,7 @@ export function DashboardReplica() {
 
           <div className="mt-8 space-y-5">
             {previewSites.map((s, i) => (
-              <ReplicaSiteCard key={s.url} site={s} callouts={i === 0} className={lgCards[i] ?? "lg:hidden"} />
+              <ReplicaSiteCard key={s.url} site={s} callouts={i === 0} className={cardClass[i] ?? "hidden"} />
             ))}
           </div>
         </div>

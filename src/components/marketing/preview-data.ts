@@ -9,8 +9,6 @@ export type PreviewSite = {
   code: number | null;
   sslDays: number;
   domainDays: number;
-  /** Hidden on phones so the preview stays short (lg+ shows the first 2 or 3, see FitWindow). */
-  desktopOnly?: boolean;
 };
 
 export const previewUser = { name: "Alex", initial: "A", plan: "Pro", limit: 10, packSites: 5 };
@@ -18,8 +16,8 @@ export const previewUser = { name: "Alex", initial: "A", plan: "Pro", limit: 10,
 export const previewSites: PreviewSite[] = [
   { name: "My shop", url: "https://shop.example.com", status: "up", lastCheck: "1 Oct 2026, 9:41 am", latencyMs: 142, code: 200, sslDays: 62, domainDays: 164 },
   { name: "Launch page", url: "https://launch.example.io", status: "down", lastCheck: "1 Oct 2026, 9:40 am", latencyMs: 1204, code: 503, sslDays: 45, domainDays: 6 },
-  { name: "Client blog", url: "https://blog.example.org", status: "up", lastCheck: "1 Oct 2026, 9:41 am", latencyMs: 210, code: 200, sslDays: 21, domainDays: 300, desktopOnly: true },
-  { name: "Docs", url: "https://docs.example.dev", status: "up", lastCheck: "1 Oct 2026, 9:40 am", latencyMs: 98, code: 200, sslDays: 88, domainDays: 41, desktopOnly: true },
+  { name: "Client blog", url: "https://blog.example.org", status: "up", lastCheck: "1 Oct 2026, 9:41 am", latencyMs: 210, code: 200, sslDays: 21, domainDays: 300 },
+  { name: "Docs", url: "https://docs.example.dev", status: "up", lastCheck: "1 Oct 2026, 9:40 am", latencyMs: 98, code: 200, sslDays: 88, domainDays: 41 },
 ];
 
 /** The three signals, pointed at on the first card. */

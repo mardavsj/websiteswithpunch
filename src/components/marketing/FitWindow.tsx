@@ -3,13 +3,12 @@
 import { useEffect, useRef, type ReactNode } from "react";
 
 const NAV = 65; // sticky navbar height
-const CHROME = 84; // lg: section padding (2×24) + stage padding (2×16) + stage/section borders (3) + 1px slack
+const CHROME = 60; // lg: section padding (2×16) + stage padding (2×12) + stage/section borders (3) + 1px slack
 const MIN_W = 790; // never lay the window out narrower than this (dates in the pills stay on one line)
-const MIN_3 = 0.8; // below this scale, show 2 site cards instead of 3 so text stays readable
 
 /**
- * lg+: zooms the dashboard window so the whole section fits one viewport below the navbar,
- * dropping to 2 cards on short screens. Announces "preview-fit" so the callouts re-measure.
+ * lg+: zooms the dashboard window (2 cards + the top of a 3rd) so the whole section fits one
+ * viewport below the navbar. Announces "preview-fit" so the callouts re-measure.
  */
 export function FitWindow({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -31,16 +30,11 @@ export function FitWindow({ children }: { children: ReactNode }) {
     };
 
     const fit = () => {
-      el.classList.remove("fit-2");
       el.style.zoom = "";
       if (lg.matches) {
         const avail = window.innerHeight - NAV - CHROME;
         const width = el.getBoundingClientRect().width; // unzoomed: the stage content width
-        let s = scaleFor(avail, width);
-        if (s < MIN_3) {
-          el.classList.add("fit-2");
-          s = scaleFor(avail, width);
-        }
+        const s = scaleFor(avail, width);
         el.style.zoom = String(s);
         const h = el.getBoundingClientRect().height; // re-check after reflow at the new width
         if (h > avail) el.style.zoom = String((s * avail) / h);

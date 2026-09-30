@@ -18,9 +18,7 @@ export function ReplicaSiteCard({
   const tag = (key: string) => (callouts ? { "data-callout": key } : {});
   return (
     <article
-      className={`rounded-none border border-rule bg-surface p-5 transition hover:border-ink/20 ${
-        site.desktopOnly ? "hidden sm:block" : ""
-      } ${className}`}
+      className={`rounded-none border border-rule bg-surface p-5 transition hover:border-ink/20 ${className}`}
       {...(callouts ? { "data-callout-card": "" } : {})}
     >
       <div className="flex items-center justify-between gap-3">
