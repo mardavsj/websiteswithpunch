@@ -4,11 +4,10 @@ import type { TechItem } from "./tech-types";
 
 /**
  * Server-side, browser-free tech detection (Wappalyzer-style) on the page the
- * uptime check already fetched. Rules needing JS execution or a DOM are
- * skipped. Never throws; returns null when it couldn't run (keep old data).
+ * detector fetched (see page-capture). Rules needing JS execution or a DOM
+ * are skipped. Matching takes ~0.1–0.5s once the fingerprints are loaded.
  */
 
-const BUDGET_MS = 8000; // includes a cold fingerprint download; warm runs take ~0.1–0.5s
 const HTML_MATCH_CHARS = 600_000;
 const MAX_ITEMS = 40;
 
@@ -141,28 +140,11 @@ function analyze(fp: Fingerprints, page: Page): TechItem[] {
   return items.slice(0, MAX_ITEMS);
 }
 
-/** Detect technologies; null = couldn't run (fingerprints unavailable / timeout). */
-export async function detectTech(capture: PageCapture | undefined): Promise<TechItem[] | null> {
-  if (!capture) return null;
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<null>((resolve) => {
-    timer = setTimeout(() => resolve(null), BUDGET_MS);
-  });
-  const work = (async () => {
-    const fp = await getFingerprints();
-    return fp ? analyze(fp, parsePage(capture)) : null;
-  })().catch((err) => {
-    console.error("Tech detection failed", err);
-    return null;
-  });
-  try {
-    return await Promise.race([work, timeout]);
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-/** Prisma fields to store a detection result (nothing when it didn't run). */
-export function techStackFields(tech: TechItem[] | null | undefined) {
-  return tech ? { techStack: JSON.stringify(tech), techStackAt: new Date() } : {};
+/**
+ * Detect technologies on a fetched page. Throws a readable Error when the
+ * fingerprints can't be loaded; an empty array means nothing was recognised.
+ */
+export async function detectTech(capture: PageCapture): Promise<TechItem[]> {
+  const fp = await getFingerprints();
+  return analyze(fp, parsePage(capture));
 }
