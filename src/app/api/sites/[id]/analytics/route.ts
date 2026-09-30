@@ -58,13 +58,36 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   const unlockedRanges = getUnlockedRanges(ageMs);
   const { range, rangeClamped } = clampRangeToUnlocked(requestedRange, unlockedRanges);
 
-  const since = new Date(now - rangeToMs(range));
+  const windowMs = rangeToMs(range);
+  let since = new Date(now - windowMs);
 
-  const rows = await prisma.checkResult.findMany({
+  let rows = await prisma.checkResult.findMany({
     where: { siteId: site.id, checkedAt: { gte: since } },
     orderBy: { checkedAt: "asc" },
     take: 5000,
   });
+
+  // Nothing in the live window: fall back to the latest saved window of the
+  // same length, anchored at the most recent check we have.
+  let stale = false;
+  let latestAt: Date | null = rows.length ? rows[rows.length - 1].checkedAt : null;
+  if (!rows.length) {
+    const latest = await prisma.checkResult.findFirst({
+      where: { siteId: site.id },
+      orderBy: { checkedAt: "desc" },
+      select: { checkedAt: true },
+    });
+    if (latest) {
+      stale = true;
+      latestAt = latest.checkedAt;
+      since = new Date(latest.checkedAt.getTime() - windowMs);
+      rows = await prisma.checkResult.findMany({
+        where: { siteId: site.id, checkedAt: { gte: since, lte: latest.checkedAt } },
+        orderBy: { checkedAt: "asc" },
+        take: 5000,
+      });
+    }
+  }
 
   const checks: CheckPoint[] = rows.map((r) => ({
     status: r.status,
@@ -143,7 +166,15 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     statusCodes,
     lastDowntimeAt: lastDowntimeAt?.toISOString() ?? null,
     empty: total === 0,
+    stale,
     since: since.toISOString(),
+    dataEndsAt: latestAt?.toISOString() ?? null,
+    site: {
+      status: site.status,
+      lastCheckedAt: site.lastCheckedAt?.toISOString() ?? null,
+      lastStatusCode: site.lastStatusCode,
+      lastLatencyMs: site.lastLatencyMs,
+    },
   };
 
   return NextResponse.json(body, {

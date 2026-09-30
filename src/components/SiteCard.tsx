@@ -7,6 +7,7 @@ import { StatusBadge } from "./StatusBadge";
 import { EditSiteModal } from "./EditSiteModal";
 import { DeleteSiteButton } from "./DeleteSiteButton";
 import { formatDate } from "@/lib/utils";
+import { recheckSite } from "@/lib/site-check-client";
 
 type Site = {
   id: string;
@@ -71,11 +72,12 @@ export function SiteCard({
 
   async function recheck() {
     setBusy(true);
-    await fetch(`/api/sites/${site.id}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "check" }),
-    });
+    setMsg(null);
+    try {
+      await recheckSite(site.id);
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Recheck failed. Try again.");
+    }
     router.refresh();
     setBusy(false);
   }
@@ -190,7 +192,7 @@ export function SiteCard({
             disabled={busy}
             className="rounded-none bg-solid px-3 py-1.5 text-xs font-medium text-solid-fg hover:opacity-90 disabled:opacity-50"
           >
-            Recheck
+            {busy ? "Checking…" : "Recheck"}
           </button>
           {showAnalyticsLink && (
             <Link
@@ -217,6 +219,8 @@ export function SiteCard({
           />
         </div>
       </div>
+
+      {msg && <p className="mt-2 text-xs text-danger">{msg}</p>}
 
       <EditSiteModal
         open={editOpen}
