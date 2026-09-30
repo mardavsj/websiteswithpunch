@@ -2,23 +2,12 @@ import Link from "next/link";
 import type { Persona } from "./audience-content";
 
 /** Editorial persona sheet: statement, before → after, and the plan-sized stat. */
-export function AudienceDetail({ p, index }: { p: Persona; index: number }) {
+export function AudienceDetail({ p }: { p: Persona }) {
   return (
-    <div className="relative overflow-hidden border border-rule bg-surface p-6 sm:p-10">
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_70%_at_100%_0%,hsl(var(--accent)/0.12),transparent_65%)]"
-        aria-hidden
-      />
-      <span
-        className="pointer-events-none absolute -right-1 -top-5 select-none font-display text-[7rem] font-medium leading-none text-transparent [-webkit-text-stroke:1px_hsl(var(--accent)/0.35)] sm:-top-8 sm:text-[11rem]"
-        aria-hidden
-      >
-        0{index + 1}
-      </span>
-
-      <div className="relative">
+    <div className="border border-rule bg-surface p-6 sm:p-10">
+      <div>
         <p className="label-caps !text-accent">For {p.title.toLowerCase()}</p>
-        <p className="mt-4 max-w-md pr-10 font-display text-xl font-medium leading-snug text-ink sm:pr-0 sm:text-3xl">
+        <p className="mt-4 max-w-md font-display text-xl font-medium leading-snug text-ink sm:text-3xl">
           {p.body}
         </p>
 

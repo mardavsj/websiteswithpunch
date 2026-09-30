@@ -12,7 +12,6 @@ export type Persona = {
   get: string;
   stat: string;
   statLabel: string;
-  plan: string;
   cta: string;
   href: string;
 };
@@ -31,7 +30,6 @@ export const personas: Persona[] = [
     get: "Uptime, SSL and domain checks for your main site. Upgrade only when you add more.",
     stat: String(PLANS.free.siteLimit),
     statLabel: `site on ${PLANS.free.name}, no card needed`,
-    plan: `${PLANS.free.name} · $${PLANS.free.price}`,
     cta: "Start free",
     href: "/signup",
   },
@@ -44,7 +42,6 @@ export const personas: Persona[] = [
     get: `Pro covers up to ${PLANS.pro.siteLimit} sites; add +${SITE_PACKS.pro.sitesPerPack} packs up to ${proMax}.`,
     stat: String(PLANS.pro.siteLimit),
     statLabel: `client sites on ${PLANS.pro.name}`,
-    plan: `${PLANS.pro.name} · $${PLANS.pro.price}/mo`,
     cta: "Start with Pro",
     href: "/signup?plan=pro",
   },
@@ -57,7 +54,6 @@ export const personas: Persona[] = [
     get: `Business covers up to ${PLANS.business.siteLimit} sites; add +${SITE_PACKS.business.sitesPerPack} packs up to ${bizMax}.`,
     stat: String(PLANS.business.siteLimit),
     statLabel: `sites on ${PLANS.business.name}, in one view`,
-    plan: `${PLANS.business.name} · $${PLANS.business.price}/mo`,
     cta: "Start with Business",
     href: "/signup?plan=business",
   },

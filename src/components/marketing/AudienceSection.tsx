@@ -63,7 +63,6 @@ export function AudienceSection() {
                       >
                         {p.title}
                       </span>
-                      <span className="mt-1.5 block text-xs text-muted">{p.plan}</span>
                     </span>
                     <span
                       className={`flex h-9 w-9 shrink-0 items-center justify-center border border-rule transition-colors ${ease} ${
@@ -84,7 +83,7 @@ export function AudienceSection() {
                       className={`overflow-hidden transition-[visibility] ${ease} ${on ? "visible" : "invisible"}`}
                     >
                       <div className="pb-6">
-                        <AudienceDetail p={p} index={i} />
+                        <AudienceDetail p={p} />
                       </div>
                     </div>
                   </div>
@@ -105,7 +104,7 @@ export function AudienceSection() {
                       on ? "visible translate-y-0 opacity-100" : "pointer-events-none invisible translate-y-3 opacity-0"
                     }`}
                   >
-                    <AudienceDetail p={p} index={i} />
+                    <AudienceDetail p={p} />
                   </div>
                 );
               })}
