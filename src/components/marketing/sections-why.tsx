@@ -1,8 +1,11 @@
 import { lapses, whyColumns } from "./why-content";
 
-/** Three-column ledger with hairline rules: the lapse, the outside view, and the dashboard view. */
+/** Three-column table: the lapse, the outside view, and the dashboard view. */
 const cols = "lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1fr)]";
-const cell = "min-w-0 lg:px-8 lg:first:pl-0 lg:last:pr-0 lg:[&+&]:border-l lg:[&+&]:border-rule";
+const pad = "p-5 sm:p-6 lg:px-7 lg:py-8";
+const tint = "bg-[hsl(var(--ink)/0.025)]";
+/** Every divider meets the outer border: stacked cells split by full-width rules, lg columns by full-height rules. */
+const cell = "min-w-0 [&+&]:border-t [&+&]:border-rule lg:[&+&]:border-l lg:[&+&]:border-t-0";
 
 function MobileLabel({ children }: { children: string }) {
   return <p className="label-caps mb-2 lg:hidden">{children}</p>;
@@ -25,25 +28,28 @@ export function WhyItMattersSection() {
           </p>
         </div>
 
-        <div className="mt-14 border-t border-rule sm:mt-16">
-          <div className={`hidden border-b border-rule py-3 lg:grid ${cols}`} aria-hidden>
+        <div className="mt-14 space-y-4 sm:mt-16 lg:space-y-0 lg:border lg:border-rule">
+          <div className={`hidden border-b border-rule lg:grid ${tint} ${cols}`} aria-hidden>
             {whyColumns.map((c) => (
-              <p key={c} className={`label-caps ${cell}`}>
+              <p key={c} className={`label-caps px-7 py-3.5 ${cell}`}>
                 {c}
               </p>
             ))}
           </div>
 
           {lapses.map((l) => (
-            <article key={l.id} className={`grid gap-6 border-b border-rule py-8 sm:py-10 lg:gap-0 ${cols}`}>
-              <div className={cell}>
+            <article
+              key={l.id}
+              className={`grid border border-rule lg:border-0 lg:border-b lg:last:border-b-0 ${cols}`}
+            >
+              <div className={`${cell} ${pad} ${tint} lg:bg-transparent`}>
                 <h3 className="font-display text-2xl font-medium tracking-[-0.02em] text-ink sm:text-[1.75rem]">
                   {l.title}
                 </h3>
                 <p className="mt-3 max-w-sm leading-relaxed text-muted">{l.impact}</p>
               </div>
 
-              <div className={cell}>
+              <div className={`${cell} ${pad}`}>
                 <MobileLabel>{whyColumns[1]}</MobileLabel>
                 <p className="break-all font-mono text-[13px] font-medium text-rose-700 dark:text-rose-300">
                   {l.code}
@@ -51,7 +57,7 @@ export function WhyItMattersSection() {
                 <p className="mt-2 text-sm leading-relaxed text-muted">{l.codeNote}</p>
               </div>
 
-              <div className={cell}>
+              <div className={`${cell} ${pad}`}>
                 <MobileLabel>{whyColumns[2]}</MobileLabel>
                 <p className="flex gap-3 leading-relaxed text-ink">
                   <span className="mt-[0.65em] h-0.5 w-4 shrink-0 bg-accent" aria-hidden />
