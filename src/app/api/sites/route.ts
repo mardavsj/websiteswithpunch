@@ -10,6 +10,7 @@ import {
   resolvePackCountForLimit,
 } from "@/lib/plans";
 import { runFullSiteCheck } from "@/lib/checks";
+import { techStackFields } from "@/lib/tech-detect";
 import {
   applyDuePendingAndEnforce,
   currentEffectiveLimit,
@@ -174,7 +175,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const result = await runFullSiteCheck(url);
+    const result = await runFullSiteCheck(url, { tech: true });
     await prisma.site.update({
       where: { id: site.id },
       data: {
@@ -186,6 +187,7 @@ export async function POST(req: Request) {
         sslDaysLeft: result.ssl.daysLeft,
         domainExpiresAt: result.domain.expiresAt,
         domainDaysLeft: result.domain.daysLeft,
+        ...techStackFields(result.tech),
       },
     });
     await prisma.checkResult.create({
