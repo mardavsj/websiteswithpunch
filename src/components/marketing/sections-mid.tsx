@@ -1,5 +1,14 @@
 import { DashboardMock } from "./DashboardMock";
+import { DomainVisual } from "./DomainVisual";
+import { SslVisual } from "./SslVisual";
+import { UptimeVisual } from "./UptimeVisual";
 import { monitorRows, painPoints } from "./home-content";
+
+const monitorVisuals = {
+  uptime: UptimeVisual,
+  ssl: SslVisual,
+  domain: DomainVisual,
+} as const;
 
 export function FeaturesSection() {
   return (
@@ -14,14 +23,13 @@ export function FeaturesSection() {
         <div className="mt-16 space-y-16 sm:space-y-20">
           {monitorRows.map((row, i) => {
             const reverse = i % 2 === 1;
+            const Visual = monitorVisuals[row.visual];
             return (
               <div
                 key={row.title}
-                className={`grid items-stretch gap-8 md:grid-cols-2 md:gap-14 ${reverse ? "md:[&>*:first-child]:order-2" : ""}`}
+                className={`grid min-w-0 items-stretch gap-8 md:grid-cols-2 md:gap-14 ${reverse ? "md:[&>*:first-child]:order-2" : ""}`}
               >
-                <div className="flex h-full min-h-[220px] w-full items-center justify-center bg-accent-soft sm:min-h-[280px]">
-                  <row.Icon className="h-12 w-12 text-accent sm:h-14 sm:w-14" />
-                </div>
+                <Visual />
                 <div className="flex flex-col justify-center">
                   <p className="label-caps text-accent">{row.eyebrow}</p>
                   <h3 className="mt-2 font-display text-2xl font-medium text-ink sm:text-3xl">

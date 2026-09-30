@@ -34,21 +34,21 @@ export const monitorRows = [
     title: "Uptime",
     eyebrow: "Availability",
     body: "We hit your URL on a schedule and record whether it responded. See up/down status, recent history, and response latency so you know when something broke — and how long it took to recover.",
-    Icon: IconPulse,
+    visual: "uptime",
   },
   {
     title: "SSL certificates",
     eyebrow: "Trust",
     body: "For HTTPS sites we read the certificate expiry date and show days remaining. Get ahead of browser trust warnings before customers see them and bounce.",
-    Icon: IconLock,
+    visual: "ssl",
   },
   {
     title: "Domain expiry",
     eyebrow: "Ownership",
     body: "Best-effort RDAP/WHOIS lookups surface when your root domain is due for renewal. A lapsed domain takes the site and often email offline — catch that early.",
-    Icon: IconGlobe,
+    visual: "domain",
   },
-];
+] as const;
 
 export const painPoints = [
   {
