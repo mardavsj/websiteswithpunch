@@ -1,11 +1,12 @@
 import { promises as fs } from "fs";
 import os from "os";
 import path from "path";
-import { WEBAPPANALYZER_CDN, WEBAPPANALYZER_COMMIT } from "./tech-types";
+import { WEBAPPANALYZER_CDN, WEBAPPANALYZER_COMMIT, WEBAPPANALYZER_RAW } from "./tech-types";
 
 /**
- * Loads the webappanalyzer fingerprints (GPL-3.0 data, pinned commit) from
- * jsDelivr at runtime, caches them on disk (os.tmpdir) and in memory, and
+ * Loads the webappanalyzer fingerprints (GPL-3.0 data, pinned commit) at
+ * runtime from jsDelivr (fallback: raw.githubusercontent.com), caches them in
+ * memory and, best effort, on disk (.next/cache, then the OS temp dir), and
  * compiles only the rules we can match without a browser: headers, cookies,
  * meta, html, scriptSrc, inline scripts, url, implies/excludes/requires.
  */
@@ -36,9 +37,11 @@ export type Fingerprints = {
 type Raw = { technologies: Record<string, Record<string, unknown>>; categories: Record<string, { name: string; priority: number }> };
 
 const FILES = ["_", ..."abcdefghijklmnopqrstuvwxyz".split("")];
-const CACHE_FILE = path.join(os.tmpdir(), `wwp-webappanalyzer-${WEBAPPANALYZER_COMMIT}.json`);
-const LOAD_MS = 15_000;
-const RETRY_MS = 10 * 60_000;
+const CACHE_NAME = `wwp-webappanalyzer-${WEBAPPANALYZER_COMMIT}.json`;
+const SOURCES = [WEBAPPANALYZER_CDN, WEBAPPANALYZER_RAW];
+const FILE_MS = 30_000; // per file; the first load downloads ~3.3MB
+const ATTEMPTS = 2; // per source
+const RETRY_MS = 30_000; // after a failed load, wait this long before trying again
 
 const arr = (v: unknown): string[] =>
   v == null ? [] : (Array.isArray(v) ? v : [v]).filter((x): x is string => typeof x === "string");
@@ -102,52 +105,110 @@ function compile(raw: Raw): Fingerprints {
   return { rules, categories };
 }
 
-async function getJson(url: string, signal: AbortSignal): Promise<unknown> {
-  const res = await fetch(url, { signal, cache: "no-store" });
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  return res.json();
+function cacheFiles(): string[] {
+  const dirs = [path.join(process.cwd(), ".next", "cache"), os.tmpdir()];
+  return dirs.map((d) => path.join(d, CACHE_NAME));
 }
 
-async function loadRaw(): Promise<Raw> {
-  try {
-    return JSON.parse(await fs.readFile(CACHE_FILE, "utf8")) as Raw;
-  } catch {
-    /* not cached yet */
+const valid = (raw: Raw | null): raw is Raw =>
+  Boolean(raw?.technologies && raw.categories && Object.keys(raw.technologies).length > 1000);
+
+async function readCache(): Promise<Raw | null> {
+  for (const file of cacheFiles()) {
+    try {
+      const raw = JSON.parse(await fs.readFile(file, "utf8")) as Raw;
+      if (valid(raw)) return raw;
+    } catch {
+      /* missing or unreadable: try the next one */
+    }
   }
+  return null;
+}
+
+/** Best effort: a failed write (permissions, OneDrive, read-only) just means memory-only. */
+async function writeCache(raw: Raw): Promise<void> {
+  const text = JSON.stringify(raw);
+  for (const file of cacheFiles()) {
+    const tmp = `${file}.${process.pid}.tmp`; // write + rename: never a half file
+    try {
+      await fs.mkdir(path.dirname(file), { recursive: true });
+      await fs.writeFile(tmp, text);
+      await fs.rename(tmp, file);
+      return;
+    } catch (err) {
+      await fs.unlink(tmp).catch(() => undefined);
+      console.warn(`[tech-stack] Couldn't cache fingerprints at ${file}:`, (err as Error).message);
+    }
+  }
+}
+
+async function getJsonOnce(url: string): Promise<unknown> {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), LOAD_MS);
+  const timer = setTimeout(() => ctrl.abort(), FILE_MS);
   try {
-    const [categories, ...parts] = await Promise.all([
-      getJson(`${WEBAPPANALYZER_CDN}/categories.json`, ctrl.signal),
-      ...FILES.map((f) => getJson(`${WEBAPPANALYZER_CDN}/technologies/${f}.json`, ctrl.signal)),
-    ]);
-    const raw: Raw = {
-      categories: categories as Raw["categories"],
-      technologies: Object.assign({}, ...(parts as Array<Raw["technologies"]>)),
-    };
-    const tmp = `${CACHE_FILE}.${process.pid}.tmp`; // write + rename: never a half file
-    await fs
-      .writeFile(tmp, JSON.stringify(raw))
-      .then(() => fs.rename(tmp, CACHE_FILE))
-      .catch(() => undefined);
-    return raw;
+    const res = await fetch(url, { signal: ctrl.signal, cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    const e = err as Error & { cause?: { code?: string } };
+    throw new Error(e.name === "AbortError" ? "timed out" : e.cause?.code || e.message);
   } finally {
     clearTimeout(timer);
   }
 }
 
-let cached: Promise<Fingerprints> | null = null;
-let failedAt = 0;
+/** One file, trying each source ATTEMPTS times. */
+async function getJson(file: string): Promise<unknown> {
+  const errors: string[] = [];
+  for (const base of SOURCES) {
+    for (let i = 0; i < ATTEMPTS; i++) {
+      try {
+        return await getJsonOnce(`${base}/${file}`);
+      } catch (err) {
+        errors.push(`${new URL(base).host}: ${(err as Error).message}`);
+      }
+    }
+  }
+  throw new Error(`${file} (${errors.join("; ")})`);
+}
 
-/** Compiled fingerprints, or null if they can't be loaded right now. */
-export async function getFingerprints(): Promise<Fingerprints | null> {
+async function loadRaw(): Promise<Raw> {
+  const cached = await readCache();
+  if (cached) return cached;
+  const started = Date.now();
+  const [categories, ...parts] = await Promise.all([
+    getJson("categories.json"),
+    ...FILES.map((f) => getJson(`technologies/${f}.json`)),
+  ]);
+  const raw: Raw = {
+    categories: categories as Raw["categories"],
+    technologies: Object.assign({}, ...(parts as Array<Raw["technologies"]>)),
+  };
+  if (!valid(raw)) throw new Error("fingerprint data looks incomplete");
+  console.info(
+    `[tech-stack] Downloaded ${Object.keys(raw.technologies).length} fingerprints in ${Date.now() - started}ms`
+  );
+  await writeCache(raw);
+  return raw;
+}
+
+let cached: Promise<Fingerprints> | null = null;
+let failed: { at: number; message: string } | null = null;
+
+/** Compiled fingerprints. Throws a readable Error if they can't be loaded. */
+export async function getFingerprints(): Promise<Fingerprints> {
   if (!cached) {
-    if (Date.now() - failedAt < RETRY_MS) return null;
+    if (failed && Date.now() - failed.at < RETRY_MS) throw new Error(failed.message);
     cached = loadRaw().then(compile);
-    cached.catch(() => {
+    cached.catch((err: Error) => {
       cached = null;
-      failedAt = Date.now();
+      failed = { at: Date.now(), message: `Couldn't download the technology fingerprints: ${err.message}` };
+      console.error("[tech-stack]", failed.message);
     });
   }
-  return cached.catch(() => null);
+  try {
+    return await cached;
+  } catch {
+    throw new Error(failed?.message ?? "Couldn't load the technology fingerprints");
+  }
 }

@@ -8,6 +8,11 @@
 
 export const WEBAPPANALYZER_COMMIT = "eea872af449e207e055398f7369d11ee48c8ea03";
 export const WEBAPPANALYZER_CDN = `https://cdn.jsdelivr.net/gh/enthec/webappanalyzer@${WEBAPPANALYZER_COMMIT}/src`;
+/** Fallback for the fingerprint JSON when jsDelivr is slow or blocked. */
+export const WEBAPPANALYZER_RAW = `https://raw.githubusercontent.com/enthec/webappanalyzer/${WEBAPPANALYZER_COMMIT}/src`;
+
+/** "Recheck stack" is allowed once per this long per site (server-enforced). */
+export const TECH_RECHECK_MS = 24 * 60 * 60 * 1000;
 
 export type TechItem = {
   name: string;
@@ -36,3 +41,14 @@ export function parseTechStack(raw: string | null | undefined): TechItem[] | nul
     return null;
   }
 }
+
+/** GET/POST /api/sites/[id]/tech-stack response. */
+export type TechStackState = {
+  items: TechItem[] | null;
+  /** Last successful detection (ISO); null = never detected. */
+  detectedAt: string | null;
+  /** When "Recheck stack" is allowed again (ISO); null = now. */
+  nextAllowedAt: string | null;
+  /** Server clock (ISO), to correct the client countdown. */
+  now: string;
+};
