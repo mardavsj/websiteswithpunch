@@ -2,8 +2,6 @@ import tls from "tls";
 import { URL } from "url";
 import { normalizeSiteUrl } from "./url";
 import { checkDomainExpiry, type DomainResult } from "./checks-domain";
-import { capturePage, type PageCapture } from "./page-capture";
-import { detectTech } from "./tech-detect";
 
 export type { DomainResult };
 export { checkDomainExpiry };
@@ -14,8 +12,6 @@ export type UptimeResult = {
   latencyMs: number | null;
   error: string | null;
   finalUrl?: string | null;
-  /** Only with { capture: true }: headers/cookies/HTML for tech detection. */
-  page?: PageCapture;
 };
 
 export type SslResult = {
@@ -59,7 +55,7 @@ function isTlsHostnameError(err: unknown): boolean {
   return /CERT_ALTNAME|hostname\/IP does not match|altname|SSL|TLS|fetch failed/i.test(msg);
 }
 
-async function fetchUptimeOnce(url: string, capture = false): Promise<UptimeResult> {
+async function fetchUptimeOnce(url: string): Promise<UptimeResult> {
   const started = Date.now();
   let current = url;
   try {
@@ -95,16 +91,12 @@ async function fetchUptimeOnce(url: string, capture = false): Promise<UptimeResu
       }
 
       const ok = res.status >= 200 && res.status < 400;
-      const latencyMs = Date.now() - started; // headers received; body read (if any) excluded
-      const finalUrl = res.url || current;
-      const page = capture ? await capturePage(res, finalUrl, controller) : undefined;
       return {
         status: ok ? "up" : "down",
         statusCode: res.status,
-        latencyMs,
+        latencyMs: Date.now() - started,
         error: ok ? null : `HTTP ${res.status}`,
-        finalUrl,
-        page,
+        finalUrl: res.url || current,
       };
     }
     return {
@@ -125,19 +117,16 @@ async function fetchUptimeOnce(url: string, capture = false): Promise<UptimeResu
   }
 }
 
-export async function checkUptime(
-  rawUrl: string,
-  opts: { capture?: boolean } = {}
-): Promise<UptimeResult> {
+export async function checkUptime(rawUrl: string): Promise<UptimeResult> {
   const primary = checkTargetUrl(rawUrl);
-  const first = await fetchUptimeOnce(primary, opts.capture);
+  const first = await fetchUptimeOnce(primary);
   if (first.status !== "error") return first;
 
   // Certs that omit www (e.g. www.ullam.ai → CN=ullam.ai) fail TLS before redirects.
   if (isTlsHostnameError(first.error) || first.error) {
     const apex = apexFallbackUrl(primary);
     if (apex && apex !== primary) {
-      const second = await fetchUptimeOnce(apex, opts.capture);
+      const second = await fetchUptimeOnce(apex);
       if (second.status !== "error") return second;
       return { ...second, error: second.error || first.error };
     }
@@ -217,17 +206,11 @@ export async function checkSsl(rawUrl: string, preferUrl?: string | null): Promi
   return last;
 }
 
-/**
- * Uptime, then SSL + domain (+ tech stack when opts.tech) in parallel.
- * tech is null when detection didn't run or failed; it never affects uptime.
- */
-export async function runFullSiteCheck(rawUrl: string, opts: { tech?: boolean } = {}) {
-  const { page, ...uptime } = await checkUptime(rawUrl, { capture: opts.tech });
-  const [ssl, domain, tech] = await Promise.all([
+export async function runFullSiteCheck(rawUrl: string) {
+  const uptime = await checkUptime(rawUrl);
+  const [ssl, domain] = await Promise.all([
     checkSsl(rawUrl, uptime.finalUrl),
     checkDomainExpiry(rawUrl),
-    // Only detect on a healthy page: an error page would overwrite the real stack.
-    opts.tech && uptime.status === "up" ? detectTech(page) : Promise.resolve(null),
   ]);
-  return { uptime, ssl, domain, tech };
+  return { uptime, ssl, domain };
 }

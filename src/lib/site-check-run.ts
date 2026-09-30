@@ -1,7 +1,6 @@
 import type { Site } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { checkSsl, checkUptime, runFullSiteCheck } from "@/lib/checks";
-import { techStackFields } from "@/lib/tech-detect";
 
 /** Recheck (manual or auto refresh): once per minute per site. */
 export const RECHECK_COOLDOWN_MS = 60_000;
@@ -23,7 +22,6 @@ export type SiteCheckOutcome =
  * domain expiry is not looked up again (third-party RDAP/WHOIS every minute
  * would be wasteful and rate-limited); its days-left is recomputed from the
  * stored expiry date instead. Manual Recheck and cron still look it up.
- * The tech stack is detected on manual Recheck only (never on auto ticks).
  */
 export async function runSiteCheck(
   site: Site,
@@ -83,7 +81,7 @@ export async function runSiteCheck(
 }
 
 async function fullCheck(site: Site) {
-  const result = await runFullSiteCheck(site.url, { tech: true });
+  const result = await runFullSiteCheck(site.url);
   return {
     uptime: result.uptime,
     result,
@@ -92,7 +90,6 @@ async function fullCheck(site: Site) {
       sslDaysLeft: result.ssl.daysLeft,
       domainExpiresAt: result.domain.expiresAt,
       domainDaysLeft: result.domain.daysLeft,
-      ...techStackFields(result.tech),
     },
   };
 }

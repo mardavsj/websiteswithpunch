@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { runFullSiteCheck } from "@/lib/checks";
-import { techStackFields } from "@/lib/tech-detect";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
-
-/** Tech stack is re-detected by the scheduled check at most once a day per site. */
-const TECH_EVERY_MS = 24 * 60 * 60 * 1000;
 
 function authorized(req: Request): boolean {
   const secret = process.env.CRON_SECRET;
@@ -33,8 +29,7 @@ export async function GET(req: Request) {
 
   for (const site of sites) {
     try {
-      const tech = !site.techStackAt || Date.now() - site.techStackAt.getTime() >= TECH_EVERY_MS;
-      const result = await runFullSiteCheck(site.url, { tech });
+      const result = await runFullSiteCheck(site.url);
       await prisma.site.update({
         where: { id: site.id },
         data: {
@@ -46,7 +41,6 @@ export async function GET(req: Request) {
           sslDaysLeft: result.ssl.daysLeft,
           domainExpiresAt: result.domain.expiresAt,
           domainDaysLeft: result.domain.daysLeft,
-          ...techStackFields(result.tech),
         },
       });
       await prisma.checkResult.create({
