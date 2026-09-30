@@ -2,7 +2,6 @@ import { formatDuration, type RangeKey } from "@/lib/analytics";
 import { AvailabilityStrip, DonutChart, RingGauge } from "./analytics-charts";
 import { LatencyAreaChart, seriesRange } from "./LatencyChart";
 import { DomainExpiryMeter, ExpiryRingCard } from "./expiry-meters";
-import { TechStackCard, type TechPayload } from "./TechStackCard";
 
 export type AnalyticsPayload = {
   range: RangeKey;
@@ -40,8 +39,6 @@ export type AnalyticsPayload = {
   }>;
   ssl: { daysLeft: number | null; expiresAt: string | null };
   domain: { daysLeft: number | null; expiresAt: string | null };
-  /** Detected technologies (add site / Recheck / daily). */
-  tech?: TechPayload;
   statusCodes: Record<string, number>;
   lastDowntimeAt: string | null;
   empty: boolean;
@@ -159,8 +156,6 @@ export function SiteAnalyticsBody({ data }: { data: AnalyticsPayload }) {
       </div>
 
       <ExpiryCards data={data} />
-
-      <TechStackCard tech={data.tech} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="border border-rule bg-surface p-4">

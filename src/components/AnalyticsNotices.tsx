@@ -1,7 +1,6 @@
 import { formatDate } from "@/lib/utils";
 import { StatusBadge } from "./StatusBadge";
 import { ExpiryCards, timeAgo, type AnalyticsPayload } from "./SiteAnalyticsBody";
-import { TechStackCard } from "./TechStackCard";
 
 type RecheckProps = {
   busy: boolean;
@@ -119,7 +118,6 @@ export function EmptyHistory({
         </div>
       </div>
       {hasExpiry && <ExpiryCards data={data} />}
-      {data.tech?.detectedAt && <TechStackCard tech={data.tech} />}
     </div>
   );
 }

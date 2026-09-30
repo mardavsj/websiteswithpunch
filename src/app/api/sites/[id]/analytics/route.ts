@@ -15,7 +15,6 @@ import {
   type RangeKey,
 } from "@/lib/analytics";
 import { alignDown, latencyBucketMs, latencySeries } from "@/lib/analytics-series";
-import { parseTechStack } from "@/lib/tech-types";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -168,11 +167,6 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     domain: {
       daysLeft: site.domainDaysLeft,
       expiresAt: site.domainExpiresAt?.toISOString() ?? null,
-    },
-    // Detected on add site / Recheck / daily cron; null = not detected yet.
-    tech: {
-      items: parseTechStack(site.techStack),
-      detectedAt: site.techStackAt?.toISOString() ?? null,
     },
     statusCodes,
     lastDowntimeAt: lastDowntimeAt?.toISOString() ?? null,
