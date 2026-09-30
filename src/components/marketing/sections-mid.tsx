@@ -97,11 +97,11 @@ export function ProductPreviewSection() {
         </div>
         <div className="relative mx-auto mt-14 max-w-3xl">
           <div
-            className="absolute -bottom-4 -right-4 hidden h-full w-full border border-rule bg-bg/40 sm:block"
+            className="absolute -bottom-2 -right-2 hidden h-full w-full border border-rule bg-bg/40 sm:block lg:-bottom-4 lg:-right-4"
             aria-hidden
           />
           <div
-            className="absolute -bottom-8 -right-8 hidden h-full w-full border border-rule bg-accent/15 sm:block"
+            className="absolute -bottom-4 -right-4 hidden h-full w-full border border-rule bg-accent/15 sm:block lg:-bottom-8 lg:-right-8"
             aria-hidden
           />
           <DashboardMock className="relative" />
