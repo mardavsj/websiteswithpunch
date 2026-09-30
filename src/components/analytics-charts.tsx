@@ -152,8 +152,13 @@ export function LatencyAreaChart({
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
 
+  // X follows real time (bucket start), not array index, so the same data
+  // always draws the same shape and gaps between checks stay visible.
+  const times = series.map((p) => new Date(p.t).getTime());
+  const t0 = times[0];
+  const tSpan = Math.max(times[times.length - 1] - t0, 1);
   const points = series.map((p, i) => {
-    const x = padL + (i / (series.length - 1)) * plotW;
+    const x = padL + ((times[i] - t0) / tSpan) * plotW;
     const y = padT + plotH - ((p.ms - min) / span) * plotH;
     return { x, y, ms: p.ms, t: p.t };
   });
