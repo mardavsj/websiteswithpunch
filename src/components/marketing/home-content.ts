@@ -1,5 +1,4 @@
 import { PLANS, SITE_PACKS } from "@/lib/plans";
-import { IconChart, IconGlobe, IconLock } from "./icons";
 
 export const howSteps = [
   {
@@ -39,24 +38,6 @@ export const monitorRows = [
     visual: "domain",
   },
 ] as const;
-
-export const painPoints = [
-  {
-    title: "Expired SSL kills trust",
-    body: "A red padlock looks like a scam. Visitors leave. Monitoring days-left is calmer than scramble mode after the fact.",
-    Icon: IconLock,
-  },
-  {
-    title: "Domain lapse takes everything offline",
-    body: "Miss a renewal and the site, email, and DNS can vanish overnight. Days-left on the dashboard is cheap insurance.",
-    Icon: IconGlobe,
-  },
-  {
-    title: "Downtime loses sales",
-    body: "If nobody tells you the shop is down, every minute is lost revenue. Uptime history shows what happened and when.",
-    Icon: IconChart,
-  },
-];
 
 export const faqs = [
   {

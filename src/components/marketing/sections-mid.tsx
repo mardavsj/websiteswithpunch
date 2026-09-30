@@ -2,7 +2,7 @@ import { DashboardMock } from "./DashboardMock";
 import { DomainVisual } from "./DomainVisual";
 import { SslVisual } from "./SslVisual";
 import { UptimeVisual } from "./UptimeVisual";
-import { monitorRows, painPoints } from "./home-content";
+import { monitorRows } from "./home-content";
 
 const monitorVisuals = {
   uptime: UptimeVisual,
@@ -40,42 +40,6 @@ export function FeaturesSection() {
               </div>
             );
           })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-export function WhyItMattersSection() {
-  return (
-    <section className="border-b border-rule bg-bg">
-      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:gap-16">
-          <aside className="lg:sticky lg:top-24 lg:self-start">
-            <h2 className="font-display text-3xl font-medium text-ink sm:text-4xl">Why it matters</h2>
-            <p className="mt-4 text-muted">
-              The alternative is finding out the hard way — from users, clients, or a blank browser
-              tab.
-            </p>
-          </aside>
-          <div>
-            {painPoints.map((p, i) => (
-              <article
-                key={p.title}
-                className={`py-8 first:pt-0 last:pb-0 ${i < painPoints.length - 1 ? "border-b border-rule" : ""}`}
-              >
-                <div className="flex items-start gap-4">
-                  <p.Icon className="mt-1 h-6 w-6 shrink-0 text-accent" />
-                  <div>
-                    <h3 className="font-display text-xl font-medium text-ink sm:text-2xl">
-                      {p.title}
-                    </h3>
-                    <p className="mt-3 text-base leading-relaxed text-muted">{p.body}</p>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
         </div>
       </div>
     </section>

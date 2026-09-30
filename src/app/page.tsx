@@ -9,8 +9,8 @@ import {
 import {
   FeaturesSection,
   ProductPreviewSection,
-  WhyItMattersSection,
 } from "@/components/marketing/sections-mid";
+import { WhyItMattersSection } from "@/components/marketing/sections-why";
 import { HowItWorksSection } from "@/components/marketing/sections-how";
 import { HeroSection } from "@/components/marketing/sections-hero";
 import { IntroLine, ProofStrip } from "@/components/marketing/sections-top";
