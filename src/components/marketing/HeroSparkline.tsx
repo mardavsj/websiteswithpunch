@@ -38,12 +38,12 @@ export function HeroSparkline({ site }: { site: HeroSite }) {
               strokeWidth="1.5"
               strokeDasharray="3 3"
               vectorEffect="non-scaling-stroke"
-              className="stroke-rose-400"
+              className="stroke-rose-500 dark:stroke-rose-400"
             />
           )}
         </svg>
         <span
-          className={`absolute right-0 h-1.5 w-1.5 -translate-y-1/2 translate-x-1/2 rounded-full ${site.up ? "bg-accent" : "bg-rose-400"}`}
+          className={`absolute right-0 h-1.5 w-1.5 -translate-y-1/2 translate-x-1/2 rounded-full ${site.up ? "bg-accent" : "bg-rose-500"}`}
           style={{ top: `${(endY / H) * 100}%` }}
         />
       </span>
@@ -53,9 +53,9 @@ export function HeroSparkline({ site }: { site: HeroSite }) {
 }
 
 function Trend({ site }: { site: HeroSite }) {
-  if (!site.up) return <span className="w-12 shrink-0 text-right text-[11px] text-rose-300 lg:hidden">no reply</span>;
+  if (!site.up) return <span className="w-12 shrink-0 text-right text-[11px] text-rose-700 lg:hidden dark:text-rose-300">no reply</span>;
   const { trend } = site;
-  const tone = trend < 0 ? "text-emerald-300" : trend > 0 ? "text-amber-200" : "text-solid-fg/50";
+  const tone = trend < 0 ? "text-emerald-700 dark:text-emerald-300" : trend > 0 ? "text-amber-800 dark:text-amber-200" : "text-muted";
   const arrow = trend < 0 ? "↓" : trend > 0 ? "↑" : "→";
   return (
     <span className={`w-12 shrink-0 text-right text-[11px] tabular-nums lg:hidden ${tone}`}>

@@ -20,9 +20,9 @@ export const heroSites: HeroSite[] = [
   { name: "Launch page", host: "launch.example.io", up: false, reading: "503", latency: [132, 128, 136, 131, 140, 138, 165, 190, null, null, null, null], trend: 0, ssl: 45, domain: 212 },
 ];
 
-/** Same thresholds as the dashboard's days-left pills: amber at 30 days, red at 7. */
+/** Dashboard days-left thresholds (amber at 30 days, red at 7), in StatusBadge colours. */
 export function daysTone(days: number) {
-  if (days <= 7) return "bg-rose-400/15 text-rose-300";
-  if (days <= 30) return "bg-amber-400/15 text-amber-200";
-  return "bg-solid-fg/[0.06] text-solid-fg/85";
+  if (days <= 7) return "bg-rose-50 text-rose-700 ring-rose-600/20 dark:bg-rose-400/15 dark:text-rose-300 dark:ring-rose-400/30";
+  if (days <= 30) return "bg-amber-50 text-amber-800 ring-amber-600/20 dark:bg-amber-400/15 dark:text-amber-200 dark:ring-amber-400/30";
+  return "bg-bg text-ink ring-rule";
 }
