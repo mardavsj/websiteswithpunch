@@ -5,14 +5,12 @@ import { useRouter } from "next/navigation";
 import { lockedRangeNotice, type RangeKey } from "@/lib/analytics";
 import { SiteAnalyticsBody, type AnalyticsPayload } from "./SiteAnalyticsBody";
 import { EmptyHistory, StaleBanner } from "./AnalyticsNotices";
+import { AnalyticsHeader } from "./AnalyticsHeader";
+import { LiveIndicator } from "./LiveIndicator";
+import { useLiveUpdates } from "./useLiveUpdates";
 import { onSiteChecked, recheckSite } from "@/lib/site-check-client";
 
-const RANGES: Array<{ key: RangeKey; label: string }> = [
-  { key: "24h", label: "24h" },
-  { key: "7d", label: "7d" },
-  { key: "30d", label: "30d" },
-  { key: "90d", label: "All" },
-];
+type LoadOpts = { quiet?: boolean; signal?: AbortSignal };
 
 export function SiteAnalytics({
   siteId,
@@ -26,71 +24,63 @@ export function SiteAnalytics({
   const [data, setData] = useState<AnalyticsPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [siteLocked, setSiteLocked] = useState(false);
   const [fade, setFade] = useState(true);
   const [lockNotice, setLockNotice] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [checkError, setCheckError] = useState<string | null>(null);
   const router = useRouter();
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rangeRef = useRef<RangeKey>(range);
+  rangeRef.current = range;
+  const seq = useRef(0);
 
-  const unlockedRanges: RangeKey[] = data?.unlockedRanges?.length
-    ? data.unlockedRanges
-    : ["24h"];
+  const unlockedRanges: RangeKey[] = data?.unlockedRanges?.length ? data.unlockedRanges : ["24h"];
   const ageDays = data?.ageDays ?? 0;
 
   const clearNotice = useCallback(() => {
-    if (noticeTimer.current) {
-      clearTimeout(noticeTimer.current);
-      noticeTimer.current = null;
-    }
+    if (noticeTimer.current) clearTimeout(noticeTimer.current);
+    noticeTimer.current = null;
     setLockNotice(null);
   }, []);
 
-  const showLockNotice = useCallback(
-    (locked: RangeKey) => {
-      const msg = lockedRangeNotice(ageDays, locked);
-      setLockNotice(msg);
-      if (noticeTimer.current) clearTimeout(noticeTimer.current);
-      noticeTimer.current = setTimeout(() => {
-        setLockNotice(null);
-        noticeTimer.current = null;
-      }, 6000);
-    },
-    [ageDays]
-  );
-
-  useEffect(() => {
-    return () => {
-      if (noticeTimer.current) clearTimeout(noticeTimer.current);
-    };
+  useEffect(() => () => {
+    if (noticeTimer.current) clearTimeout(noticeTimer.current);
   }, []);
 
+  /** quiet = background refresh: no fade/spinner, errors go to the caller. */
   const load = useCallback(
-    async (r: RangeKey) => {
-      setLoading(true);
-      setError(null);
-      setFade(false);
+    async (r: RangeKey, opts: LoadOpts = {}) => {
+      // Manual loads bump the sequence; quiet ones only apply if none started since.
+      const id = opts.quiet ? seq.current : ++seq.current;
+      if (!opts.quiet) {
+        setLoading(true);
+        setError(null);
+        setFade(false);
+      }
       try {
         const res = await fetch(
           `/api/sites/${siteId}/analytics?range=${encodeURIComponent(r)}&_=${Date.now()}`,
-          {
-            method: "GET",
-            cache: "no-store",
-            headers: { Accept: "application/json" },
-          }
+          { cache: "no-store", headers: { Accept: "application/json" }, signal: opts.signal }
         );
         if (!res.ok) {
           const j = await res.json().catch(() => null);
+          if (res.status === 403 && j?.code === "SITE_LOCKED") setSiteLocked(true);
           throw new Error(j?.error || "Could not load analytics");
         }
         const json = (await res.json()) as AnalyticsPayload;
+        if (id !== seq.current) return; // a newer request (e.g. range change) won
         setData(json);
         setRange(json.range);
+        if (opts.quiet) setError(null);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load");
+        if (opts.quiet || opts.signal?.aborted) throw e;
+        if (id === seq.current) setError(e instanceof Error ? e.message : "Failed to load");
       } finally {
-        setLoading(false);
-        requestAnimationFrame(() => setFade(true));
+        if (!opts.quiet && id === seq.current) {
+          setLoading(false);
+          requestAnimationFrame(() => setFade(true));
+        }
       }
     },
     [siteId]
@@ -98,33 +88,33 @@ export function SiteAnalytics({
 
   useEffect(() => {
     void load("24h");
-    // intentionally only on mount / site change — range changes call load directly
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [siteId, load]);
 
   function selectRange(next: RangeKey) {
-    const isUnlocked = unlockedRanges.includes(next);
-    if (!isUnlocked) {
-      showLockNotice(next);
+    if (!unlockedRanges.includes(next)) {
+      setLockNotice(lockedRangeNotice(ageDays, next));
+      if (noticeTimer.current) clearTimeout(noticeTimer.current);
+      noticeTimer.current = setTimeout(() => setLockNotice(null), 6000);
       return;
     }
     clearNotice();
-    if (next === range && !loading) {
-      void load(next);
-      return;
-    }
     setRange(next);
     void load(next);
   }
 
-  const rangeRef = useRef<RangeKey>(range);
-  rangeRef.current = range;
+  // Any successful manual Recheck (site card or banner) → refetch in place.
+  useEffect(() => onSiteChecked(siteId, () => void load(rangeRef.current)), [siteId, load]);
 
-  // Any successful Recheck (site card or banner) → refetch analytics in place.
-  useEffect(
-    () => onSiteChecked(siteId, () => void load(rangeRef.current)),
-    [siteId, load]
-  );
+  // Live mode: cheap server-throttled uptime check + quiet refetch.
+  const live = useLiveUpdates({
+    enabled: Boolean(data) && !siteLocked,
+    lastKnownAt: data?.site?.lastCheckedAt ? new Date(data.site.lastCheckedAt).getTime() : null,
+    run: async (signal) => {
+      await recheckSite(siteId, { live: true, signal, broadcast: false });
+      await load(rangeRef.current, { quiet: true, signal });
+      router.refresh(); // soft refresh: updates the site card, keeps state + scroll
+    },
+  });
 
   async function recheck() {
     setChecking(true);
@@ -143,54 +133,22 @@ export function SiteAnalytics({
     <section
       className={`min-w-0 rounded-none border border-rule bg-surface ${compact ? "p-4" : "p-5 sm:p-6"}`}
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="font-display text-lg font-medium text-ink">Site analytics</h2>
-          <p className="text-xs text-muted">
-            Built from real checks — uptime, latency, incidents, SSL & domain risk.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex border border-rule">
-            {RANGES.map((r) => {
-              const locked = !unlockedRanges.includes(r.key);
-              const active = range === r.key;
-              return (
-                <button
-                  key={r.key}
-                  type="button"
-                  onClick={() => selectRange(r.key)}
-                  aria-disabled={locked || undefined}
-                  title={
-                    locked
-                      ? lockedRangeNotice(ageDays, r.key)
-                      : undefined
-                  }
-                  className={`px-3 py-1.5 text-xs font-medium transition-colors duration-200 ${
-                    locked
-                      ? "cursor-not-allowed bg-bg text-muted opacity-40"
-                      : active
-                        ? "bg-solid text-solid-fg"
-                        : "bg-bg text-muted hover:bg-accent-soft hover:text-ink"
-                  } ${loading && active && !locked ? "opacity-70" : ""}`}
-                >
-                  {r.label}
-                </button>
-              );
-            })}
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              clearNotice();
-              void load(range);
-            }}
-            className="border border-rule px-3 py-1.5 text-xs font-medium text-ink hover:bg-accent-soft"
-          >
-            Refresh
-          </button>
-        </div>
-      </div>
+      <AnalyticsHeader
+        range={range}
+        unlockedRanges={unlockedRanges}
+        ageDays={ageDays}
+        loading={loading}
+        onSelect={selectRange}
+        onRefresh={() => {
+          clearNotice();
+          void load(range);
+        }}
+        live={
+          data && !siteLocked ? (
+            <LiveIndicator state={live} fallbackAt={data.site?.lastCheckedAt} />
+          ) : null
+        }
+      />
 
       <p className="mt-2 text-xs text-muted">Longer ranges unlock as this site ages.</p>
 
@@ -231,11 +189,11 @@ export function SiteAnalytics({
           </div>
         )}
 
-        {data && data.empty && (
+        {data && !siteLocked && data.empty && (
           <EmptyHistory data={data} busy={checking} onRecheck={recheck} error={checkError} />
         )}
 
-        {data && !data.empty && (
+        {data && !siteLocked && !data.empty && (
           <>
             {data.stale && (
               <StaleBanner data={data} busy={checking} onRecheck={recheck} error={checkError} />
