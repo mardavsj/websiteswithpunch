@@ -13,9 +13,9 @@ import {
   ProductPreviewSection,
   WhyItMattersSection,
 } from "@/components/marketing/sections-mid";
+import { HowItWorksSection } from "@/components/marketing/sections-how";
 import {
   HeroSection,
-  HowItWorksSection,
   IntroLine,
   ProofStrip,
 } from "@/components/marketing/sections-top";

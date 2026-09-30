@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { howSteps, proofMetrics } from "./home-content";
+import { proofMetrics } from "./home-content";
 
 /** Mixkit Free License — digital network clip (uptime / connectivity themed). */
 const HERO_VIDEO = "https://assets.mixkit.co/videos/31590/31590-720.mp4";
@@ -124,43 +124,6 @@ export function IntroLine() {
               className="h-28 w-28 object-contain sm:h-36 sm:w-36 lg:h-44 lg:w-44"
             />
           </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-export function HowItWorksSection() {
-  return (
-    <section id="how-it-works" className="border-b border-rule bg-bg">
-      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-        <div className="max-w-xl">
-          <h2 className="font-display text-3xl font-medium text-ink sm:text-4xl">How it works</h2>
-          <p className="mt-3 text-muted">Three steps. Minutes to set up. Ongoing peace of mind.</p>
-        </div>
-        <div className="relative mt-14">
-          <div
-            className="pointer-events-none absolute left-0 right-0 top-7 hidden h-px bg-rule md:block"
-            aria-hidden
-          />
-          <ol className="grid gap-10 md:grid-cols-3 md:gap-8">
-            {howSteps.map((s) => (
-              <li key={s.step} className="relative">
-                <div className="flex items-baseline gap-3 md:flex-col md:gap-0">
-                  <span className="relative z-10 bg-bg pr-3 font-display text-4xl font-medium text-accent md:text-5xl">
-                    {s.step}
-                  </span>
-                  <div className="md:mt-6">
-                    <div className="flex items-center gap-2">
-                      <s.Icon className="h-5 w-5 text-ink" />
-                      <h3 className="font-display text-lg font-medium text-ink">{s.title}</h3>
-                    </div>
-                    <p className="mt-2 text-sm leading-relaxed text-muted">{s.body}</p>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ol>
         </div>
       </div>
     </section>

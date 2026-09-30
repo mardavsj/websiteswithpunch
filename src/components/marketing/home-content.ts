@@ -1,31 +1,21 @@
 import { PLANS, SITE_PACKS } from "@/lib/plans";
-import {
-  IconBell,
-  IconChart,
-  IconGlobe,
-  IconLink,
-  IconLock,
-  IconPulse,
-} from "./icons";
+import { IconChart, IconGlobe, IconLock } from "./icons";
 
 export const howSteps = [
   {
     step: "01",
     title: "Add your URL",
     body: "Paste the site you care about. Free covers one site; paid plans scale with you.",
-    Icon: IconLink,
   },
   {
     step: "02",
     title: "We check it",
     body: "Scheduled HTTP(S) checks, SSL expiry reads, and domain lookups run in the background.",
-    Icon: IconPulse,
   },
   {
     step: "03",
-    title: "See status & alerts",
+    title: "See status & warnings",
     body: "Dashboard shows up/down, SSL days left, and domain days left — act before customers notice.",
-    Icon: IconBell,
   },
 ];
 
