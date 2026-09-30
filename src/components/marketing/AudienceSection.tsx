@@ -46,7 +46,7 @@ export function AudienceSection() {
                     onClick={() => setActive(i)}
                     onMouseEnter={() => setActive(i)}
                     onFocus={() => setActive(i)}
-                    className="group/row relative flex w-full items-center gap-4 py-5 text-left sm:gap-6 sm:py-7"
+                    className="group/row relative flex min-h-[76px] w-full items-center gap-4 text-left sm:min-h-[96px] sm:gap-6 lg:min-h-[104px]"
                   >
                     <span
                       className={`absolute left-0 top-[-1px] h-px w-full origin-left bg-accent transition-transform ${ease} ${on ? "scale-x-100" : "scale-x-0"}`}
@@ -57,7 +57,7 @@ export function AudienceSection() {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span
-                        className={`block font-display text-3xl font-medium tracking-tight transition-colors sm:text-4xl lg:text-5xl ${ease} ${
+                        className={`block font-display text-2xl font-medium tracking-tight transition-colors sm:text-3xl lg:text-4xl ${ease} ${
                           on ? "text-ink" : "text-ink/35 group-hover/row:text-ink/70"
                         }`}
                       >

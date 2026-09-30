@@ -1,149 +1,48 @@
 import Link from "next/link";
-import { PLANS, SITE_PACKS } from "@/lib/plans";
-
-const PRICING_ORDER = [PLANS.free, PLANS.pro, PLANS.business] as const;
-
-function signupHref(planId: "free" | "pro" | "business"): string {
-  if (planId === "pro") return "/signup?plan=pro";
-  if (planId === "business") return "/signup?plan=business";
-  return "/signup";
-}
+import { Check, PricingCard } from "./PricingCard";
+import { customPlanHref, everyPlanIncludes, maxSelfServeSites, pricingPlans } from "./pricing-content";
 
 export function PricingSection() {
   return (
     <section id="pricing" className="border-b border-rule bg-bg">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-        <div className="max-w-xl">
-          <h2 className="font-display text-3xl font-medium text-ink sm:text-4xl">Simple pricing</h2>
-          <p className="mt-3 text-muted">
-            Three plans. Need a few more sites? Add packs from the dashboard — they join your
-            existing subscription.
-          </p>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-xl">
+            <h2 className="font-display text-3xl font-medium text-ink sm:text-4xl">Simple pricing</h2>
+            <p className="mt-3 text-muted">
+              Start free with one site. Upgrade as your portfolio grows, month to month.
+            </p>
+          </div>
+          <p className="label-caps">Monthly billing · Cancel anytime</p>
         </div>
 
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:items-stretch">
-          {PRICING_ORDER.map((plan) => {
-            const featured = plan.id === "pro";
-            const sitesLabel =
-              plan.siteLimit === 1
-                ? "1 monitored site"
-                : `Up to ${plan.siteLimit} monitored sites`;
-
-            return (
-              <div
-                key={plan.id}
-                className={`relative flex h-full min-w-0 flex-col p-8 sm:p-9 ${
-                  featured ? "bg-solid text-solid-fg" : "border border-rule bg-surface text-ink"
-                }`}
-              >
-                {featured && (
-                  <span className="absolute right-6 top-0 -translate-y-1/2 bg-accent px-3 py-1 text-xs font-semibold text-white">
-                    Popular
-                  </span>
-                )}
-                <p className={`label-caps ${featured ? "!text-solid-fg/55" : ""}`}>
-                  {plan.id === "free" ? "Starter" : plan.id === "pro" ? "Grow" : "Scale"}
-                </p>
-                <h3 className="mt-2 font-display text-2xl font-medium">{plan.name}</h3>
-                <p className="mt-4 font-display text-5xl font-medium">
-                  ${plan.price}
-                  <span
-                    className={`text-lg font-normal ${featured ? "text-solid-fg/55" : "text-muted"}`}
-                  >
-                    /mo
-                  </span>
-                </p>
-                <p className={`mt-3 text-sm ${featured ? "text-solid-fg/70" : "text-muted"}`}>
-                  {plan.description}
-                </p>
-                <ul
-                  className={`mt-8 space-y-3 border-t pt-8 text-sm ${
-                    featured ? "border-solid-fg/15" : "border-rule"
-                  }`}
-                >
-                  <li className="flex gap-3">
-                    <span className="text-accent" aria-hidden>
-                      —
-                    </span>
-                    {sitesLabel}
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-accent" aria-hidden>
-                      —
-                    </span>
-                    Uptime + SSL + domain checks
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-accent" aria-hidden>
-                      —
-                    </span>
-                    Dashboard & history
-                  </li>
-                  {plan.id !== "free" && (
-                    <li className="flex gap-3">
-                      <span className="text-accent" aria-hidden>
-                        —
-                      </span>
-                      Billing portal included
-                    </li>
-                  )}
-                  {plan.id === "pro" && (
-                    <li className="flex gap-3">
-                      <span className="text-accent" aria-hidden>
-                        —
-                      </span>
-                      Optional +{SITE_PACKS.pro.sitesPerPack} site packs ($
-                      {SITE_PACKS.pro.pricePerMonth}/mo)
-                    </li>
-                  )}
-                  {plan.id === "business" && (
-                    <li className="flex gap-3">
-                      <span className="text-accent" aria-hidden>
-                        —
-                      </span>
-                      Optional +{SITE_PACKS.business.sitesPerPack} site packs ($
-                      {SITE_PACKS.business.pricePerMonth}/mo)
-                    </li>
-                  )}
-                </ul>
-                <Link
-                  href={signupHref(plan.id)}
-                  className={
-                    featured
-                      ? "mt-auto block bg-accent py-3 text-center text-sm font-semibold text-white hover:bg-accent-hover"
-                      : "mt-auto inline-flex w-fit pt-8 text-sm font-semibold text-ink underline-offset-4 hover:underline"
-                  }
-                >
-                  {plan.id === "free"
-                    ? "Get started free →"
-                    : plan.id === "pro"
-                      ? "Start with Pro"
-                      : "Start with Business"}
-                </Link>
-              </div>
-            );
-          })}
+        <div className="mt-12 grid gap-4 lg:grid-cols-3">
+          {pricingPlans.map((plan) => (
+            <PricingCard key={plan.id} plan={plan} />
+          ))}
         </div>
 
-        <div className="mt-10 space-y-2 text-sm text-muted">
+        <div className="mt-4 border border-rule bg-surface px-6 py-5 sm:px-8">
+          <div className="flex flex-col gap-4">
+            <p className="label-caps">Every plan includes</p>
+            <ul className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm text-ink min-[420px]:grid-cols-2 sm:grid-cols-3 lg:flex lg:justify-between">
+              {everyPlanIncludes.map((f) => (
+                <li key={f} className="flex items-center gap-2 lg:whitespace-nowrap">
+                  <Check className="text-accent" />
+                  {f}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-8 flex flex-col gap-2 text-sm text-muted sm:flex-row sm:justify-between">
           <p>
-            Pro packs add +{SITE_PACKS.pro.sitesPerPack} sites for $
-            {SITE_PACKS.pro.pricePerMonth}/mo (up to{" "}
-            {PLANS.pro.siteLimit + SITE_PACKS.pro.maxPacks * SITE_PACKS.pro.sitesPerPack} sites).
-            Business packs add +{SITE_PACKS.business.sitesPerPack} for $
-            {SITE_PACKS.business.pricePerMonth}/mo (up to{" "}
-            {PLANS.business.siteLimit +
-              SITE_PACKS.business.maxPacks * SITE_PACKS.business.sitesPerPack}{" "}
-            sites). Packs join your existing subscription — pay for the rest of this month today,
-            then one bill on the same renewal date. Remove anytime; you keep them until the end of
-            the month you&apos;ve paid for. Need more?{" "}
-            <a
-              href="mailto:hello@websiteswithpunch.com?subject=Custom%20site%20limit"
-              className="font-semibold text-ink underline-offset-2 hover:underline"
-            >
-              Contact us
-            </a>
-            .
+            Need more than {maxSelfServeSites} sites?{" "}
+            <a href={customPlanHref} className="font-semibold text-ink underline-offset-2 hover:underline">
+              Talk to us
+            </a>{" "}
+            about a custom plan.
           </p>
           <p>
             Already have an account?{" "}
