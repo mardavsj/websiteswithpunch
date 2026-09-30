@@ -37,7 +37,7 @@ export function DomainVisual() {
                 Today
               </span>
               <span className="absolute -translate-x-1/2 text-amber-600 dark:text-amber-400" style={{ left: ALERT }}>
-                Alert
+                30 d
               </span>
             </div>
             <div className="relative mt-1 h-1.5 bg-ink/10">
@@ -70,7 +70,7 @@ export function DomainVisual() {
           className={`absolute bottom-0 right-3 flex items-center gap-2 bg-solid px-3 py-2 text-xs text-solid-fg shadow-[4px_4px_0_0_hsl(var(--accent)/0.35)] delay-700 sm:-right-4 ${riseIn}`}
         >
           <IconBell className="h-3.5 w-3.5 shrink-0 text-accent" />
-          <span className="whitespace-nowrap">Alert sent 30 days before</span>
+          <span className="whitespace-nowrap">Flagged 30 days before</span>
         </div>
       </div>
     </VisualStage>
