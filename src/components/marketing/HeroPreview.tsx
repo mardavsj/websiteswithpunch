@@ -22,12 +22,12 @@ function Status({ site, checking }: { site: HeroSite; checking: boolean }) {
     ? "bg-emerald-400/15 text-emerald-300 ring-emerald-400/30"
     : "bg-rose-400/15 text-rose-300 ring-rose-400/30";
   return (
-    <span className="flex items-center gap-2">
+    <span className="flex items-center gap-2 lg:flex-col lg:items-start lg:gap-1">
       <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${tone}`}>
         <span className={`h-1.5 w-1.5 rounded-full ${site.up ? "bg-emerald-400" : "bg-rose-400"}`} />
         {site.up ? "Up" : "Down"}
       </span>
-      <span className="w-[4.5rem] text-[11px] tabular-nums text-solid-fg/55">
+      <span className="w-[4.5rem] whitespace-nowrap text-[11px] tabular-nums text-solid-fg/55">
         {checking ? (
           <span className="text-accent">checking…</span>
         ) : site.up ? (
@@ -70,10 +70,12 @@ export function HeroPreview() {
           </span>
         </div>
 
-        <div className="hidden grid-cols-[minmax(0,1fr)_8.5rem_minmax(0,1.2fr)_2.75rem_2.75rem] gap-4 border-b border-solid-fg/10 px-5 py-2 text-[10px] uppercase tracking-wider text-solid-fg/40 sm:grid">
+        <div className="hidden grid-cols-[minmax(0,1fr)_8.5rem_minmax(0,1.2fr)_2.75rem_2.75rem] gap-4 border-b border-solid-fg/10 px-5 py-2 lg:grid-cols-[minmax(0,1.2fr)_4.5rem_minmax(0,0.8fr)_2.5rem_2.75rem] lg:gap-3 lg:px-4 text-[10px] uppercase tracking-wider text-solid-fg/40 sm:grid">
           <span>Site</span>
           <span>Status</span>
-          <span>Response time</span>
+          <span className="whitespace-nowrap">
+            Response<span className="lg:hidden"> time</span>
+          </span>
           <span>SSL</span>
           <span>Domain</span>
         </div>
@@ -82,7 +84,7 @@ export function HeroPreview() {
           {heroSites.map((s, i) => (
             <li
               key={s.host}
-              className={`relative grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-2 border-b border-solid-fg/10 px-4 py-3 transition-colors duration-500 last:border-b-0 motion-reduce:transition-none sm:grid-cols-[minmax(0,1fr)_8.5rem_minmax(0,1.2fr)_2.75rem_2.75rem] sm:items-center sm:gap-4 sm:px-5 ${
+              className={`relative grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-2 border-b border-solid-fg/10 px-4 py-3 transition-colors duration-500 last:border-b-0 motion-reduce:transition-none sm:grid-cols-[minmax(0,1fr)_8.5rem_minmax(0,1.2fr)_2.75rem_2.75rem] sm:items-center sm:gap-4 sm:px-5 lg:grid-cols-[minmax(0,1.2fr)_4.5rem_minmax(0,0.8fr)_2.5rem_2.75rem] lg:gap-3 lg:px-4 ${
                 checking === i ? "bg-accent/[0.08]" : ""
               }`}
             >

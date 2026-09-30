@@ -16,12 +16,14 @@ export function HeroSection() {
         <div className="absolute -right-40 top-1/4 h-[36rem] w-[36rem] rounded-full bg-accent/20 blur-[120px]" />
       </div>
 
-      <div className="mx-auto grid max-w-6xl items-center gap-14 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,0.77fr)_minmax(0,1fr)] lg:gap-12 lg:py-24">
+      <div className="mx-auto grid max-w-6xl items-center gap-14 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,1.33fr)_minmax(0,1fr)] lg:gap-12 lg:py-24">
         <div className="min-w-0">
-          <h1 className="max-w-[17ch] font-display text-4xl font-medium tracking-tight text-solid-fg sm:text-5xl lg:text-[3.1rem] lg:leading-[1.06]">
-            Know <span className="text-accent">before</span> your site, SSL or domain lets you down.
+          <h1 className="max-w-[17ch] font-display text-4xl font-medium tracking-tight text-solid-fg sm:text-5xl lg:max-w-none lg:text-[2.35rem] lg:leading-[1.1] xl:text-[2.75rem]">
+            Know <span className="text-accent">before</span> your site,{" "}
+            <br className="hidden lg:block" />
+            SSL or domain lets you down.
           </h1>
-          <p className="mt-5 max-w-lg text-lg leading-relaxed text-solid-fg/70">
+          <p className="mt-5 max-w-lg text-lg lg:max-w-[36rem] leading-relaxed text-solid-fg/70">
             We monitor your sites’ uptime, SSL certificate expiry and domain expiry, and show all
             three on one dashboard.
           </p>

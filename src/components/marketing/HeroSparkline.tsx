@@ -53,12 +53,12 @@ export function HeroSparkline({ site }: { site: HeroSite }) {
 }
 
 function Trend({ site }: { site: HeroSite }) {
-  if (!site.up) return <span className="w-12 shrink-0 text-right text-[11px] text-rose-300">no reply</span>;
+  if (!site.up) return <span className="w-12 shrink-0 text-right text-[11px] text-rose-300 lg:hidden">no reply</span>;
   const { trend } = site;
   const tone = trend < 0 ? "text-emerald-300" : trend > 0 ? "text-amber-200" : "text-solid-fg/50";
   const arrow = trend < 0 ? "↓" : trend > 0 ? "↑" : "→";
   return (
-    <span className={`w-12 shrink-0 text-right text-[11px] tabular-nums ${tone}`}>
+    <span className={`w-12 shrink-0 text-right text-[11px] tabular-nums lg:hidden ${tone}`}>
       {arrow} {Math.abs(trend)}%
     </span>
   );
