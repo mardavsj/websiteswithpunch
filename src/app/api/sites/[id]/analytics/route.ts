@@ -176,7 +176,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     dataEndsAt: latestAt?.toISOString() ?? null,
     site: {
       status: site.status,
+      /** Last full check (add / Recheck / cron) — drives the Recheck cooldown. */
       lastCheckedAt: site.lastCheckedAt?.toISOString() ?? null,
+      /** Freshest check of any kind (incl. auto update). */
+      lastSeenAt: latestAt?.toISOString() ?? site.lastCheckedAt?.toISOString() ?? null,
       lastStatusCode: site.lastStatusCode,
       lastLatencyMs: site.lastLatencyMs,
     },

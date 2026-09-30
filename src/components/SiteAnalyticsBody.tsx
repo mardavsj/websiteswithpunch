@@ -1,12 +1,6 @@
 import { formatDuration, type RangeKey } from "@/lib/analytics";
-import {
-  AvailabilityStrip,
-  DomainExpiryMeter,
-  DonutChart,
-  ExpiryRingCard,
-  LatencyAreaChart,
-  RingGauge,
-} from "./analytics-charts";
+import { AvailabilityStrip, DonutChart, LatencyAreaChart, RingGauge } from "./analytics-charts";
+import { DomainExpiryMeter, ExpiryRingCard } from "./expiry-meters";
 
 export type AnalyticsPayload = {
   range: RangeKey;
@@ -52,6 +46,7 @@ export type AnalyticsPayload = {
   site?: {
     status: string;
     lastCheckedAt: string | null;
+    lastSeenAt?: string | null;
     lastStatusCode: number | null;
     lastLatencyMs: number | null;
   };
@@ -74,9 +69,14 @@ export function ExpiryCards({ data }: { data: AnalyticsPayload }) {
         title="SSL certificate"
         days={data.ssl.daysLeft}
         expiresAt={data.ssl.expiresAt}
+        addedAt={data.siteCreatedAt}
         warnAt={30}
       />
-      <DomainExpiryMeter days={data.domain.daysLeft} expiresAt={data.domain.expiresAt} />
+      <DomainExpiryMeter
+        days={data.domain.daysLeft}
+        expiresAt={data.domain.expiresAt}
+        addedAt={data.siteCreatedAt}
+      />
     </div>
   );
 }
