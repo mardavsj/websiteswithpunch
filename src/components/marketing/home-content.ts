@@ -100,10 +100,3 @@ export const faqs = [
     a: "Yes. Paid plans are month-to-month. Cancel from Your plan on the dashboard (or Manage billing). You keep your paid plan until the period ends, then Free. Nothing is deleted — extra sites are locked.",
   },
 ];
-
-export const proofMetrics = [
-  { label: "Uptime", detail: "Scheduled HTTP checks" },
-  { label: "SSL", detail: "Days until expiry" },
-  { label: "Domain", detail: "Renewal window" },
-  { label: "One dashboard", detail: "Status at a glance" },
-];
