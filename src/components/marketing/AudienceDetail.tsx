@@ -7,7 +7,7 @@ export function AudienceDetail({ p }: { p: Persona }) {
     <div className="border border-rule bg-surface p-6 sm:p-10">
       <div>
         <p className="label-caps !text-accent">For {p.title.toLowerCase()}</p>
-        <p className="mt-4 max-w-md font-display text-xl font-medium leading-snug text-ink sm:text-3xl">
+        <p className="mt-4 max-w-md font-display text-xl font-medium leading-snug text-ink sm:text-3xl lg:max-w-lg">
           {p.body}
         </p>
 

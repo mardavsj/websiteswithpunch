@@ -19,7 +19,7 @@ function Caption({ className }: { className: string }) {
 export function ProductPreviewSection() {
   return (
     <section className="border-b border-rule bg-bg">
-      <div className="relative mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] px-4 py-20 sm:px-6 sm:py-24 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:[@media(min-height:1000px)]:grid-cols-[minmax(0,340px)_minmax(0,1fr)] lg:grid-rows-[auto_1fr_auto_1fr] lg:gap-x-10">
+      <div className="relative mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] px-4 py-20 sm:px-6 sm:py-24 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:[@media(min-height:1000px)]:grid-cols-[minmax(0,340px)_minmax(0,1fr)] lg:grid-rows-[auto_1fr_auto_1fr_auto] lg:gap-x-10">
         {/* lg: pt = stage border + padding, so the copy starts level with the window's top edge. */}
         <div className="lg:col-start-1 lg:row-start-1 lg:pb-6 lg:pt-[13px]">
           <p className="label-caps">Inside the dashboard</p>
@@ -32,18 +32,18 @@ export function ProductPreviewSection() {
           </p>
         </div>
 
-        {/* lg: equal 1fr rows above and below (plus the matching 13px) keep the key where it sat
-            when the whole column was centred, so the leader lines stay put. */}
-        <div className="hidden lg:col-start-1 lg:row-start-3 lg:block lg:pb-[13px]">
-          <ol data-key-list className="grid gap-3">
-            <KeyItems />
-          </ol>
-          <Caption className="mt-5 flex" />
-        </div>
+        {/* lg: equal 1fr rows above and below keep the key where it sat when the whole column was
+            centred (pb-5 + the caption row below stand in for the old caption spacing), so the
+            leader lines stay put. */}
+        <ol data-key-list className="hidden gap-3 lg:col-start-1 lg:row-start-3 lg:grid lg:pb-5">
+          <KeyItems />
+        </ol>
+        {/* lg: pb = stage padding + border, so the caption sits level with the window's bottom edge. */}
+        <Caption className="hidden lg:col-start-1 lg:row-start-5 lg:flex lg:self-end lg:pb-[13px]" />
 
         <div
           data-preview-stage
-          className="mt-12 border border-rule bg-[hsl(var(--ink)/0.03)] px-3 pb-8 pt-5 sm:mt-14 sm:px-8 sm:pb-12 sm:pt-6 lg:col-start-2 lg:row-span-4 lg:row-start-1 lg:mt-0 lg:self-center lg:p-3"
+          className="mt-12 border border-rule bg-[hsl(var(--ink)/0.03)] px-3 pb-8 pt-5 sm:mt-14 sm:px-8 sm:pb-12 sm:pt-6 lg:col-start-2 lg:row-span-5 lg:row-start-1 lg:mt-0 lg:self-center lg:p-3"
         >
           <Caption className="mb-4 flex sm:mb-5 lg:hidden" />
           <FitWindow>

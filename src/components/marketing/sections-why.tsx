@@ -65,11 +65,6 @@ export function WhyItMattersSection() {
             </article>
           ))}
         </div>
-
-        <p className="mt-8 text-sm text-muted">
-          All three sit on one dashboard, with a manual recheck and opt-in auto refresh when you want
-          to watch a site live.
-        </p>
       </div>
     </section>
   );
