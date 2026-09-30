@@ -16,6 +16,13 @@ export default async function SiteAnalyticsPage({ params }: { params: { id: stri
   });
   if (!site) notFound();
 
+  // Freshest check of any kind (auto update doesn't move lastCheckedAt).
+  const latest = await prisma.checkResult.findFirst({
+    where: { siteId: site.id },
+    orderBy: [{ checkedAt: "desc" }, { id: "desc" }],
+    select: { checkedAt: true },
+  });
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <div className="mb-6">
@@ -29,6 +36,7 @@ export default async function SiteAnalyticsPage({ params }: { params: { id: stri
           site={{
             ...site,
             lastCheckedAt: site.lastCheckedAt?.toISOString() ?? null,
+            lastSeenAt: latest?.checkedAt.toISOString() ?? null,
           }}
         />
         <SiteAnalytics siteId={site.id} />

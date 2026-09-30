@@ -2,70 +2,82 @@ import type { Site } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { checkUptime, runFullSiteCheck } from "@/lib/checks";
 
-/** Live checks (analytics page auto-refresh): at most one per site per 45s. */
+/** Manual Recheck (full check): once per minute per site. */
+export const RECHECK_COOLDOWN_MS = 60_000;
+/** Auto-update live checks: at most one per site per 45s (any tab/device). */
 export const LIVE_MIN_GAP_MS = 45_000;
-/** Manual Recheck: guards against double-clicks / rapid repeats. */
-export const MANUAL_MIN_GAP_MS = 10_000;
 
 export type SiteCheckOutcome =
-  | { throttled: true; site: Site; retryAfterMs: number }
-  | { throttled: false; site: Site; result: unknown };
+  | { kind: "ok"; site: Site; result: unknown }
+  /** Live check skipped: a check ran moments ago; the saved result is reused. */
+  | { kind: "throttled"; site: Site; retryAfterMs: number }
+  /** Manual Recheck refused: the last full check was under a minute ago. */
+  | { kind: "cooldown"; site: Site; retryAfterMs: number };
 
 /**
- * Runs and stores a check for one site, with a per-site throttle shared by all
- * tabs/devices. The throttle slot is claimed atomically (conditional update on
- * lastCheckedAt), so concurrent callers can't both run a check.
- * live=true runs the cheap uptime-only check; otherwise the full check
- * (uptime + SSL + domain) as before.
+ * Site.lastCheckedAt = time of the last FULL check (add site, manual Recheck,
+ * cron). Live checks only refresh status/latency and store a history row, so
+ * the Recheck cooldown survives page refreshes and isn't reset by auto update.
  */
 export async function runSiteCheck(site: Site, live: boolean): Promise<SiteCheckOutcome> {
-  const minGapMs = live ? LIVE_MIN_GAP_MS : MANUAL_MIN_GAP_MS;
-  const now = new Date();
+  const now = Date.now();
+  return live ? runLive(site, now) : runFull(site, now);
+}
+
+async function runLive(site: Site, now: number): Promise<SiteCheckOutcome> {
+  const latest = await prisma.checkResult.findFirst({
+    where: { siteId: site.id },
+    orderBy: [{ checkedAt: "desc" }, { id: "desc" }],
+    select: { checkedAt: true },
+  });
+  const since = latest ? now - latest.checkedAt.getTime() : Infinity;
+  if (since < LIVE_MIN_GAP_MS) {
+    return { kind: "throttled", site, retryAfterMs: LIVE_MIN_GAP_MS - since };
+  }
+  const uptime = await checkUptime(site.url);
+  const updated = await prisma.site.update({
+    where: { id: site.id },
+    data: {
+      status: uptime.status,
+      lastStatusCode: uptime.statusCode,
+      lastLatencyMs: uptime.latencyMs,
+    },
+  });
+  await prisma.checkResult.create({
+    data: {
+      siteId: site.id,
+      status: uptime.status,
+      statusCode: uptime.statusCode,
+      latencyMs: uptime.latencyMs,
+      error: uptime.error,
+    },
+  });
+  return { kind: "ok", site: updated, result: { uptime } };
+}
+
+async function runFull(site: Site, now: number): Promise<SiteCheckOutcome> {
+  // Claim the cooldown slot atomically so parallel clicks/tabs can't both run.
   const claimed = await prisma.site.updateMany({
     where: {
       id: site.id,
       OR: [
         { lastCheckedAt: null },
-        { lastCheckedAt: { lt: new Date(now.getTime() - minGapMs) } },
+        { lastCheckedAt: { lt: new Date(now - RECHECK_COOLDOWN_MS) } },
       ],
     },
-    data: { lastCheckedAt: now },
+    data: { lastCheckedAt: new Date(now) },
   });
-
   if (claimed.count === 0) {
     const fresh = (await prisma.site.findUnique({ where: { id: site.id } })) ?? site;
-    const last = fresh.lastCheckedAt?.getTime() ?? now.getTime();
+    const last = fresh.lastCheckedAt?.getTime() ?? now;
     return {
-      throttled: true,
+      kind: "cooldown",
       site: fresh,
-      retryAfterMs: Math.max(0, minGapMs - (now.getTime() - last)),
+      retryAfterMs: Math.max(1000, RECHECK_COOLDOWN_MS - (now - last)),
     };
   }
 
   try {
-    if (live) {
-      const uptime = await checkUptime(site.url);
-      const updated = await prisma.site.update({
-        where: { id: site.id },
-        data: {
-          status: uptime.status,
-          lastCheckedAt: new Date(),
-          lastStatusCode: uptime.statusCode,
-          lastLatencyMs: uptime.latencyMs,
-        },
-      });
-      await prisma.checkResult.create({
-        data: {
-          siteId: site.id,
-          status: uptime.status,
-          statusCode: uptime.statusCode,
-          latencyMs: uptime.latencyMs,
-          error: uptime.error,
-        },
-      });
-      return { throttled: false, site: updated, result: { uptime } };
-    }
-
     const result = await runFullSiteCheck(site.url);
     const updated = await prisma.site.update({
       where: { id: site.id },
@@ -89,9 +101,9 @@ export async function runSiteCheck(site: Site, live: boolean): Promise<SiteCheck
         error: result.uptime.error,
       },
     });
-    return { throttled: false, site: updated, result };
+    return { kind: "ok", site: updated, result };
   } catch (err) {
-    // Release the throttle slot so a failed check doesn't fake a fresh timestamp.
+    // Release the slot so a failed check doesn't block the next attempt.
     await prisma.site
       .update({ where: { id: site.id }, data: { lastCheckedAt: site.lastCheckedAt } })
       .catch(() => undefined);

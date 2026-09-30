@@ -7,50 +7,25 @@ import { StatusBadge } from "./StatusBadge";
 import { EditSiteModal } from "./EditSiteModal";
 import { DeleteSiteButton } from "./DeleteSiteButton";
 import { formatDate } from "@/lib/utils";
-import { recheckSite } from "@/lib/site-check-client";
+import { RecheckError, recheckSite } from "@/lib/site-check-client";
+import { useRecheckCooldown } from "./useRecheckCooldown";
+import { DaysPill, latestOf } from "./SiteCardParts";
 
 type Site = {
   id: string;
   name: string;
   url: string;
   status: string;
+  /** Last full check (drives the once-per-minute Recheck limit). */
   lastCheckedAt: string | Date | null;
+  /** Freshest check of any kind (auto update), for the "Last check" label. */
+  lastSeenAt?: string | Date | null;
   lastStatusCode: number | null;
   lastLatencyMs: number | null;
   sslDaysLeft: number | null;
   domainDaysLeft: number | null;
   locked?: boolean;
 };
-
-function DaysPill({ days, label, warnAt = 30 }: { days: number | null; label: string; warnAt?: number }) {
-  if (days === null || days === undefined) {
-    return (
-      <div className="rounded-none border border-rule bg-surface px-3 py-2">
-        <p className="text-xs text-muted">{label}</p>
-        <p className="text-sm font-medium text-muted">Not available</p>
-        <p className="text-[10px] text-muted/80">retry recheck</p>
-      </div>
-    );
-  }
-  const warn = days <= warnAt;
-  const critical = days <= 7;
-  return (
-    <div
-      className={`rounded-none border border-rule px-3 py-2 ${
-        critical ? "bg-rose-50 dark:bg-rose-400/10" : warn ? "bg-amber-50 dark:bg-amber-400/10" : "bg-surface"
-      }`}
-    >
-      <p className="text-xs text-muted">{label}</p>
-      <p
-        className={`text-sm font-semibold ${
-          critical ? "text-rose-700 dark:text-rose-300" : warn ? "text-amber-800 dark:text-amber-200" : "text-ink"
-        }`}
-      >
-        {days} day{days === 1 ? "" : "s"}
-      </p>
-    </div>
-  );
-}
 
 export function SiteCard({
   site,
@@ -69,13 +44,17 @@ export function SiteCard({
   const [busy, setBusy] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const cooldown = useRecheckCooldown(site.lastCheckedAt);
 
   async function recheck() {
+    if (cooldown.secondsLeft > 0) return;
     setBusy(true);
     setMsg(null);
     try {
       await recheckSite(site.id);
+      cooldown.startCooldown();
     } catch (e) {
+      if (e instanceof RecheckError && e.retryAfter) cooldown.startCooldown(e.retryAfter);
       setMsg(e instanceof Error ? e.message : "Recheck failed. Try again.");
     }
     router.refresh();
@@ -172,7 +151,9 @@ export function SiteCard({
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <div className="rounded-none border border-rule bg-surface px-3 py-2">
           <p className="text-xs text-muted">Last check</p>
-          <p className="text-sm font-medium text-ink">{formatDate(site.lastCheckedAt)}</p>
+          <p className="text-sm font-medium text-ink">
+            {formatDate(latestOf(site.lastCheckedAt, site.lastSeenAt))}
+          </p>
         </div>
         <div className="rounded-none border border-rule bg-surface px-3 py-2">
           <p className="text-xs text-muted">Latency / code</p>
@@ -189,10 +170,11 @@ export function SiteCard({
         <div className="flex flex-wrap gap-2">
           <button
             onClick={recheck}
-            disabled={busy}
-            className="rounded-none bg-solid px-3 py-1.5 text-xs font-medium text-solid-fg hover:opacity-90 disabled:opacity-50"
+            disabled={busy || cooldown.secondsLeft > 0}
+            title={cooldown.secondsLeft > 0 ? "Recheck is limited to once per minute" : undefined}
+            className="rounded-none bg-solid px-3 py-1.5 text-xs font-medium tabular-nums text-solid-fg hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-75"
           >
-            {busy ? "Checking…" : "Recheck"}
+            {busy ? "Checking…" : cooldown.secondsLeft > 0 ? `Recheck in ${cooldown.secondsLeft}s` : "Recheck"}
           </button>
           {showAnalyticsLink && (
             <Link

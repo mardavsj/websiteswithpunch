@@ -168,8 +168,20 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   }
 
   const outcome = await runSiteCheck(site, body?.live === true);
-  if (outcome.throttled) {
-    // Checked moments ago (another tab/device or a double click): reuse it.
+  if (outcome.kind === "cooldown") {
+    const retryAfter = Math.ceil(outcome.retryAfterMs / 1000);
+    return NextResponse.json(
+      {
+        error: `You can recheck again in ${retryAfter}s.`,
+        code: "RECHECK_COOLDOWN",
+        retryAfter,
+        site: outcome.site,
+      },
+      { status: 429, headers: { "Retry-After": String(retryAfter) } },
+    );
+  }
+  if (outcome.kind === "throttled") {
+    // Auto update: checked moments ago (another tab/device) — reuse it.
     return NextResponse.json({
       site: outcome.site,
       result: null,
