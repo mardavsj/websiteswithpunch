@@ -220,28 +220,6 @@ export function buildTimeline(checks: CheckPoint[], range: RangeKey): TimelineBu
   return buckets;
 }
 
-export function latencySeries(
-  checks: CheckPoint[],
-  maxPoints = 48
-): Array<{ t: string; ms: number }> {
-  const withLatency = checks.filter((c) => c.latencyMs != null) as Array<
-    CheckPoint & { latencyMs: number }
-  >;
-  if (!withLatency.length) return [];
-  if (withLatency.length <= maxPoints) {
-    return withLatency.map((c) => ({ t: c.checkedAt.toISOString(), ms: c.latencyMs }));
-  }
-  const step = withLatency.length / maxPoints;
-  const out: Array<{ t: string; ms: number }> = [];
-  for (let i = 0; i < maxPoints; i++) {
-    const slice = withLatency.slice(Math.floor(i * step), Math.floor((i + 1) * step));
-    if (!slice.length) continue;
-    const avg = Math.round(slice.reduce((s, c) => s + c.latencyMs, 0) / slice.length);
-    out.push({ t: slice[slice.length - 1].checkedAt.toISOString(), ms: avg });
-  }
-  return out;
-}
-
 export function healthScore(input: {
   uptimePercent: number | null;
   avgLatencyMs: number | null;

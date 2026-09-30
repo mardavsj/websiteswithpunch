@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { runFullSiteCheck } from "@/lib/checks";
+import { runSiteCheck } from "@/lib/site-check-run";
 import { applyDuePendingAndEnforce, toClientSite } from "@/lib/site-limits";
 import { assertHostnameResolves } from "@/lib/dns-check";
 import {
@@ -167,28 +167,15 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   }
 
-  const result = await runFullSiteCheck(site.url);
-  const updated = await prisma.site.update({
-    where: { id: site.id },
-    data: {
-      status: result.uptime.status,
-      lastCheckedAt: new Date(),
-      lastStatusCode: result.uptime.statusCode,
-      lastLatencyMs: result.uptime.latencyMs,
-      sslExpiresAt: result.ssl.expiresAt,
-      sslDaysLeft: result.ssl.daysLeft,
-      domainExpiresAt: result.domain.expiresAt,
-      domainDaysLeft: result.domain.daysLeft,
-    },
-  });
-  await prisma.checkResult.create({
-    data: {
-      siteId: site.id,
-      status: result.uptime.status,
-      statusCode: result.uptime.statusCode,
-      latencyMs: result.uptime.latencyMs,
-      error: result.uptime.error,
-    },
-  });
-  return NextResponse.json({ site: updated, result });
+  const outcome = await runSiteCheck(site, body?.live === true);
+  if (outcome.throttled) {
+    // Checked moments ago (another tab/device or a double click): reuse it.
+    return NextResponse.json({
+      site: outcome.site,
+      result: null,
+      throttled: true,
+      retryAfterMs: outcome.retryAfterMs,
+    });
+  }
+  return NextResponse.json({ site: outcome.site, result: outcome.result, throttled: false });
 }

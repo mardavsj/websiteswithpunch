@@ -8,13 +8,13 @@ import {
   clampRangeToUnlocked,
   getUnlockedRanges,
   healthScore,
-  latencySeries,
   parseRange,
   percentile,
   rangeToMs,
   type CheckPoint,
   type RangeKey,
 } from "@/lib/analytics";
+import { alignDown, latencyBucketMs, latencySeries } from "@/lib/analytics-series";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -58,14 +58,23 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   const unlockedRanges = getUnlockedRanges(ageMs);
   const { range, rangeClamped } = clampRangeToUnlocked(requestedRange, unlockedRanges);
 
+  // Window start is aligned to the fixed latency bucket, so refreshing within
+  // the same bucket always reads the exact same rows (no sliding edge).
   const windowMs = rangeToMs(range);
-  let since = new Date(now - windowMs);
+  const bucketMs = latencyBucketMs(range);
+  let since = new Date(alignDown(now - windowMs, bucketMs));
 
-  let rows = await prisma.checkResult.findMany({
-    where: { siteId: site.id, checkedAt: { gte: since } },
-    orderBy: { checkedAt: "asc" },
-    take: 5000,
-  });
+  // Newest rows first so the 5000 cap keeps recent data; id breaks ties.
+  const loadRows = async (from: Date, to?: Date) =>
+    (
+      await prisma.checkResult.findMany({
+        where: { siteId: site.id, checkedAt: to ? { gte: from, lte: to } : { gte: from } },
+        orderBy: [{ checkedAt: "desc" }, { id: "desc" }],
+        take: 5000,
+      })
+    ).reverse();
+
+  let rows = await loadRows(since);
 
   // Nothing in the live window: fall back to the latest saved window of the
   // same length, anchored at the most recent check we have.
@@ -74,18 +83,14 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   if (!rows.length) {
     const latest = await prisma.checkResult.findFirst({
       where: { siteId: site.id },
-      orderBy: { checkedAt: "desc" },
+      orderBy: [{ checkedAt: "desc" }, { id: "desc" }],
       select: { checkedAt: true },
     });
     if (latest) {
       stale = true;
       latestAt = latest.checkedAt;
-      since = new Date(latest.checkedAt.getTime() - windowMs);
-      rows = await prisma.checkResult.findMany({
-        where: { siteId: site.id, checkedAt: { gte: since, lte: latest.checkedAt } },
-        orderBy: { checkedAt: "asc" },
-        take: 5000,
-      });
+      since = new Date(alignDown(latest.checkedAt.getTime() - windowMs, bucketMs));
+      rows = await loadRows(since, latest.checkedAt);
     }
   }
 
@@ -151,7 +156,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       p95: percentile(latencies, 95) != null ? Math.round(percentile(latencies, 95)!) : null,
       min: latencies.length ? latencies[0] : null,
       max: latencies.length ? latencies[latencies.length - 1] : null,
-      series: latencySeries(checks),
+      series: latencySeries(checks, range),
     },
     timeline: buildTimeline(checks, range),
     incidents: incidents.slice(0, 20),
