@@ -18,7 +18,7 @@ export function Navbar() {
           className="flex min-w-0 items-center gap-2 font-display text-sm font-medium text-ink sm:gap-2.5 sm:text-base"
         >
           <img
-            src="https://websiteswithpunch.com/logo.png"
+            src="/logo.svg"
             alt="Websites With Punch"
             className="h-7 w-7 shrink-0 object-contain md:h-8 md:w-8"
           />
