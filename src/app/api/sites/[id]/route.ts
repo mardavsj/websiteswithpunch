@@ -167,7 +167,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   }
 
-  const outcome = await runSiteCheck(site, body?.live === true);
+  // auto = auto refresh tick (same once-per-minute slot, no domain lookup).
+  const outcome = await runSiteCheck(site, { auto: body?.auto === true });
   if (outcome.kind === "cooldown") {
     const retryAfter = Math.ceil(outcome.retryAfterMs / 1000);
     return NextResponse.json(
@@ -180,14 +181,5 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       { status: 429, headers: { "Retry-After": String(retryAfter) } },
     );
   }
-  if (outcome.kind === "throttled") {
-    // Auto update: checked moments ago (another tab/device) — reuse it.
-    return NextResponse.json({
-      site: outcome.site,
-      result: null,
-      throttled: true,
-      retryAfterMs: outcome.retryAfterMs,
-    });
-  }
-  return NextResponse.json({ site: outcome.site, result: outcome.result, throttled: false });
+  return NextResponse.json({ site: outcome.site, result: outcome.result });
 }
