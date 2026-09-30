@@ -1,60 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  formatDuration,
-  lockedRangeNotice,
-  type RangeKey,
-} from "@/lib/analytics";
-import {
-  AvailabilityStrip,
-  DomainExpiryMeter,
-  DonutChart,
-  ExpiryRingCard,
-  LatencyAreaChart,
-  RingGauge,
-} from "./analytics-charts";
-
-type AnalyticsPayload = {
-  range: RangeKey;
-  requestedRange?: RangeKey;
-  rangeClamped?: boolean;
-  siteCreatedAt?: string;
-  ageMs?: number;
-  ageDays?: number;
-  unlockedRanges?: RangeKey[];
-  healthScore: number;
-  healthLabel: string;
-  uptimePercent: number | null;
-  totals: { checks: number; up: number; down: number; error: number };
-  latency: {
-    avg: number | null;
-    p95: number | null;
-    min: number | null;
-    max: number | null;
-    series: Array<{ t: string; ms: number }>;
-  };
-  timeline: Array<{
-    t: string;
-    status: "up" | "down" | "error" | "mixed" | "empty";
-    up: number;
-    down: number;
-    error: number;
-  }>;
-  incidents: Array<{
-    status: string;
-    startedAt: string;
-    endedAt: string | null;
-    durationMs: number | null;
-    statusCode: number | null;
-    error: string | null;
-  }>;
-  ssl: { daysLeft: number | null; expiresAt: string | null };
-  domain: { daysLeft: number | null; expiresAt: string | null };
-  statusCodes: Record<string, number>;
-  lastDowntimeAt: string | null;
-  empty: boolean;
-};
+import { useRouter } from "next/navigation";
+import { lockedRangeNotice, type RangeKey } from "@/lib/analytics";
+import { SiteAnalyticsBody, type AnalyticsPayload } from "./SiteAnalyticsBody";
+import { EmptyHistory, StaleBanner } from "./AnalyticsNotices";
+import { onSiteChecked, recheckSite } from "@/lib/site-check-client";
 
 const RANGES: Array<{ key: RangeKey; label: string }> = [
   { key: "24h", label: "24h" },
@@ -62,15 +13,6 @@ const RANGES: Array<{ key: RangeKey; label: string }> = [
   { key: "30d", label: "30d" },
   { key: "90d", label: "All" },
 ];
-
-function timeAgo(iso: string | null): string {
-  if (!iso) return "Never in this range";
-  const ms = Date.now() - new Date(iso).getTime();
-  if (ms < 60_000) return "Just now";
-  if (ms < 3_600_000) return `${Math.floor(ms / 60_000)}m ago`;
-  if (ms < 86_400_000) return `${Math.floor(ms / 3_600_000)}h ago`;
-  return `${Math.floor(ms / 86_400_000)}d ago`;
-}
 
 export function SiteAnalytics({
   siteId,
@@ -86,6 +28,9 @@ export function SiteAnalytics({
   const [error, setError] = useState<string | null>(null);
   const [fade, setFade] = useState(true);
   const [lockNotice, setLockNotice] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [checkError, setCheckError] = useState<string | null>(null);
+  const router = useRouter();
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const unlockedRanges: RangeKey[] = data?.unlockedRanges?.length
@@ -134,7 +79,10 @@ export function SiteAnalytics({
             headers: { Accept: "application/json" },
           }
         );
-        if (!res.ok) throw new Error("Could not load analytics");
+        if (!res.ok) {
+          const j = await res.json().catch(() => null);
+          throw new Error(j?.error || "Could not load analytics");
+        }
         const json = (await res.json()) as AnalyticsPayload;
         setData(json);
         setRange(json.range);
@@ -169,9 +117,31 @@ export function SiteAnalytics({
     void load(next);
   }
 
+  const rangeRef = useRef<RangeKey>(range);
+  rangeRef.current = range;
+
+  // Any successful Recheck (site card or banner) → refetch analytics in place.
+  useEffect(
+    () => onSiteChecked(siteId, () => void load(rangeRef.current)),
+    [siteId, load]
+  );
+
+  async function recheck() {
+    setChecking(true);
+    setCheckError(null);
+    try {
+      await recheckSite(siteId);
+      router.refresh();
+    } catch (e) {
+      setCheckError(e instanceof Error ? e.message : "Recheck failed. Try again.");
+    } finally {
+      setChecking(false);
+    }
+  }
+
   return (
     <section
-      className={`rounded-none border border-rule bg-surface ${compact ? "p-4" : "p-5 sm:p-6"}`}
+      className={`min-w-0 rounded-none border border-rule bg-surface ${compact ? "p-4" : "p-5 sm:p-6"}`}
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -237,7 +207,8 @@ export function SiteAnalytics({
         <p className="mt-3 text-xs text-muted">
           Showing <span className="font-medium text-ink">{data.range}</span>
           {" · "}
-          <span className="font-medium text-ink">{data.totals.checks}</span> checks in this window
+          <span className="font-medium text-ink">{data.totals.checks}</span>{" "}
+          {data.stale ? "checks in the last saved window" : "checks in this window"}
           {loading ? " · updating…" : ""}
         </p>
       )}
@@ -247,7 +218,7 @@ export function SiteAnalytics({
         className={`mt-5 transition-opacity duration-300 ${fade && !loading ? "opacity-100" : "opacity-40"}`}
       >
         {error && (
-          <p className="rounded-none border border-rose-200 bg-rose-50 dark:border-rose-400/30 dark:bg-rose-400/10 px-3 py-2 text-sm text-rose-800 dark:text-rose-200">
+          <p className="mb-5 rounded-none border border-rose-200 bg-rose-50 dark:border-rose-400/30 dark:bg-rose-400/10 px-3 py-2 text-sm text-danger">
             {error}
           </p>
         )}
@@ -261,127 +232,16 @@ export function SiteAnalytics({
         )}
 
         {data && data.empty && (
-          <div className="border border-dashed border-rule px-4 py-10 text-center">
-            <p className="font-display text-base font-medium text-ink">No check history yet</p>
-            <p className="mt-2 text-sm text-muted">
-              Hit Recheck on the site card to start building uptime and latency history.
-            </p>
-          </div>
+          <EmptyHistory data={data} busy={checking} onRecheck={recheck} error={checkError} />
         )}
 
         {data && !data.empty && (
-          <div className="space-y-5">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="flex flex-col items-center justify-center border border-rule bg-surface p-4">
-                <p className="label-caps mb-2 self-start text-muted">Health score</p>
-                <RingGauge
-                  value={data.healthScore}
-                  label="Score"
-                  caption={data.healthLabel}
-                />
-              </div>
-              <div className="flex flex-col items-center justify-center border border-rule bg-surface p-4">
-                <p className="label-caps mb-2 self-start text-muted">Uptime</p>
-                <RingGauge
-                  value={data.uptimePercent}
-                  label="Uptime"
-                  suffix="%"
-                />
-                <p className="mt-2 text-center text-xs text-muted">
-                  {data.totals.checks} checks · {data.totals.down + data.totals.error} issues
-                </p>
-              </div>
-              <div className="border border-rule bg-surface p-4">
-                <p className="label-caps text-muted">Avg latency</p>
-                <p className="mt-2 font-display text-3xl font-medium text-ink">
-                  {data.latency.avg == null ? "—" : `${data.latency.avg}ms`}
-                </p>
-                <p className="text-sm text-muted">
-                  p95 {data.latency.p95 == null ? "—" : `${data.latency.p95}ms`}
-                </p>
-              </div>
-              <div className="border border-rule bg-surface p-4">
-                <p className="label-caps text-muted">Last downtime</p>
-                <p className="mt-2 font-display text-xl font-medium text-ink">
-                  {timeAgo(data.lastDowntimeAt)}
-                </p>
-                <p className="text-sm text-muted">In selected range</p>
-              </div>
-            </div>
-
-            <div className="grid gap-4 lg:grid-cols-2">
-              <div className="border border-rule bg-surface p-4">
-                <div className="flex items-center justify-between">
-                  <p className="font-display text-sm font-medium text-ink">Latency trend</p>
-                  <p className="text-xs text-muted">
-                    {data.latency.min ?? "—"}–{data.latency.max ?? "—"} ms
-                  </p>
-                </div>
-                <div className="mt-2">
-                  <LatencyAreaChart series={data.latency.series} />
-                </div>
-              </div>
-              <div className="border border-rule bg-surface p-4">
-                <p className="font-display text-sm font-medium text-ink">Availability timeline</p>
-                <p className="mt-1 text-xs text-muted">
-                  Segment density follows the selected range
-                </p>
-                <div className="mt-4">
-                  <AvailabilityStrip timeline={data.timeline} />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <ExpiryRingCard
-                title="SSL certificate"
-                days={data.ssl.daysLeft}
-                expiresAt={data.ssl.expiresAt}
-                warnAt={30}
-              />
-              <DomainExpiryMeter
-                days={data.domain.daysLeft}
-                expiresAt={data.domain.expiresAt}
-              />
-            </div>
-
-            <div className="grid gap-4 lg:grid-cols-2">
-              <div className="border border-rule bg-surface p-4">
-                <p className="font-display text-sm font-medium text-ink">Incidents</p>
-                {data.incidents.length === 0 ? (
-                  <p className="mt-3 text-sm text-muted">No incidents in this range. Nice.</p>
-                ) : (
-                  <ul className="mt-3 divide-y divide-rule">
-                    {data.incidents.map((inc, i) => (
-                      <li key={`${inc.startedAt}-${i}`} className="py-2.5 text-sm">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-medium capitalize text-ink">{inc.status}</span>
-                          <span className="text-xs text-muted">
-                            {formatDuration(inc.durationMs)}
-                            {inc.endedAt ? "" : " · ongoing"}
-                          </span>
-                        </div>
-                        <p className="mt-0.5 text-xs text-muted">
-                          {new Date(inc.startedAt).toLocaleString("en-IN", {
-                            timeZone: "Asia/Kolkata",
-                          })}
-                          {inc.statusCode != null ? ` · HTTP ${inc.statusCode}` : ""}
-                          {inc.error ? ` · ${inc.error}` : ""}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              <div className="border border-rule bg-surface p-4">
-                <p className="font-display text-sm font-medium text-ink">Status codes</p>
-                <DonutChart
-                  codes={data.statusCodes}
-                  totalChecks={data.totals.checks}
-                />
-              </div>
-            </div>
-          </div>
+          <>
+            {data.stale && (
+              <StaleBanner data={data} busy={checking} onRecheck={recheck} error={checkError} />
+            )}
+            <SiteAnalyticsBody data={data} />
+          </>
         )}
       </div>
     </section>
