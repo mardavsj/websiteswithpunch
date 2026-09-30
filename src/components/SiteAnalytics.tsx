@@ -6,9 +6,10 @@ import { lockedRangeNotice, type RangeKey } from "@/lib/analytics";
 import { SiteAnalyticsBody, type AnalyticsPayload } from "./SiteAnalyticsBody";
 import { EmptyHistory, StaleBanner } from "./AnalyticsNotices";
 import { AnalyticsHeader } from "./AnalyticsHeader";
-import { LiveIndicator } from "./LiveIndicator";
-import { useLiveUpdates } from "./useLiveUpdates";
-import { onSiteChecked, recheckSite } from "@/lib/site-check-client";
+import { AutoUpdateControl } from "./AutoUpdateControl";
+import { useAutoUpdate } from "./useAutoUpdate";
+import { useRecheckCooldown } from "./useRecheckCooldown";
+import { RecheckError, onSiteChecked, recheckSite } from "@/lib/site-check-client";
 
 type LoadOpts = { quiet?: boolean; signal?: AbortSignal };
 
@@ -105,10 +106,10 @@ export function SiteAnalytics({
   // Any successful manual Recheck (site card or banner) → refetch in place.
   useEffect(() => onSiteChecked(siteId, () => void load(rangeRef.current)), [siteId, load]);
 
-  // Live mode: cheap server-throttled uptime check + quiet refetch.
-  const live = useLiveUpdates({
-    enabled: Boolean(data) && !siteLocked,
-    lastKnownAt: data?.site?.lastCheckedAt ? new Date(data.site.lastCheckedAt).getTime() : null,
+  // Opt-in Auto update: light server-throttled uptime check + quiet refetch.
+  const auto = useAutoUpdate({
+    allowed: Boolean(data) && !siteLocked,
+    lastCheckAt: data?.site?.lastSeenAt ?? data?.site?.lastCheckedAt ?? null,
     run: async (signal) => {
       await recheckSite(siteId, { live: true, signal, broadcast: false });
       await load(rangeRef.current, { quiet: true, signal });
@@ -116,13 +117,19 @@ export function SiteAnalytics({
     },
   });
 
+  // Recheck: once per minute per site (server-enforced, survives refresh).
+  const cooldown = useRecheckCooldown(data?.site?.lastCheckedAt);
+
   async function recheck() {
+    if (cooldown.secondsLeft > 0) return;
     setChecking(true);
     setCheckError(null);
     try {
       await recheckSite(siteId);
+      cooldown.startCooldown();
       router.refresh();
     } catch (e) {
+      if (e instanceof RecheckError && e.retryAfter) cooldown.startCooldown(e.retryAfter);
       setCheckError(e instanceof Error ? e.message : "Recheck failed. Try again.");
     } finally {
       setChecking(false);
@@ -145,12 +152,10 @@ export function SiteAnalytics({
         }}
         live={
           data && !siteLocked ? (
-            <LiveIndicator state={live} fallbackAt={data.site?.lastCheckedAt} />
+            <AutoUpdateControl state={auto} />
           ) : null
         }
       />
-
-      <p className="mt-2 text-xs text-muted">Longer ranges unlock as this site ages.</p>
 
       {lockNotice && (
         <p
@@ -158,16 +163,6 @@ export function SiteAnalytics({
           className="mt-2 rounded-none border border-amber-200 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-100"
         >
           {lockNotice}
-        </p>
-      )}
-
-      {data && (
-        <p className="mt-3 text-xs text-muted">
-          Showing <span className="font-medium text-ink">{data.range}</span>
-          {" · "}
-          <span className="font-medium text-ink">{data.totals.checks}</span>{" "}
-          {data.stale ? "checks in the last saved window" : "checks in this window"}
-          {loading ? " · updating…" : ""}
         </p>
       )}
 
@@ -190,13 +185,25 @@ export function SiteAnalytics({
         )}
 
         {data && !siteLocked && data.empty && (
-          <EmptyHistory data={data} busy={checking} onRecheck={recheck} error={checkError} />
+          <EmptyHistory
+            data={data}
+            busy={checking}
+            cooldown={cooldown.secondsLeft}
+            onRecheck={recheck}
+            error={checkError}
+          />
         )}
 
         {data && !siteLocked && !data.empty && (
           <>
             {data.stale && (
-              <StaleBanner data={data} busy={checking} onRecheck={recheck} error={checkError} />
+              <StaleBanner
+                data={data}
+                busy={checking}
+                cooldown={cooldown.secondsLeft}
+                onRecheck={recheck}
+                error={checkError}
+              />
             )}
             <SiteAnalyticsBody data={data} />
           </>

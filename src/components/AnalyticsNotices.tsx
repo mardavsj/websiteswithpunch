@@ -4,21 +4,25 @@ import { ExpiryCards, timeAgo, type AnalyticsPayload } from "./SiteAnalyticsBody
 
 type RecheckProps = {
   busy: boolean;
+  /** Seconds until Recheck is allowed again (once per minute). */
+  cooldown?: number;
   onRecheck: () => void;
   error?: string | null;
 };
 
 /** Same black solid style as the Recheck button on the site card. */
-export function RecheckButton({ busy, onRecheck }: Omit<RecheckProps, "error">) {
+export function RecheckButton({ busy, cooldown = 0, onRecheck }: Omit<RecheckProps, "error">) {
+  const wait = cooldown > 0;
   return (
     <button
       type="button"
       onClick={onRecheck}
-      disabled={busy}
+      disabled={busy || wait}
       aria-busy={busy || undefined}
-      className="shrink-0 self-start rounded-none bg-solid px-3 py-1.5 text-xs font-medium text-solid-fg hover:opacity-90 disabled:opacity-50 sm:self-center"
+      title={wait ? "Recheck is limited to once per minute" : undefined}
+      className="shrink-0 self-start rounded-none bg-solid px-3 py-1.5 text-xs font-medium tabular-nums text-solid-fg hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-75 sm:self-center"
     >
-      {busy ? "Checking…" : "Recheck"}
+      {busy ? "Checking…" : wait ? `Recheck in ${cooldown}s` : "Recheck"}
     </button>
   );
 }
@@ -26,7 +30,8 @@ export function RecheckButton({ busy, onRecheck }: Omit<RecheckProps, "error">) 
 /** Latest known status from the site record (updated on every check). */
 export function LatestKnown({ data }: { data: AnalyticsPayload }) {
   const s = data.site;
-  if (!s || !s.lastCheckedAt) return null;
+  const seen = s?.lastSeenAt ?? s?.lastCheckedAt;
+  if (!s || !seen) return null;
   const bits = [
     s.lastStatusCode != null ? `HTTP ${s.lastStatusCode}` : null,
     s.lastLatencyMs != null ? `${s.lastLatencyMs}ms` : null,
@@ -38,7 +43,7 @@ export function LatestKnown({ data }: { data: AnalyticsPayload }) {
       <span>Latest known:</span>
       <StatusBadge status={s.status} />
       {bits.length > 0 && <span className="min-w-0 break-words">{bits.join(" · ")}</span>}
-      <span>· checked {timeAgo(s.lastCheckedAt, "never")}</span>
+      <span>· checked {timeAgo(seen, "never")}</span>
     </div>
   );
 }
@@ -46,10 +51,11 @@ export function LatestKnown({ data }: { data: AnalyticsPayload }) {
 export function StaleBanner({
   data,
   busy,
+  cooldown,
   onRecheck,
   error,
 }: RecheckProps & { data: AnalyticsPayload }) {
-  const at = data.dataEndsAt ?? data.site?.lastCheckedAt ?? null;
+  const at = data.dataEndsAt ?? data.site?.lastSeenAt ?? data.site?.lastCheckedAt ?? null;
   return (
     <div role="status" className="mb-5 rounded-none border border-rule bg-bg px-3 py-3 sm:px-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -64,7 +70,7 @@ export function StaleBanner({
           </p>
           <LatestKnown data={data} />
         </div>
-        <RecheckButton busy={busy} onRecheck={onRecheck} />
+        <RecheckButton busy={busy} cooldown={cooldown} onRecheck={onRecheck} />
       </div>
       {error && <p className="mt-2 text-xs text-danger">{error}</p>}
     </div>
@@ -74,6 +80,7 @@ export function StaleBanner({
 export function EmptyHistory({
   data,
   busy,
+  cooldown,
   onRecheck,
   error,
 }: RecheckProps & { data: AnalyticsPayload }) {
@@ -86,7 +93,7 @@ export function EmptyHistory({
           Run a check now to start building uptime and latency history.
         </p>
         <div className="mt-4 flex justify-center">
-          <RecheckButton busy={busy} onRecheck={onRecheck} />
+          <RecheckButton busy={busy} cooldown={cooldown} onRecheck={onRecheck} />
         </div>
         {error && <p className="mt-3 text-xs text-danger">{error}</p>}
         <div className="flex justify-center">
