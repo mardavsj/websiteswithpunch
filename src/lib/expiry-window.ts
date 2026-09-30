@@ -75,3 +75,20 @@ export function formatDay(iso: string | null | undefined): string | null {
     dateStyle: "medium",
   });
 }
+
+/** Hue at 100% remaining (green) → 0 (red) at 0%. */
+const FULL_HUE = 142;
+
+/**
+ * Meter hue from the share of the window remaining: smooth green → yellow →
+ * orange → red. Safety caps: always red at ≤7 days left, at least orange at
+ * ≤30 days left (even when the window is short).
+ */
+export function expiryHue(pct: number, days: number | null): number {
+  let h = Math.round((Math.max(0, Math.min(100, pct)) / 100) * FULL_HUE);
+  if (days != null) {
+    if (days <= 7) h = 0;
+    else if (days <= 30) h = Math.min(h, 28);
+  }
+  return h;
+}

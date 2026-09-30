@@ -1,41 +1,43 @@
 "use client";
 
-import { expiryWindow, formatDay, formatSpanLong, formatSpanShort } from "@/lib/expiry-window";
+import type { CSSProperties } from "react";
+import {
+  expiryHue,
+  expiryWindow,
+  formatDay,
+  formatSpanLong,
+  formatSpanShort,
+} from "@/lib/expiry-window";
 
 /** SSL + domain expiry cards. Window = site added → expiry (full when added). */
 
-const ACCENT = "hsl(var(--accent))";
 const INK = "hsl(var(--ink))";
 const MUTED = "hsl(var(--muted))";
 const RULE = "hsl(var(--rule))";
-const AMBER = "hsl(38 92% 50%)";
-const ROSE = "hsl(350 89% 60%)";
 
-/** Same urgency thresholds as before: ≤30d red, ≤~18 months amber. */
-const DOMAIN_CRITICAL_DAYS = 30;
-const DOMAIN_WARN_DAYS = (365 * 3) / 2;
-
-const toneText = (critical: boolean, warn: boolean) =>
-  critical ? "text-rose-700 dark:text-rose-300" : warn ? "text-amber-800 dark:text-amber-200" : "text-ink";
+/**
+ * Colour follows % remaining (see expiryHue). The hue is set inline as
+ * --meter-h; lightness switches per theme so it reads in light and dark.
+ */
+const METER_VARS = "[--meter-l:44%] dark:[--meter-l:55%]";
+const METER_FILL = "hsl(var(--meter-h) 72% var(--meter-l))";
+const METER_TEXT = "text-[hsl(var(--meter-h)_70%_32%)] dark:text-[hsl(var(--meter-h)_75%_66%)]";
+const meterStyle = (h: number) => ({ "--meter-h": String(h) }) as CSSProperties;
 
 export function ExpiryRingCard({
   title,
   days,
   expiresAt,
   addedAt,
-  warnAt,
 }: {
   title: string;
   days: number | null;
   expiresAt: string | null;
   addedAt?: string | null;
-  warnAt: number;
 }) {
   const win = expiryWindow({ days, expiresAt, addedAt });
-  const critical = days != null && days <= 7;
-  const warn = days != null && days <= warnAt;
   const pct = win?.pct ?? 0;
-  const stroke = critical ? ROSE : warn ? AMBER : ACCENT;
+  const hue = expiryHue(pct, days);
   const r = 22;
   const circ = 2 * Math.PI * r;
   const offset = circ - (pct / 100) * circ;
@@ -43,7 +45,10 @@ export function ExpiryRingCard({
   const added = formatDay(addedAt);
 
   return (
-    <div className="rounded-none border border-rule bg-surface p-4">
+    <div
+      className={`rounded-none border border-rule bg-surface p-4 ${METER_VARS}`}
+      style={meterStyle(hue)}
+    >
       <p className="label-caps text-muted">{title}</p>
       <div className="mt-3 flex items-center gap-4">
         <svg width="64" height="64" viewBox="0 0 64 64" className="shrink-0" aria-hidden>
@@ -53,12 +58,14 @@ export function ExpiryRingCard({
             cy="32"
             r={r}
             fill="none"
-            stroke={days == null ? MUTED : stroke}
             strokeWidth="6"
             strokeDasharray={circ}
             strokeDashoffset={offset}
             transform="rotate(-90 32 32)"
-            style={{ transition: "stroke-dashoffset 0.65s ease" }}
+            style={{
+              stroke: days == null ? MUTED : METER_FILL,
+              transition: "stroke-dashoffset 0.65s ease, stroke 0.3s ease",
+            }}
           />
           <text
             x="32"
@@ -77,7 +84,7 @@ export function ExpiryRingCard({
         <div className="min-w-0">
           <p
             className={`font-display text-2xl font-medium ${
-              win?.expired ? "text-danger" : toneText(critical, warn)
+              win?.expired ? "text-danger" : days == null ? "text-ink" : METER_TEXT
             }`}
           >
             {days == null ? "—" : win?.expired ? "Expired" : `${days} days`}
@@ -108,10 +115,8 @@ export function DomainExpiryMeter({
 }) {
   const win = expiryWindow({ days, expiresAt, addedAt });
   const expired = Boolean(win?.expired);
-  const critical = days != null && days <= DOMAIN_CRITICAL_DAYS;
-  const warn = days != null && days <= DOMAIN_WARN_DAYS;
   const pct = win?.pct ?? 0;
-  const fill = critical ? ROSE : warn ? AMBER : ACCENT;
+  const hue = expiryHue(pct, days);
   const expiry = formatDay(expiresAt);
   const added = formatDay(addedAt);
 
@@ -125,12 +130,15 @@ export function DomainExpiryMeter({
   const midLabel = win && !expired ? formatSpanShort(win.midDays) : null;
 
   return (
-    <div className="rounded-none border border-rule bg-surface p-4">
+    <div
+      className={`rounded-none border border-rule bg-surface p-4 ${METER_VARS}`}
+      style={meterStyle(hue)}
+    >
       <p className="label-caps text-muted">Domain registration</p>
 
       <p
         className={`mt-3 font-display text-3xl font-medium tabular-nums ${
-          expired ? "text-danger" : toneText(critical, warn)
+          expired ? "text-danger" : days == null ? "text-ink" : METER_TEXT
         }`}
       >
         {days == null ? "—" : expired ? "Expired" : days}
@@ -159,8 +167,7 @@ export function DomainExpiryMeter({
             y={trackY}
             width={Math.max(fillW, 2)}
             height={trackH}
-            fill={fill}
-            style={{ transition: "width 0.65s ease, fill 0.3s ease" }}
+            style={{ fill: METER_FILL, transition: "width 0.65s ease, fill 0.3s ease" }}
           />
         )}
         {win &&
