@@ -9,14 +9,15 @@ const checks = [
 ];
 
 export function HeroSection() {
+  // lg+: fill the viewport below the 65px sticky navbar, capped so tall screens don't balloon.
   return (
-    <section className="relative isolate overflow-hidden border-b border-rule bg-solid text-solid-fg">
+    <section className="relative isolate overflow-hidden border-b border-rule bg-solid text-solid-fg lg:flex lg:min-h-[min(calc(100svh_-_65px),1024px)] lg:items-center">
       <div className="absolute inset-0 -z-10" aria-hidden>
         <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--solid-fg)/0.05)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--solid-fg)/0.05)_1px,transparent_1px)] [background-size:56px_56px] [mask-image:radial-gradient(ellipse_80%_70%_at_60%_40%,black,transparent)]" />
         <div className="absolute -right-40 top-1/4 h-[36rem] w-[36rem] rounded-full bg-accent/20 blur-[120px]" />
       </div>
 
-      <div className="mx-auto grid max-w-6xl items-center gap-14 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,1.33fr)_minmax(0,1fr)] lg:gap-12 lg:py-24">
+      <div className="mx-auto grid w-full max-w-6xl items-center gap-14 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,1.33fr)_minmax(0,1fr)] lg:gap-12 lg:py-24">
         <div className="min-w-0">
           <h1 className="max-w-[17ch] font-display text-4xl font-medium tracking-tight text-solid-fg sm:text-5xl lg:max-w-none lg:text-[2.35rem] lg:leading-[1.1] xl:text-[2.75rem]">
             Know <span className="text-accent">before</span> your site,{" "}
