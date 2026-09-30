@@ -9,6 +9,8 @@ import { DeleteSiteButton } from "./DeleteSiteButton";
 import { formatDate } from "@/lib/utils";
 import { RecheckError, recheckSite } from "@/lib/site-check-client";
 import { useRecheckCooldown } from "./useRecheckCooldown";
+import { useSiteRecheckContext } from "./SiteRecheckProvider";
+import { StopAutoButton } from "./AutoUpdateControl";
 import { DaysPill, latestOf } from "./SiteCardParts";
 
 type Site = {
@@ -16,9 +18,9 @@ type Site = {
   name: string;
   url: string;
   status: string;
-  /** Last full check (drives the once-per-minute Recheck limit). */
+  /** Last recheck, manual or auto (drives the once-per-minute Recheck limit). */
   lastCheckedAt: string | Date | null;
-  /** Freshest check of any kind (auto update), for the "Last check" label. */
+  /** Freshest check of any kind (history), for the "Last check" label. */
   lastSeenAt?: string | Date | null;
   lastStatusCode: number | null;
   lastLatencyMs: number | null;
@@ -45,8 +47,15 @@ export function SiteCard({
   const [editOpen, setEditOpen] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const cooldown = useRecheckCooldown(site.lastCheckedAt);
+  // On the analytics page: the shared controller (same countdown as auto refresh).
+  const rc = useSiteRecheckContext(site.id);
+  const autoOn = Boolean(rc?.auto.on);
+  const secondsLeft = rc ? rc.secondsLeft : cooldown.secondsLeft;
+  const checking = rc ? rc.busy : busy;
+  const recheckMsg = rc ? rc.error : msg;
 
   async function recheck() {
+    if (rc) return void rc.recheck();
     if (cooldown.secondsLeft > 0) return;
     setBusy(true);
     setMsg(null);
@@ -170,12 +179,25 @@ export function SiteCard({
         <div className="flex flex-wrap gap-2">
           <button
             onClick={recheck}
-            disabled={busy || cooldown.secondsLeft > 0}
-            title={cooldown.secondsLeft > 0 ? "Recheck is limited to once per minute" : undefined}
+            disabled={checking || autoOn || secondsLeft > 0}
+            title={
+              autoOn
+                ? "Auto refresh/recheck is on"
+                : secondsLeft > 0
+                  ? "Recheck is limited to once per minute"
+                  : undefined
+            }
             className="rounded-none bg-solid px-3 py-1.5 text-xs font-medium tabular-nums text-solid-fg hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-75"
           >
-            {busy ? "Checking…" : cooldown.secondsLeft > 0 ? `Recheck in ${cooldown.secondsLeft}s` : "Recheck"}
+            {checking
+              ? "Checking…"
+              : autoOn
+                ? `Rechecking in ${secondsLeft}s`
+                : secondsLeft > 0
+                  ? `Recheck in ${secondsLeft}s`
+                  : "Recheck"}
           </button>
+          {rc && autoOn && <StopAutoButton onStop={rc.auto.stop} />}
           {showAnalyticsLink && (
             <Link
               href={`/dashboard/sites/${site.id}`}
@@ -197,12 +219,12 @@ export function SiteCard({
             siteId={site.id}
             siteName={site.name}
             hasLockedSites={hasLockedSites}
-            disabled={busy}
+            disabled={checking}
           />
         </div>
       </div>
 
-      {msg && <p className="mt-2 text-xs text-danger">{msg}</p>}
+      {recheckMsg && <p className="mt-2 text-xs text-danger">{recheckMsg}</p>}
 
       <EditSiteModal
         open={editOpen}
