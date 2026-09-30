@@ -58,24 +58,6 @@ export const painPoints = [
   },
 ];
 
-export const audiences = [
-  {
-    title: "Founders",
-    body: "Ship product, not pager duty. One dashboard for the sites that keep revenue flowing.",
-    wide: true,
-  },
-  {
-    title: "Freelancers",
-    body: "Client sites shouldn’t surprise you. Spot SSL and domain issues before the midnight email.",
-    wide: false,
-  },
-  {
-    title: "Small agencies",
-    body: "Monitor a portfolio without enterprise pricing. Free for one, Pro for ten, Business for fifty.",
-    wide: false,
-  },
-];
-
 export const faqs = [
   {
     q: "What counts as one site?",

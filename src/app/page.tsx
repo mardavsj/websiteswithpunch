@@ -1,9 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import {
-  AudienceSection,
-  PricingSection,
-} from "@/components/marketing/sections-audience-pricing";
+import { AudienceSection } from "@/components/marketing/AudienceSection";
+import { PricingSection } from "@/components/marketing/sections-audience-pricing";
 import {
   FaqSection,
   FinalCtaSection,

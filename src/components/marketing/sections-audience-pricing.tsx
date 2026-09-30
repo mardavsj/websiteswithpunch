@@ -1,40 +1,5 @@
 import Link from "next/link";
 import { PLANS, SITE_PACKS } from "@/lib/plans";
-import { audiences } from "./home-content";
-
-export function AudienceSection() {
-  return (
-    <section className="border-b border-rule bg-bg">
-      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-        <div className="max-w-xl">
-          <h2 className="font-display text-3xl font-medium text-ink sm:text-4xl">Who it’s for</h2>
-          <p className="mt-3 text-muted">People who own sites but don’t want a full ops stack.</p>
-        </div>
-        <div className="mt-12 grid gap-4 md:grid-cols-2 md:grid-rows-2">
-          {audiences.map((a) =>
-            a.wide ? (
-              <div
-                key={a.title}
-                className="border border-rule bg-accent-soft p-8 md:row-span-2 md:flex md:flex-col md:justify-center md:p-10"
-              >
-                <p className="label-caps text-accent">Primary</p>
-                <h3 className="mt-3 font-display text-3xl font-medium text-ink sm:text-4xl">
-                  {a.title}
-                </h3>
-                <p className="mt-4 max-w-sm text-base leading-relaxed text-muted">{a.body}</p>
-              </div>
-            ) : (
-              <div key={a.title} className="border border-rule bg-surface p-6 sm:p-8">
-                <h3 className="font-display text-xl font-medium text-ink">{a.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted">{a.body}</p>
-              </div>
-            ),
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 const PRICING_ORDER = [PLANS.free, PLANS.pro, PLANS.business] as const;
 
@@ -171,7 +136,7 @@ export function PricingSection() {
               SITE_PACKS.business.maxPacks * SITE_PACKS.business.sitesPerPack}{" "}
             sites). Packs join your existing subscription — pay for the rest of this month today,
             then one bill on the same renewal date. Remove anytime; you keep them until the end of
-            the month you've paid for. Need more?{" "}
+            the month you&apos;ve paid for. Need more?{" "}
             <a
               href="mailto:hello@websiteswithpunch.com?subject=Custom%20site%20limit"
               className="font-semibold text-ink underline-offset-2 hover:underline"
