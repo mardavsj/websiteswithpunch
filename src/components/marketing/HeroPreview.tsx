@@ -53,15 +53,13 @@ export function HeroPreview() {
   const checking = useCheckingRow(heroSites.length);
 
   return (
-    <div className="relative" aria-hidden>
+    <div className="relative">
       <div className="border border-rule bg-surface shadow-[8px_8px_0_0_hsl(var(--accent)/0.18)]">
-        <div className="flex items-center justify-between gap-3 border-b border-rule px-4 py-3 sm:px-5">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 bg-accent" />
-            <span className="font-display text-sm font-medium text-ink">Sites</span>
-            <span className="text-[11px] text-muted">4 monitored</span>
-          </div>
-          <span className="flex items-center gap-1.5 text-[11px] text-muted">
+        <div className="flex items-center gap-2 border-b border-rule px-4 py-3 sm:px-5">
+          <span className="h-2 w-2 bg-accent" />
+          <span className="font-display text-sm font-medium text-ink">Sites</span>
+          <span className="text-[11px] text-muted">4 monitored</span>
+          <span className="ml-2 flex items-center gap-1.5 text-[11px] text-muted">
             <span className="relative flex h-1.5 w-1.5">
               <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-60 motion-safe:animate-ping" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -102,22 +100,9 @@ export function HeroPreview() {
             </li>
           ))}
         </ul>
+        {/* On lg+ the floating cards sit over this strip, so its label is hidden there. */}
         <div className="flex justify-end border-t border-rule px-4 py-2.5 text-[11px] text-muted sm:px-5">
-          Last check · just now
-        </div>
-      </div>
-
-      <div className="absolute -bottom-16 -left-8 hidden w-56 border border-rule bg-surface p-4 shadow-[6px_6px_0_0_hsl(var(--accent)/0.18)] lg:block">
-        <p className="text-[10px] uppercase tracking-wider text-muted">Health score</p>
-        <div className="mt-2 flex items-center gap-3">
-          <svg viewBox="0 0 36 36" className="h-11 w-11 -rotate-90">
-            <circle cx="18" cy="18" r="15" fill="none" strokeWidth="4" className="stroke-rule" />
-            <circle cx="18" cy="18" r="15" fill="none" strokeWidth="4" pathLength={100} strokeDasharray="100" strokeDashoffset="0" className="stroke-emerald-500" />
-          </svg>
-          <div>
-            <p className="font-display text-2xl font-medium leading-none text-ink">100</p>
-            <p className="mt-1 text-[11px] text-muted">shop.example.com</p>
-          </div>
+          <span className="lg:invisible">Last check · just now</span>
         </div>
       </div>
     </div>

@@ -108,3 +108,23 @@ h6 {
     color: hsl(var(--muted));
   }
 }
+
+/* Homepage hero: gentle float for the floating cards, and the drawn underline under "before". */
+@keyframes hero-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes hero-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
