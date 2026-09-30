@@ -1,6 +1,14 @@
 import Link from "next/link";
 import type { PricingPlan } from "./pricing-content";
 
+function Dash({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={`h-4 w-4 shrink-0 ${className}`} fill="none" aria-hidden>
+      <path d="M4 8h8" stroke="currentColor" strokeWidth={1.5} />
+    </svg>
+  );
+}
+
 export function Check({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 16 16" className={`h-4 w-4 shrink-0 ${className}`} fill="none" aria-hidden>
@@ -15,13 +23,18 @@ const cta = {
   business: "bg-solid text-solid-fg hover:opacity-90",
 } as const;
 
-/** One plan: name + tag, who it's for, price + billing note, CTA, divider, feature list. */
+/**
+ * One plan: name + tag, who it's for, price + billing note, CTA, divider, feature list.
+ * lg: each card is a subgrid spanning the parent's rows (6 blocks + 7 feature rows, the longest
+ * list; update span_13 / row-span-7 if the lists grow),
+ * so every block and every feature row sits at the same height across the three cards.
+ */
 export function PricingCard({ plan }: { plan: PricingPlan }) {
   const dark = plan.id === "pro";
   const soft = dark ? "text-solid-fg/60" : "text-muted";
   return (
     <div
-      className={`flex min-w-0 flex-col p-6 sm:p-8 ${
+      className={`flex min-w-0 flex-col p-6 sm:p-8 lg:[grid-row:span_13] lg:grid lg:grid-rows-subgrid lg:gap-y-0 ${
         dark ? "border border-solid bg-solid text-solid-fg" : "border border-rule bg-surface text-ink"
       }`}
     >
@@ -48,17 +61,17 @@ export function PricingCard({ plan }: { plan: PricingPlan }) {
         {plan.cta}
       </Link>
 
-      <div className={`mt-8 border-t pt-6 ${dark ? "border-solid-fg/15" : "border-rule"}`}>
-        <p className={`label-caps ${dark ? "!text-solid-fg/55" : ""}`}>{plan.featuresLabel}</p>
-        <ul className="mt-4 space-y-3 text-sm">
-          {plan.features.map((f) => (
-            <li key={f} className="flex gap-3">
-              <Check className="mt-0.5 text-accent" />
-              <span className={dark ? "text-solid-fg/90" : "text-ink"}>{f}</span>
-            </li>
-          ))}
-        </ul>
+      <div className={`mt-8 border-t pb-4 pt-6 ${dark ? "border-solid-fg/15" : "border-rule"}`}>
+        <p className={`label-caps ${dark ? "!text-solid-fg/55" : ""}`}>Includes</p>
       </div>
+      <ul className="space-y-3 text-sm lg:row-span-7 lg:grid lg:grid-rows-subgrid lg:gap-y-0">
+        {plan.features.map((f) => (
+          <li key={f.text} className="flex gap-3">
+            {f.off ? <Dash className={`mt-0.5 ${soft}`} /> : <Check className="mt-0.5 text-accent" />}
+            <span className={f.off ? soft : dark ? "text-solid-fg/90" : "text-ink"}>{f.text}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

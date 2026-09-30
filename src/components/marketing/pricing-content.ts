@@ -5,6 +5,8 @@ const packCeiling = (id: "pro" | "business") =>
 
 const perSite = (id: "pro" | "business") => (PLANS[id].price / PLANS[id].siteLimit).toFixed(2);
 
+export type PlanFeature = { text: string; off?: boolean };
+
 export type PricingPlan = {
   id: PlanId;
   name: string;
@@ -13,11 +15,25 @@ export type PricingPlan = {
   note: string;
   cta: string;
   href: string;
-  featuresLabel: string;
-  features: string[];
+  features: PlanFeature[];
 };
 
-/** Homepage pricing cards. Prices and limits come from PLANS / SITE_PACKS; only real features. */
+/** Rows shared word-for-word by every card (row 3 and 4). */
+const shared: PlanFeature[] = [
+  { text: "Uptime, SSL and domain checks" },
+  { text: "Dashboard, analytics and check history" },
+];
+
+/** Paid-only, from the code: Stripe billing portal (needs a Stripe customer) and pack add/remove. */
+const paid: PlanFeature[] = [
+  { text: "Self-serve billing portal" },
+  { text: "Manage packs from the dashboard" },
+];
+
+/**
+ * Homepage pricing cards. Prices and limits come from PLANS / SITE_PACKS; only real features.
+ * Rows are parallel across cards: 1 sites, 2 packs, 3–4 shared, then paid-only extras.
+ */
 export const pricingPlans: PricingPlan[] = [
   {
     id: "free",
@@ -27,8 +43,7 @@ export const pricingPlans: PricingPlan[] = [
     note: "No card needed",
     cta: "Get started free",
     href: "/signup",
-    featuresLabel: "Includes",
-    features: ["1 monitored site", "Uptime, SSL and domain checks", "Dashboard, analytics and check history"],
+    features: [{ text: "1 monitored site" }, { text: "No site packs", off: true }, ...shared],
   },
   {
     id: "pro",
@@ -38,11 +53,11 @@ export const pricingPlans: PricingPlan[] = [
     note: `Billed monthly · $${perSite("pro")} per site`,
     cta: "Start with Pro",
     href: "/signup?plan=pro",
-    featuresLabel: "Everything in Free, plus",
     features: [
-      `Up to ${PLANS.pro.siteLimit} monitored sites`,
-      `Optional +${SITE_PACKS.pro.sitesPerPack}-site packs, up to ${packCeiling("pro")} sites`,
-      "Self-serve billing portal",
+      { text: `Up to ${PLANS.pro.siteLimit} monitored sites` },
+      { text: `Optional +${SITE_PACKS.pro.sitesPerPack}-site packs, up to ${packCeiling("pro")} sites` },
+      ...shared,
+      ...paid,
     ],
   },
   {
@@ -53,11 +68,12 @@ export const pricingPlans: PricingPlan[] = [
     note: `Billed monthly · $${perSite("business")} per site`,
     cta: "Start with Business",
     href: "/signup?plan=business",
-    featuresLabel: "Everything in Pro, plus",
     features: [
-      `Up to ${PLANS.business.siteLimit} monitored sites`,
-      `Optional +${SITE_PACKS.business.sitesPerPack}-site packs, up to ${packCeiling("business")} sites`,
-      "Lowest cost per site",
+      { text: `Up to ${PLANS.business.siteLimit} monitored sites` },
+      { text: `Optional +${SITE_PACKS.business.sitesPerPack}-site packs, up to ${packCeiling("business")} sites` },
+      ...shared,
+      ...paid,
+      { text: "Lowest cost per site" },
     ],
   },
 ];

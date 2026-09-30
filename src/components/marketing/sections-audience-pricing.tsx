@@ -16,7 +16,7 @@ export function PricingSection() {
           <p className="label-caps">Monthly billing · Cancel anytime</p>
         </div>
 
-        <div className="mt-12 grid gap-4 lg:grid-cols-3">
+        <div className="mt-12 grid gap-4 lg:grid-cols-3 lg:gap-y-0">
           {pricingPlans.map((plan) => (
             <PricingCard key={plan.id} plan={plan} />
           ))}
