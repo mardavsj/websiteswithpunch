@@ -78,16 +78,6 @@ export const pricingPlans: PricingPlan[] = [
   },
 ];
 
-/** Shared by every plan (none of these are gated by plan). */
-export const everyPlanIncludes = [
-  "Uptime & latency",
-  "SSL expiry",
-  "Domain expiry",
-  "Analytics & Health Score",
-  "Manual recheck",
-  "Auto refresh",
-];
-
 /** Highest self-serve limit (Business plus every pack); beyond this is a custom plan. */
 export const maxSelfServeSites = packCeiling("business");
 

@@ -9,11 +9,29 @@ function Dash({ className = "" }: { className?: string }) {
   );
 }
 
-export function Check({ className = "" }: { className?: string }) {
+function Check({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 16 16" className={`h-4 w-4 shrink-0 ${className}`} fill="none" aria-hidden>
       <path d="m3.5 8.5 3 3 6-7" stroke="currentColor" strokeWidth={1.75} strokeLinecap="square" />
     </svg>
+  );
+}
+
+function Spark() {
+  return (
+    <svg viewBox="0 0 12 12" className="h-2.5 w-2.5 shrink-0" fill="currentColor" aria-hidden>
+      <path d="M6 0.5 7.2 4.8 11.5 6 7.2 7.2 6 11.5 4.8 7.2 0.5 6 4.8 4.8Z" />
+    </svg>
+  );
+}
+
+/** Straddles the card's top edge; the page-colour ring reads as a notch cut into the border. */
+function PopularTag() {
+  return (
+    <span className="absolute left-1/2 top-0 z-10 inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 whitespace-nowrap bg-accent px-2.5 py-1.5 text-[11px] font-semibold uppercase leading-none tracking-[0.08em] text-white ring-2 ring-bg">
+      <Spark />
+      Most popular
+    </span>
   );
 }
 
@@ -34,18 +52,12 @@ export function PricingCard({ plan }: { plan: PricingPlan }) {
   const soft = dark ? "text-solid-fg/60" : "text-muted";
   return (
     <div
-      className={`flex min-w-0 flex-col p-6 sm:p-8 lg:[grid-row:span_13] lg:grid lg:grid-rows-subgrid lg:gap-y-0 ${
-        dark ? "border border-solid bg-solid text-solid-fg" : "border border-rule bg-surface text-ink"
+      className={`relative flex min-w-0 flex-col p-6 sm:p-8 lg:[grid-row:span_13] lg:grid lg:grid-rows-subgrid lg:gap-y-0 ${
+        dark ? "border border-solid bg-solid text-solid-fg max-lg:mt-3" : "border border-rule bg-surface text-ink"
       }`}
     >
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="font-display text-xl font-medium">{plan.name}</h3>
-        {dark ? (
-          <span className="bg-accent px-2 py-1 text-[11px] font-semibold uppercase leading-none tracking-[0.08em] text-white">
-            Most popular
-          </span>
-        ) : null}
-      </div>
+      {dark ? <PopularTag /> : null}
+      <h3 className="font-display text-xl font-medium">{plan.name}</h3>
       <p className={`mt-2 text-sm leading-relaxed ${soft}`}>{plan.audience}</p>
 
       <p className="mt-6 flex items-baseline gap-1.5">

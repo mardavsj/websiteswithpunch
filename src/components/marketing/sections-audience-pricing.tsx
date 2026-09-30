@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Check, PricingCard } from "./PricingCard";
-import { customPlanHref, everyPlanIncludes, maxSelfServeSites, pricingPlans } from "./pricing-content";
+import { PricingCard } from "./PricingCard";
+import { customPlanHref, maxSelfServeSites, pricingPlans } from "./pricing-content";
 
 export function PricingSection() {
   return (
@@ -20,20 +20,6 @@ export function PricingSection() {
           {pricingPlans.map((plan) => (
             <PricingCard key={plan.id} plan={plan} />
           ))}
-        </div>
-
-        <div className="mt-4 border border-rule bg-surface px-6 py-5 sm:px-8">
-          <div className="flex flex-col gap-4">
-            <p className="label-caps">Every plan includes</p>
-            <ul className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm text-ink min-[420px]:grid-cols-2 sm:grid-cols-3 lg:flex lg:justify-between">
-              {everyPlanIncludes.map((f) => (
-                <li key={f} className="flex items-center gap-2 lg:whitespace-nowrap">
-                  <Check className="text-accent" />
-                  {f}
-                </li>
-              ))}
-            </ul>
-          </div>
         </div>
 
         <div className="mt-8 flex flex-col gap-2 text-sm text-muted sm:flex-row sm:justify-between">
