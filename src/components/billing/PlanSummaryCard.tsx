@@ -3,6 +3,12 @@
 import { PLANS, type PlanId } from "@/lib/plans";
 import type { ReactNode } from "react";
 
+const amberBtn =
+  "rounded-none border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium disabled:opacity-60 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100";
+const amberRow =
+  "mt-2 flex flex-wrap items-center gap-2 text-sm text-amber-900 dark:text-amber-100";
+const mutedLink = "text-xs text-muted underline-offset-2 hover:underline disabled:opacity-60";
+
 type Props = {
   plan: PlanId;
   siteCount: number;
@@ -29,6 +35,12 @@ type Props = {
   onCancel: () => void;
   /** Shown for monthly subscribers: switch this plan to annual billing. */
   onSwitchAnnual?: () => void;
+  /** Shown for annual subscribers: switch to monthly at renewal. */
+  onSwitchMonthly?: () => void;
+  /** Set while an annual → monthly switch is scheduled. */
+  pendingMonthlyDate?: string | null;
+  pendingMonthlyPrice?: string | null;
+  onKeepAnnual?: () => void;
 };
 
 export function PlanSummaryCard({
@@ -55,6 +67,10 @@ export function PlanSummaryCard({
   onDowngrade,
   onCancel,
   onSwitchAnnual,
+  onSwitchMonthly,
+  pendingMonthlyDate,
+  pendingMonthlyPrice,
+  onKeepAnnual,
 }: Props) {
   return (
     <div className="rounded-none border border-rule bg-surface px-4 py-4">
@@ -77,7 +93,7 @@ export function PlanSummaryCard({
             <p className="mt-0.5 text-sm text-muted">{nextPaymentLine}</p>
           )}
           {cancelAtPeriodEnd && pendingPlanDate && (
-            <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-amber-900 dark:text-amber-100">
+            <p className={amberRow}>
               <span>
                 Your {PLANS[plan].name} plan ends on {pendingPlanDate}. {chooseMax} site
                 {chooseMax === 1 ? "" : "s"} will stay active.
@@ -85,7 +101,7 @@ export function PlanSummaryCard({
               <button
                 type="button"
                 onClick={onChooseActive}
-                className="rounded-none border border-amber-300 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100 px-2 py-0.5 text-xs font-medium"
+                className={amberBtn}
               >
                 Change which sites stay active
               </button>
@@ -93,35 +109,46 @@ export function PlanSummaryCard({
                 type="button"
                 onClick={onResume}
                 disabled={loading}
-                className="rounded-none border border-amber-300 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100 px-2 py-0.5 text-xs font-medium disabled:opacity-60"
+                className={amberBtn}
               >
                 {loading ? "Working…" : "Resume plan"}
               </button>
             </p>
           )}
           {!cancelAtPeriodEnd && pendingPlan === "pro" && pendingPlanDate && (
-            <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-amber-900 dark:text-amber-100">
+            <p className={amberRow}>
               <span>
                 Switching to Pro on {pendingPlanDate}. {chooseMax} sites will stay active.
               </span>
               <button
                 type="button"
                 onClick={onChooseActive}
-                className="rounded-none border border-amber-300 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100 px-2 py-0.5 text-xs font-medium"
+                className={amberBtn}
               >
                 Change which sites stay active
               </button>
             </p>
           )}
+          {pendingMonthlyDate && !cancelAtPeriodEnd && (
+            <p className={amberRow}>
+              <span>
+                Switches to monthly on {pendingMonthlyDate}
+                {pendingMonthlyPrice ? ` (${pendingMonthlyPrice})` : ""}.
+              </span>
+              <button type="button" onClick={onKeepAnnual} disabled={loading} className={amberBtn}>
+                {loading ? "Working…" : "Keep annual billing"}
+              </button>
+            </p>
+          )}
           {hasPendingRemoval && pendingSites > 0 && pendingDate && (
-            <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-amber-900 dark:text-amber-100">
+            <p className={amberRow}>
               <span>
                 {pendingSites} site{pendingSites === 1 ? "" : "s"} will be locked on {pendingDate}
               </span>
               <button
                 type="button"
                 onClick={onChooseActive}
-                className="rounded-none border border-amber-300 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100 px-2 py-0.5 text-xs font-medium"
+                className={amberBtn}
               >
                 Change which sites stay active
               </button>
@@ -129,7 +156,7 @@ export function PlanSummaryCard({
                 type="button"
                 onClick={onUndoPack}
                 disabled={loading}
-                className="rounded-none border border-amber-300 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100 px-2 py-0.5 text-xs font-medium disabled:opacity-60"
+                className={amberBtn}
               >
                 {loading ? "Working…" : "Undo"}
               </button>
@@ -149,12 +176,17 @@ export function PlanSummaryCard({
             Switch to annual billing (2 months free)
           </button>
         )}
+        {onSwitchMonthly && (
+          <button type="button" onClick={onSwitchMonthly} disabled={loading} className={mutedLink}>
+            Switch to monthly billing
+          </button>
+        )}
         {plan === "business" && !pendingPlan && (
           <button
             type="button"
             onClick={onDowngrade}
             disabled={loading}
-            className="text-xs text-muted underline-offset-2 hover:underline disabled:opacity-60"
+            className={mutedLink}
           >
             Switch to Pro
           </button>
@@ -164,7 +196,7 @@ export function PlanSummaryCard({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="text-xs text-muted underline-offset-2 hover:underline disabled:opacity-60"
+            className={mutedLink}
           >
             Cancel plan
           </button>

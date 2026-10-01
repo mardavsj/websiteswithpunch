@@ -41,6 +41,12 @@ export function PlanOverview({
         {summary?.intervalLabel ? ` · ${summary.intervalLabel}` : ""}
         {renews && !summary?.cancelAtPeriodEnd ? ` · renews ${renews}` : ""}
       </p>
+      {summary?.pendingInterval === "month" && summary.pendingIntervalAtFormatted && (
+        <p className="mt-1 text-sm font-medium text-amber-900 dark:text-amber-100">
+          Switches to monthly on {summary.pendingIntervalAtFormatted}
+          {summary.pendingIntervalPriceFormatted ? ` (${summary.pendingIntervalPriceFormatted})` : ""}
+        </p>
+      )}
       <p className="mt-1 text-sm text-muted">{PLANS[plan].description}</p>
       <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
         <div>

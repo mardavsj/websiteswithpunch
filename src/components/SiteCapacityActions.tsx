@@ -10,7 +10,7 @@ import { DowngradeFlow } from "@/components/billing/DowngradeFlow";
 import { PendingKeepSitesFlow } from "@/components/billing/PendingKeepSitesFlow";
 import { useBillingSummary } from "@/components/billing/useBillingSummary";
 import { useBillingActions } from "@/components/billing/useBillingActions";
-import { UpgradePlanModal } from "@/components/UpgradePlanModal";
+import { IntervalSwitchModals } from "@/components/billing/IntervalSwitchModals";
 import { formatPlanPrice } from "@/lib/billing-interval";
 import type { SiteCapacityProps } from "@/components/billing/types";
 
@@ -34,10 +34,9 @@ export function SiteCapacityActions({
   const { summary, loadSummary } = useBillingSummary(showBilling, sitePackCount);
   const actions = useBillingActions({ plan, loadSummary, toast });
   const [busy, setBusy] = useState(false);
-  const [flow, setFlow] = useState<"cancel" | "downgrade" | "pending-keep" | "annual" | null>(
-    null,
-  );
-  const [annualError, setAnnualError] = useState<string | null>(null);
+  const [flow, setFlow] = useState<
+    "cancel" | "downgrade" | "pending-keep" | "annual" | "monthly" | null
+  >(null);
   const interval = summary?.interval ?? "month";
 
   const hasPending = summary?.hasPendingRemoval ?? false;
@@ -69,25 +68,10 @@ export function SiteCapacityActions({
     }
   }
 
-  async function onCancel() {
-    if (siteCount > 1) {
-      setFlow("cancel");
-      return;
-    }
-    const ids = siteCount === 1 && keepOptions[0] ? [keepOptions[0].id] : [];
-    await run(async () => {
-      if (await actions.confirmCancel(ids)) setFlow(null);
-    });
-  }
-
+  // Cancel and downgrade always open a confirm window (the site picker is skipped when every
+  // active site fits), so the no-refund terms are shown before anything changes.
   async function onDowngrade() {
-    const need = await actions.previewNeedsKeepPicker();
-    if (need === null) return;
-    if (need) setFlow("downgrade");
-    else
-      await run(async () => {
-        if (await actions.confirmDowngrade([])) setFlow(null);
-      });
+    if ((await actions.previewNeedsKeepPicker()) !== null) setFlow("downgrade");
   }
 
   if (!showBilling) return null;
@@ -115,15 +99,20 @@ export function SiteCapacityActions({
         onResume={() => run(actions.resumePlan)}
         onUndoPack={() => run(actions.undoPendingRemoval)}
         onDowngrade={onDowngrade}
-        onCancel={onCancel}
+        onCancel={() => setFlow("cancel")}
         onSwitchAnnual={
           summary?.interval === "month" && !pendingPlan && !cancelAtPeriodEnd
-            ? () => {
-                setAnnualError(null);
-                setFlow("annual");
-              }
+            ? () => setFlow("annual")
             : undefined
         }
+        onSwitchMonthly={
+          summary?.interval === "year" && !summary.pendingInterval && !cancelAtPeriodEnd
+            ? () => setFlow("monthly")
+            : undefined
+        }
+        pendingMonthlyDate={summary?.pendingIntervalAtFormatted ?? null}
+        pendingMonthlyPrice={summary?.pendingIntervalPriceFormatted ?? null}
+        onKeepAnnual={() => run(actions.cancelMonthlySwitch)}
         packSlot={
           <PackActions
             plan={plan}
@@ -165,19 +154,14 @@ export function SiteCapacityActions({
           });
         }}
       />
-      <UpgradePlanModal
-        open={flow === "annual"}
-        targetPlan={plan}
-        loading={busy}
-        message={annualError}
+      <IntervalSwitchModals
+        flow={flow === "annual" || flow === "monthly" ? flow : null}
+        plan={plan}
+        busy={busy}
         onClose={() => setFlow(null)}
-        onConfirm={() =>
-          run(async () => {
-            const err = await actions.switchToAnnual();
-            setAnnualError(err);
-            if (!err) setFlow(null);
-          })
-        }
+        run={run}
+        switchToAnnual={actions.switchToAnnual}
+        scheduleMonthly={actions.scheduleMonthly}
       />
       <PendingKeepSitesFlow
         open={flow === "pending-keep"}
