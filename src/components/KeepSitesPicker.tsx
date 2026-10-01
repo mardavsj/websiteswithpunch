@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { ModalPortal, DIALOG_SCROLL } from "@/components/ModalPortal";
 
 export type KeepSiteOption = {
   id: string;
@@ -85,107 +86,109 @@ export function KeepSitesPicker({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-solid/40 p-4"
-      onClick={onClose}
-      role="presentation"
-    >
+    <ModalPortal>
       <div
-        role="dialog"
-        aria-modal="true"
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-none border border-rule bg-surface p-6 shadow-lg"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-solid/40 p-4"
+        onClick={onClose}
+        role="presentation"
       >
-        {step === "pick" ? (
-          <>
-            <h2 className="font-display text-xl font-medium text-ink">{title}</h2>
-            <p className="mt-2 text-sm text-muted">
-              Your new plan includes {maxKeep} site{maxKeep === 1 ? "" : "s"}. Choose which ones stay
-              active.
-            </p>
-            <p className="mt-1 text-sm font-medium text-ink">
-              {selected.size} of {maxKeep} selected
-            </p>
-            <ul className="mt-4 max-h-64 space-y-2 overflow-y-auto border border-rule p-2">
-              {sites.map((s) => {
-                const checked = selected.has(s.id);
-                const disabled = !checked && selected.size >= maxKeep;
-                return (
-                  <li key={s.id}>
-                    <label
-                      className={`flex cursor-pointer items-start gap-3 px-2 py-2 text-sm ${
-                        disabled ? "opacity-50" : "hover:bg-accent-soft"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        className="mt-1"
-                        checked={checked}
-                        disabled={disabled}
-                        onChange={() => toggle(s.id)}
-                      />
-                      <span>
-                        <span className="font-medium text-ink">{s.name}</span>
-                        <span className="mt-0.5 block truncate text-xs text-muted">{s.url}</span>
-                        <span className="block text-[10px] text-muted">
-                          Added{" "}
-                          {new Date(s.createdAt).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
+        <div
+          role="dialog"
+          aria-modal="true"
+          className={`${DIALOG_SCROLL} w-full max-w-lg rounded-none border border-rule bg-surface p-6 shadow-lg`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {step === "pick" ? (
+            <>
+              <h2 className="font-display text-xl font-medium text-ink">{title}</h2>
+              <p className="mt-2 text-sm text-muted">
+                Your new plan includes {maxKeep} site{maxKeep === 1 ? "" : "s"}. Choose which ones stay
+                active.
+              </p>
+              <p className="mt-1 text-sm font-medium text-ink">
+                {selected.size} of {maxKeep} selected
+              </p>
+              <ul className="mt-4 max-h-64 space-y-2 overflow-y-auto border border-rule p-2">
+                {sites.map((s) => {
+                  const checked = selected.has(s.id);
+                  const disabled = !checked && selected.size >= maxKeep;
+                  return (
+                    <li key={s.id}>
+                      <label
+                        className={`flex cursor-pointer items-start gap-3 px-2 py-2 text-sm ${
+                          disabled ? "opacity-50" : "hover:bg-accent-soft"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="mt-1"
+                          checked={checked}
+                          disabled={disabled}
+                          onChange={() => toggle(s.id)}
+                        />
+                        <span>
+                          <span className="font-medium text-ink">{s.name}</span>
+                          <span className="mt-0.5 block truncate text-xs text-muted">{s.url}</span>
+                          <span className="block text-[10px] text-muted">
+                            Added{" "}
+                            {new Date(s.createdAt).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </span>
                         </span>
-                      </span>
-                    </label>
-                  </li>
-                );
-              })}
-            </ul>
-            <div className="mt-5 flex gap-3">
-              <button
-                type="button"
-                disabled={selected.size !== maxKeep}
-                onClick={() => (confirmDetail ? setStep("confirm") : onConfirm([...selected]))}
-                className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-60"
-              >
-                {confirmDetail ? "Continue" : confirmLabel}
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-none border border-rule px-4 py-2 text-sm text-ink hover:bg-accent-soft"
-              >
-                Cancel
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <h2 className="font-display text-xl font-medium text-ink">{skipPick ? title : "Confirm"}</h2>
-            <div className="mt-3 text-sm leading-relaxed text-muted">
-              {confirmDetail?.(selectedSites, lockedSites)}
-            </div>
-            <div className="mt-5 flex gap-3">
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() => onConfirm([...selected])}
-                className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-60"
-              >
-                {loading ? "Working…" : confirmLabel}
-              </button>
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() => (skipPick ? onClose() : setStep("pick"))}
-                className="rounded-none border border-rule px-4 py-2 text-sm text-ink hover:bg-accent-soft"
-              >
-                {skipPick ? "Keep my plan" : "Back"}
-              </button>
-            </div>
-          </>
-        )}
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="mt-5 flex gap-3">
+                <button
+                  type="button"
+                  disabled={selected.size !== maxKeep}
+                  onClick={() => (confirmDetail ? setStep("confirm") : onConfirm([...selected]))}
+                  className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-60"
+                >
+                  {confirmDetail ? "Continue" : confirmLabel}
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="rounded-none border border-rule px-4 py-2 text-sm text-ink hover:bg-accent-soft"
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 className="font-display text-xl font-medium text-ink">{skipPick ? title : "Confirm"}</h2>
+              <div className="mt-3 text-sm leading-relaxed text-muted">
+                {confirmDetail?.(selectedSites, lockedSites)}
+              </div>
+              <div className="mt-5 flex gap-3">
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={() => onConfirm([...selected])}
+                  className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-60"
+                >
+                  {loading ? "Working…" : confirmLabel}
+                </button>
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={() => (skipPick ? onClose() : setStep("pick"))}
+                  className="rounded-none border border-rule px-4 py-2 text-sm text-ink hover:bg-accent-soft"
+                >
+                  {skipPick ? "Keep my plan" : "Back"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }

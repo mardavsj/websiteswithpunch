@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { ModalPortal, DIALOG_SCROLL } from "@/components/ModalPortal";
 import { useRouter } from "next/navigation";
 import { SiteForm } from "@/components/SiteForm";
 
@@ -29,31 +30,33 @@ export function AddSiteModal({ open, onClose }: Props) {
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-solid/40 p-4"
-      onClick={onClose}
-      role="presentation"
-    >
+    <ModalPortal>
       <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-site-title"
-        className="w-full max-w-lg rounded-none border border-rule bg-surface p-6 shadow-lg"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-solid/40 p-4"
+        onClick={onClose}
+        role="presentation"
       >
-        <h2 id="add-site-title" className="mb-5 font-display text-xl font-medium text-ink">
-          Add site
-        </h2>
-        <SiteForm
-          key="add-site-form"
-          mode="create"
-          onCancel={onClose}
-          onSuccess={() => {
-            onClose();
-            router.refresh();
-          }}
-        />
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-site-title"
+          className={`${DIALOG_SCROLL} w-full max-w-lg rounded-none border border-rule bg-surface p-6 shadow-lg`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h2 id="add-site-title" className="mb-5 font-display text-xl font-medium text-ink">
+            Add site
+          </h2>
+          <SiteForm
+            key="add-site-form"
+            mode="create"
+            onCancel={onClose}
+            onSuccess={() => {
+              onClose();
+              router.refresh();
+            }}
+          />
+        </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }

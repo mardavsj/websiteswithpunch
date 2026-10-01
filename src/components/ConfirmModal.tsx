@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
+import { ModalPortal, DIALOG_SCROLL } from "@/components/ModalPortal";
 
 type Props = {
   open: boolean;
@@ -40,51 +41,53 @@ export function ConfirmModal({
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-solid/40 p-4"
-      onClick={() => {
-        if (!loading) onClose();
-      }}
-      role="presentation"
-    >
+    <ModalPortal>
       <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="confirm-modal-title"
-        className="w-full max-w-lg rounded-none border border-rule bg-surface p-6 shadow-lg"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-solid/40 p-4"
+        onClick={() => {
+          if (!loading) onClose();
+        }}
+        role="presentation"
       >
-        <h2
-          id="confirm-modal-title"
-          className="mb-4 font-display text-xl font-medium text-ink"
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-modal-title"
+          className={`${DIALOG_SCROLL} w-full max-w-lg rounded-none border border-rule bg-surface p-6 shadow-lg`}
+          onClick={(e) => e.stopPropagation()}
         >
-          {title}
-        </h2>
-        <div className="text-sm text-muted">{children}</div>
-        {error && (
-          <div className="mt-3 rounded-none bg-danger/10 px-3 py-2 text-sm text-danger">
-            {error}
+          <h2
+            id="confirm-modal-title"
+            className="mb-4 font-display text-xl font-medium text-ink"
+          >
+            {title}
+          </h2>
+          <div className="text-sm text-muted">{children}</div>
+          {error && (
+            <div className="mt-3 rounded-none bg-danger/10 px-3 py-2 text-sm text-danger">
+              {error}
+            </div>
+          )}
+          <div className="mt-5 flex flex-wrap gap-3">
+            <button
+              type="button"
+              disabled={loading}
+              onClick={onConfirm}
+              className="rounded-none bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:bg-red-400 disabled:hover:bg-red-400"
+            >
+              {loading ? "Deleting…" : confirmLabel}
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={onClose}
+              className="rounded-none border border-rule px-4 py-2 text-sm text-ink hover:bg-accent-soft disabled:opacity-60"
+            >
+              Cancel
+            </button>
           </div>
-        )}
-        <div className="mt-5 flex flex-wrap gap-3">
-          <button
-            type="button"
-            disabled={loading}
-            onClick={onConfirm}
-            className="rounded-none bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:bg-red-400 disabled:hover:bg-red-400"
-          >
-            {loading ? "Deleting…" : confirmLabel}
-          </button>
-          <button
-            type="button"
-            disabled={loading}
-            onClick={onClose}
-            className="rounded-none border border-rule px-4 py-2 text-sm text-ink hover:bg-accent-soft disabled:opacity-60"
-          >
-            Cancel
-          </button>
         </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }

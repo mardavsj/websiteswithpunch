@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
+import { ModalPortal, DIALOG_SCROLL } from "@/components/ModalPortal";
 
 /** Shared pieces of the plain-language billing confirm windows. */
 export function PreviewSkeleton() {
@@ -41,21 +42,23 @@ export function ModalShell({
   children: ReactNode;
 }) {
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-solid/40 p-4"
-      onClick={onClose}
-      role="presentation"
-    >
+    <ModalPortal>
       <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        className="max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-none border border-rule bg-surface p-6 shadow-lg"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-solid/40 p-4"
+        onClick={onClose}
+        role="presentation"
       >
-        {children}
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          className={`${DIALOG_SCROLL} w-full max-w-lg rounded-none border border-rule bg-surface p-6 shadow-lg`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {children}
+        </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }
 
