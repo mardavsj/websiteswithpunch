@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { GuestMenu } from "@/components/GuestMenu";
 import { NavUpgradeButtons } from "@/components/NavUpgradeButtons";
@@ -17,9 +18,13 @@ export function Navbar() {
           href={session ? "/dashboard" : "/"}
           className="flex min-w-0 items-center gap-2 font-display text-sm font-medium text-ink sm:gap-2.5 sm:text-base"
         >
-          <img
+          <Image
             src="/logo.svg"
             alt="Websites With Punch"
+            width={32}
+            height={32}
+            priority
+            unoptimized
             className="h-7 w-7 shrink-0 object-contain md:h-8 md:w-8"
           />
           <span className="truncate">Websites With Punch</span>

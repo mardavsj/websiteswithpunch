@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { customPlanHref } from "@/components/marketing/pricing-content";
 
 const EMAIL = "hello@websiteswithpunch.com";
@@ -64,7 +65,7 @@ export function Footer() {
         <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-4 lg:grid-cols-[minmax(0,1.6fr)_repeat(4,minmax(0,1fr))] lg:gap-x-8">
           <div className="col-span-2 sm:col-span-4 lg:col-span-1 lg:pr-8">
             <Link href="/" className="inline-flex items-center gap-2.5 font-display font-medium text-ink">
-              <img src="/logo.svg" alt="" className="h-8 w-8 object-contain" />
+              <Image src="/logo.svg" alt="" width={32} height={32} unoptimized className="h-8 w-8 object-contain" />
               <span>Websites With Punch</span>
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">

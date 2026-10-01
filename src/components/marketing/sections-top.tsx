@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { proofMetrics } from "./home-content";
 
 export function IntroLine() {
@@ -11,9 +12,12 @@ export function IntroLine() {
             sites.
           </p>
           <div className="flex justify-center lg:justify-end">
-            <img
+            <Image
               src="/logo.svg"
               alt="Websites With Punch"
+              width={176}
+              height={176}
+              unoptimized
               className="h-28 w-28 object-contain sm:h-36 sm:w-36 lg:h-44 lg:w-44"
             />
           </div>

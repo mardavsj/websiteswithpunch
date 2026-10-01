@@ -10,7 +10,7 @@
 - **Dashboard** — list sites with status, last check, SSL days, domain days
 - **CRUD** — add / edit / delete monitored sites
 - **One site = one host** — www and paths count as the same site; other subdomains are separate
-- **Auth** — email/password signup + login (NextAuth credentials)
+- **Auth** — email/password signup + login (NextAuth credentials), password reset by email (Resend)
 - **Plans** — Free = 1 site; Pro = 10 sites at **$12/mo**; Business = 50 sites at **$42/mo**
 - **Stripe-ready** — Checkout, Customer Portal, webhook route
 - **Cron** — protected `/api/cron/check` to run all checks
@@ -125,7 +125,7 @@ Without Stripe keys the product still demos fully for Free-plan monitoring.
 
 1. Host on Vercel (or similar) with Node runtime.
 2. Set all env vars, including `DATABASE_URL` for your production Postgres (Neon), then run `npx prisma db push` once against it (and again after schema changes).
-3. Set `NEXTAUTH_URL=https://websiteswithpunch.com`.
+3. Set `NEXTAUTH_URL=https://websiteswithpunch.com` (password reset links are built from it). Set `RESEND_API_KEY` so reset emails are sent; `AUTH_FROM_EMAIL` is optional and defaults to `CONTACT_FROM_EMAIL`.
 4. Point Stripe webhook to `https://websiteswithpunch.com/api/stripe/webhook`.
 5. Schedule cron against `/api/cron/check` with `CRON_SECRET`.
 6. Ensure `/privacy` and `/terms` remain publicly reachable (Stripe review).
