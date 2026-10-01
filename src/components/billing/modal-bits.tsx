@@ -63,3 +63,13 @@ export const primaryBtn =
   "rounded-none bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-60";
 export const secondaryBtn =
   "rounded-none border border-rule px-4 py-2 text-sm text-ink hover:bg-accent-soft";
+
+/** No-refunds line for billing windows. keep = also say the paid-for time isn't credited. */
+export function NoRefundNote({ keep = false, className = "" }: { keep?: boolean; className?: string }) {
+  return (
+    <p className={`text-xs text-muted ${className}`}>
+      Payments are non-refundable
+      {keep ? ", so there's no refund or credit for time you've already paid for" : ""}.
+    </p>
+  );
+}

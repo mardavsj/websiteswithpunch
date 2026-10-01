@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import type { BillingSummary } from "./types";
 
+export const BILLING_CHANGED = "billing:changed";
+
 export function useBillingSummary(enabled: boolean, refreshKey?: number) {
   const [summary, setSummary] = useState<BillingSummary | null>(null);
 
@@ -20,6 +22,13 @@ export function useBillingSummary(enabled: boolean, refreshKey?: number) {
   useEffect(() => {
     void loadSummary();
   }, [loadSummary, refreshKey]);
+
+  // Other billing boxes on the page reload too after a change (see useBillingActions).
+  useEffect(() => {
+    const onChange = () => void loadSummary();
+    window.addEventListener(BILLING_CHANGED, onChange);
+    return () => window.removeEventListener(BILLING_CHANGED, onChange);
+  }, [loadSummary]);
 
   return { summary, loadSummary, setSummary };
 }

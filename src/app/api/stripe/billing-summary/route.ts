@@ -23,6 +23,7 @@ import {
   formatRecurringFromCents,
   formatShortDate,
 } from "@/lib/billing-format";
+import { pendingIntervalSwitch } from "@/lib/interval-schedule";
 import {
   applyDuePendingAndEnforce,
   pendingTargetLimit,
@@ -87,6 +88,7 @@ export async function GET() {
         })
       : null;
   let currency = "usd";
+  let pendingMonthly: { atFormatted: string | null; priceFormatted: string } | null = null;
 
   if (
     isStripeConfigured() &&
@@ -98,6 +100,7 @@ export async function GET() {
       if (stripe) {
         const subscription = await stripe.subscriptions.retrieve(
           user.stripeSubscriptionId,
+          { expand: ["schedule"] },
         );
         const end = subscriptionPeriodEnd(subscription);
         if (end) {
@@ -127,6 +130,15 @@ export async function GET() {
           currency,
           interval,
         });
+        const pending = pendingIntervalSwitch(subscription);
+        if (pending && (plan === "pro" || plan === "business")) {
+          // Catalog monthly price after the switch (packs move to monthly pack prices).
+          const cents = monthlyTotalCentsFromItems(plan, stripePackQty, null, null, "month");
+          pendingMonthly = {
+            atFormatted: formatShortDate(new Date(pending.at * 1000)),
+            priceFormatted: formatRecurringFromCents(cents, currency, "month"),
+          };
+        }
       }
     } catch (err) {
       console.error("billing-summary stripe error", err);
@@ -155,6 +167,9 @@ export async function GET() {
     monthlyTotalCents,
     monthlyTotalFormatted: formatRecurringFromCents(monthlyTotalCents, currency, interval),
     recurringBreakdown,
+    pendingInterval: pendingMonthly ? "month" : null,
+    pendingIntervalAtFormatted: pendingMonthly?.atFormatted ?? null,
+    pendingIntervalPriceFormatted: pendingMonthly?.priceFormatted ?? null,
     nextPaymentDate,
     nextPaymentDateFormatted,
     currency,

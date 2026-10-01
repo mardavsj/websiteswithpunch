@@ -8,6 +8,10 @@ export type BillingSummary = {
   /** null on Free. */
   interval?: BillingInterval | null;
   intervalLabel?: string | null;
+  /** "month" while an annual → monthly switch is scheduled for renewal. */
+  pendingInterval?: "month" | null;
+  pendingIntervalAtFormatted?: string | null;
+  pendingIntervalPriceFormatted?: string | null;
   sitePackCount: number;
   siteLimit: number;
   monthlyTotalFormatted: string;
