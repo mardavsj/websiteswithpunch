@@ -48,14 +48,15 @@ export function LoginForm() {
       password,
       redirect: false,
       callbackUrl,
-    });
+    }).catch(() => null);
     if (!res || res.error) {
       setLoading(false);
-      setErrors({ form: res?.error === "CredentialsSignin" || !res ? "Incorrect email or password." : "Could not log in. Please try again." });
+      setErrors({ form: res?.error === "CredentialsSignin" ? "Incorrect email or password." : "Could not log in. Please try again." });
       return;
     }
+    // One navigation, no extra refresh: the button stays on "Logging in…" until the next page
+    // (or its loading skeleton) replaces this one, and the navbar switches at the same moment.
     router.replace(callbackUrl);
-    router.refresh();
   }
 
   return (

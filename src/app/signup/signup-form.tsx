@@ -97,8 +97,8 @@ export function SignupForm({
         router.push("/login");
         return;
       }
+      // Single navigation; the button keeps its loading label until the dashboard shows.
       router.replace("/dashboard");
-      router.refresh();
     } catch {
       setErrors({ form: "Network error. Check your connection and try again." });
       setLoading(false);
