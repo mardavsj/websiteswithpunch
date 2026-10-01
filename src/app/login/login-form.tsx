@@ -4,81 +4,115 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { AuthHeading, AuthNotice } from "@/components/auth/AuthShell";
+import { PasswordField, SubmitButton, TextField, authLink, emailError } from "@/components/auth/fields";
+
+/** Only same-origin paths; anything else (or an auth page) falls back to the dashboard. */
+function safeCallback(raw: string | null): string {
+  if (!raw) return "/dashboard";
+  try {
+    const u = new URL(raw, window.location.origin);
+    const auth = /^\/(login|signup|forgot-password|reset-password)(\/|$)/.test(u.pathname);
+    if (u.origin === window.location.origin && !auth) return `${u.pathname}${u.search}${u.hash}`;
+  } catch {
+    /* fall through */
+  }
+  return "/dashboard";
+}
+
+type Errors = { email?: string; password?: string; form?: string };
 
 export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Errors>({});
   const [loading, setLoading] = useState(false);
-  const callbackUrl = params.get("callbackUrl") || "/dashboard";
   const paid = params.get("paid") === "1";
+  const reset = params.get("reset") === "1";
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    const next: Errors = {
+      email: emailError(email),
+      password: password ? undefined : "Enter your password.",
+    };
+    setErrors(next);
+    if (next.email || next.password) return;
+
     setLoading(true);
-    setError(null);
+    const callbackUrl = safeCallback(params.get("callbackUrl"));
     const res = await signIn("credentials", {
-      email,
+      email: email.trim().toLowerCase(),
       password,
       redirect: false,
       callbackUrl,
     });
-    setLoading(false);
-    if (res?.error) {
-      setError("Invalid email or password");
+    if (!res || res.error) {
+      setLoading(false);
+      setErrors({ form: res?.error === "CredentialsSignin" || !res ? "Incorrect email or password." : "Could not log in. Please try again." });
       return;
     }
-    router.push(callbackUrl);
+    router.replace(callbackUrl);
     router.refresh();
   }
 
   return (
-    <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-16">
-      <h1 className="font-display text-2xl font-medium text-ink">Welcome back</h1>
+    <>
+      <AuthHeading title="Log in">Welcome back. Log in to see your sites.</AuthHeading>
       {paid && (
-        <p className="mt-3 rounded-none border border-emerald-200 bg-emerald-50 dark:border-emerald-400/30 dark:bg-emerald-400/10 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-200">
+        <AuthNotice tone="success">
           Payment successful — your account is ready. Log in with the email and password you just
           chose.
-        </p>
+        </AuthNotice>
       )}
-      <form onSubmit={onSubmit} className="mt-8 space-y-4 rounded-none border border-rule bg-surface p-6">
-        <div>
-          <label className="text-sm font-medium text-ink">Email</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1.5 w-full rounded-none border border-rule bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-medium text-ink">Password</label>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1.5 w-full rounded-none border border-rule bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-          />
-        </div>
-        {error && <p className="text-sm text-danger">{error}</p>}
-        <button
-          type="submit"
+      {reset && (
+        <AuthNotice tone="success">Your password was updated. Log in with your new password.</AuthNotice>
+      )}
+      <form onSubmit={onSubmit} noValidate className="mt-8 space-y-5">
+        {errors.form && (
+          <AuthNotice tone="error" className="">
+            {errors.form}
+          </AuthNotice>
+        )}
+        <TextField
+          id="email"
+          label="Email"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          placeholder="you@company.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          error={errors.email}
           disabled={loading}
-          className="w-full rounded-none bg-accent py-2.5 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-60"
-        >
-          {loading ? "Signing in…" : "Log in"}
-        </button>
+        />
+        <PasswordField
+          id="password"
+          label="Password"
+          autoComplete="current-password"
+          placeholder="Your password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          error={errors.password}
+          disabled={loading}
+          aside={
+            <Link href="/forgot-password" className={`text-xs ${authLink}`}>
+              Forgot password?
+            </Link>
+          }
+        />
+        <SubmitButton loading={loading}>{loading ? "Logging in…" : "Log in"}</SubmitButton>
       </form>
-      <p className="mt-4 text-center text-sm text-muted">
-        No account?{" "}
-        <Link href="/signup" className="font-medium text-accent hover:underline">
-          Sign up free
+      <p className="mt-6 text-sm text-muted">
+        New to Websites With Punch?{" "}
+        <Link href="/signup" className={authLink}>
+          Create an account
         </Link>
       </p>
-    </div>
+    </>
   );
 }

@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { SiteChrome } from "@/components/SiteChrome";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -52,8 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <div className="flex min-h-screen flex-col">
             <Navbar />
-            <main className="flex-1">{children}</main>
-            <Footer />
+            <SiteChrome footer={<Footer />}>{children}</SiteChrome>
           </div>
         </Providers>
       </body>
