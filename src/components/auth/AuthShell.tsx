@@ -1,18 +1,15 @@
-import { AuthBrandPanel } from "./AuthBrandPanel";
+import type { ReactNode } from "react";
 
-/** Full-height auth layout: form on the left, product panel on the right (desktop only). */
-export function AuthShell({ children }: { children: React.ReactNode }) {
+/** Full-height auth layout below the navbar: one centered form column, same on every screen size. */
+export function AuthShell({ children }: { children: ReactNode }) {
   return (
-    <div className="grid flex-1 lg:grid-cols-2">
-      <section className="flex items-center justify-center px-4 py-10 sm:px-6 sm:py-16">
-        <div className="w-full max-w-[400px]">{children}</div>
-      </section>
-      <AuthBrandPanel />
+    <div className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6 sm:py-16">
+      <div className="w-full max-w-[400px]">{children}</div>
     </div>
   );
 }
 
-export function AuthHeading({ title, children }: { title: string; children?: React.ReactNode }) {
+export function AuthHeading({ title, children }: { title: string; children?: ReactNode }) {
   return (
     <div>
       <h1 className="font-display text-2xl font-medium tracking-tight text-ink sm:text-[1.7rem]">
@@ -38,7 +35,7 @@ export function AuthNotice({
   className = "mt-4",
 }: {
   tone: keyof typeof tones;
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }) {
   return (
