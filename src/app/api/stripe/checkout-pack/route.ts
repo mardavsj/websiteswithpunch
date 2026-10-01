@@ -7,14 +7,15 @@ import {
   getEffectivePlan,
   getEffectiveSiteLimit,
   getPackConfig,
-  stripePriceIdForPack,
   type PackPlanId,
 } from "@/lib/plans";
+import { missingPriceMessage, stripePriceIdForPack } from "@/lib/stripe-prices";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import {
   derivePlanAndPacks,
   findPackItem,
   hostedInvoiceUrlFromSubscription,
+  subscriptionInterval,
   subscriptionNeedsPaymentAction,
 } from "@/lib/stripe-subscription";
 import { enforceSiteLimit } from "@/lib/site-limits";
@@ -81,19 +82,6 @@ export async function POST() {
     user.pendingPackChangeAt != null &&
     user.pendingSitePackCount < paidPacks;
 
-  const priceId = stripePriceIdForPack(packPlan);
-  if (!priceId) {
-    return NextResponse.json(
-      {
-        error:
-          packPlan === "business"
-            ? "Business pack price is not configured. Set STRIPE_PRICE_ID_PACK_BUSINESS."
-            : "Pro pack price is not configured. Set STRIPE_PRICE_ID_PACK_PRO.",
-      },
-      { status: 503 },
-    );
-  }
-
   try {
     const subscription = await stripe.subscriptions.retrieve(
       user.stripeSubscriptionId,
@@ -112,13 +100,22 @@ export async function POST() {
 
     const existingPack = findPackItem(subscription);
     const stripeQty = existingPack?.quantity ?? 0;
+    // Stripe needs one interval per subscription: annual plans get the annual pack price.
+    const interval = subscriptionInterval(subscription);
+    const priceId = stripePriceIdForPack(packPlan, interval);
+    if (!priceId && !existingPack) {
+      return NextResponse.json(
+        { error: missingPriceMessage("pack", packPlan, interval), code: "PRICE_MISSING" },
+        { status: 503 },
+      );
+    }
 
     // Undo a pending removal: raise Stripe qty by 1 toward paid count, no charge
     if (hasPendingRemoval && stripeQty < paidPacks) {
       const nextQty = stripeQty + 1;
       const items: Stripe.SubscriptionUpdateParams.Item[] = existingPack
         ? [{ id: existingPack.id, quantity: nextQty }]
-        : [{ price: priceId, quantity: 1 }];
+        : [{ price: priceId!, quantity: 1 }];
 
       const updated = await stripe.subscriptions.update(subscription.id, {
         items,
@@ -175,7 +172,7 @@ export async function POST() {
 
     const items: Stripe.SubscriptionUpdateParams.Item[] = existingPack
       ? [{ id: existingPack.id, quantity: stripeQty + 1 }]
-      : [{ price: priceId, quantity: 1 }];
+      : [{ price: priceId!, quantity: 1 }];
 
     let updated: Stripe.Subscription;
     try {

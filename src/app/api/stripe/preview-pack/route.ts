@@ -8,9 +8,9 @@ import {
   getEffectiveSiteLimit,
   getPackConfig,
   PLANS,
-  stripePriceIdForPack,
   type PackPlanId,
 } from "@/lib/plans";
+import { missingPriceMessage, stripePriceIdForPack } from "@/lib/stripe-prices";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import {
   buildRecurringBreakdown,
@@ -19,11 +19,12 @@ import {
   findPlanItem,
   monthlyTotalCentsFromItems,
   priceUnitAmountCents,
+  subscriptionInterval,
   subscriptionPeriodEnd,
 } from "@/lib/stripe-subscription";
 import {
   formatChargeToday,
-  formatMonthlyFromCents,
+  formatRecurringFromCents,
   formatShortDate,
 } from "@/lib/billing-format";
 
@@ -83,64 +84,59 @@ async function preview(action: Action) {
     const subscription = await stripe.subscriptions.retrieve(
       user.stripeSubscriptionId,
     );
+    // Packs bill on the subscription's interval (annual plan → annual pack price).
+    const interval = subscriptionInterval(subscription);
     const existingPack = findPackItem(subscription);
     const stripeQty = existingPack?.quantity ?? 0;
-    const planItem = findPlanItem(subscription);
-    const planCents = priceUnitAmountCents(planItem?.price);
-    const packCents = priceUnitAmountCents(existingPack?.price) ?? (
-      config.pricePerMonth * 100
-    );
+    const planCents = priceUnitAmountCents(findPlanItem(subscription)?.price);
+    const packUnit = priceUnitAmountCents(existingPack?.price);
     const currency = subscription.currency || "usd";
     const periodEndSec = subscriptionPeriodEnd(subscription);
     const nextRenewalIso = periodEndSec
       ? new Date(periodEndSec * 1000).toISOString()
       : null;
-    const nextRenewalFormatted = formatShortDate(nextRenewalIso);
-    const daysLeft = daysLeftInBillingPeriod(subscription);
-    const siteCount = user._count.sites;
+    const common = {
+      interval,
+      sitesPerPack: config.sitesPerPack,
+      plan: packPlan,
+      planName: PLANS[packPlan].name,
+      siteCount: user._count.sites,
+      nextRenewal: nextRenewalIso,
+      nextRenewalFormatted: formatShortDate(nextRenewalIso),
+      daysLeftInPeriod: daysLeftInBillingPeriod(subscription),
+      currency,
+      currentPackCount: paidPacks,
+    };
+    /** Recurring total + plain breakdown for a pack count, on this interval. */
+    const recurring = (packCount: number) => {
+      const cents = monthlyTotalCentsFromItems(packPlan, packCount, planCents, packUnit, interval);
+      return {
+        newRecurringMonthlyCents: cents,
+        newRecurringMonthlyFormatted: formatRecurringFromCents(cents, currency, interval),
+        recurringBreakdown: buildRecurringBreakdown({
+          plan: packPlan,
+          packCount,
+          planUnitCents: planCents,
+          packUnitCents: packUnit,
+          currency,
+          interval,
+        }),
+      };
+    };
 
     if (action === "remove") {
       if (paidPacks <= 0 && stripeQty <= 0) {
         return NextResponse.json({ error: "You have no site packs to remove." }, { status: 400 });
       }
       const nextPending = Math.max(0, (hasPendingRemoval ? user.pendingSitePackCount! : paidPacks) - 1);
-      const newMonthlyCents = monthlyTotalCentsFromItems(
-        packPlan,
-        nextPending,
-        planCents,
-        packCents === config.pricePerMonth * 100
-          ? priceUnitAmountCents(existingPack?.price)
-          : packCents,
-      );
-      const packUnit = priceUnitAmountCents(existingPack?.price);
-      const breakdown = buildRecurringBreakdown({
-        plan: packPlan,
-        packCount: nextPending,
-        planUnitCents: planCents,
-        packUnitCents: packUnit,
-        currency,
-      });
-      const keepSitesUntil = getEffectiveSiteLimit(packPlan, paidPacks);
-      const newLimitFrom = getEffectiveSiteLimit(packPlan, nextPending);
-
       return NextResponse.json({
         action: "remove",
-        sitesPerPack: config.sitesPerPack,
-        plan: packPlan,
-        planName: PLANS[packPlan].name,
-        siteCount,
-        keepSiteLimitUntilRenewal: keepSitesUntil,
-        newSiteLimitFromRenewal: newLimitFrom,
-        nextRenewal: nextRenewalIso,
-        nextRenewalFormatted,
-        daysLeftInPeriod: daysLeft,
+        ...common,
+        keepSiteLimitUntilRenewal: getEffectiveSiteLimit(packPlan, paidPacks),
+        newSiteLimitFromRenewal: getEffectiveSiteLimit(packPlan, nextPending),
         amountDueToday: 0,
         amountDueTodayFormatted: formatChargeToday(0, currency),
-        newRecurringMonthlyCents: newMonthlyCents,
-        newRecurringMonthlyFormatted: formatMonthlyFromCents(newMonthlyCents, currency),
-        recurringBreakdown: breakdown,
-        currency,
-        currentPackCount: paidPacks,
+        ...recurring(nextPending),
         nextPackCount: nextPending,
       });
     }
@@ -154,17 +150,19 @@ async function preview(action: Action) {
       );
     }
 
-    const priceId = stripePriceIdForPack(packPlan);
+    const priceId = stripePriceIdForPack(packPlan, interval);
     if (!priceId && !existingPack) {
-      return NextResponse.json({ error: "Pack price is not configured." }, { status: 503 });
+      return NextResponse.json(
+        { error: missingPriceMessage("pack", packPlan, interval), code: "PRICE_MISSING" },
+        { status: 503 },
+      );
     }
 
     let amountDueToday = 0;
     if (!isUndo) {
-      const nextQty = stripeQty + 1;
       const items: Stripe.InvoiceCreatePreviewParams.SubscriptionDetails.Item[] =
         existingPack
-          ? [{ id: existingPack.id, quantity: nextQty }]
+          ? [{ id: existingPack.id, quantity: stripeQty + 1 }]
           : [{ price: priceId!, quantity: 1 }];
 
       const preview = await stripe.invoices.createPreview({
@@ -181,42 +179,14 @@ async function preview(action: Action) {
       amountDueToday = preview.amount_due ?? 0;
     }
 
-    const nextPackCount = isUndo
-      ? Math.min(paidPacks, stripeQty + 1)
-      : paidPacks + 1;
-    const recurringPacks = isUndo ? paidPacks : nextPackCount;
-    const packUnit = priceUnitAmountCents(existingPack?.price) ?? config.pricePerMonth * 100;
-    const newMonthlyCents = monthlyTotalCentsFromItems(
-      packPlan,
-      recurringPacks,
-      planCents,
-      packUnit,
-    );
-    const breakdown = buildRecurringBreakdown({
-      plan: packPlan,
-      packCount: recurringPacks,
-      planUnitCents: planCents,
-      packUnitCents: packUnit,
-      currency,
-    });
-
+    const recurringPacks = isUndo ? paidPacks : paidPacks + 1;
     return NextResponse.json({
       action: "add",
       isUndo,
-      sitesPerPack: config.sitesPerPack,
-      plan: packPlan,
-      planName: PLANS[packPlan].name,
-      siteCount,
+      ...common,
       amountDueToday,
       amountDueTodayFormatted: formatChargeToday(amountDueToday, currency),
-      daysLeftInPeriod: daysLeft,
-      nextRenewal: nextRenewalIso,
-      nextRenewalFormatted,
-      newRecurringMonthlyCents: newMonthlyCents,
-      newRecurringMonthlyFormatted: formatMonthlyFromCents(newMonthlyCents, currency),
-      recurringBreakdown: breakdown,
-      currency,
-      currentPackCount: paidPacks,
+      ...recurring(recurringPacks),
       nextPackCount: recurringPacks,
       newSiteLimit: getEffectiveSiteLimit(packPlan, recurringPacks),
     });
