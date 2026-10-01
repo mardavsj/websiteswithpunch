@@ -1,8 +1,14 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
+import type { BillingInterval } from "@/lib/billing-interval";
+import { BillingIntervalToggle } from "@/components/BillingIntervalToggle";
 import { PricingCard } from "./PricingCard";
 import { customPlanHref, maxSelfServeSites, pricingPlans } from "./pricing-content";
 
 export function PricingSection() {
+  const [interval, setBilling] = useState<BillingInterval>("month");
   return (
     <section id="pricing" className="border-b border-rule bg-bg">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
@@ -10,15 +16,18 @@ export function PricingSection() {
           <div className="max-w-xl">
             <h2 className="font-display text-3xl font-medium text-ink sm:text-4xl">Simple pricing</h2>
             <p className="mt-3 text-muted">
-              Start free with one site. Upgrade as your portfolio grows, month to month.
+              Start free with one site. Upgrade as your portfolio grows, monthly or yearly.
             </p>
           </div>
-          <p className="label-caps">Monthly billing · Cancel anytime</p>
+          <div className="flex flex-col items-start gap-3 lg:items-end">
+            <BillingIntervalToggle value={interval} onChange={setBilling} />
+            <p className="label-caps">Monthly or annual billing · Cancel anytime</p>
+          </div>
         </div>
 
         <div className="mt-12 grid gap-4 lg:grid-cols-3 lg:gap-y-0">
           {pricingPlans.map((plan) => (
-            <PricingCard key={plan.id} plan={plan} />
+            <PricingCard key={plan.id} plan={plan} interval={interval} />
           ))}
         </div>
 

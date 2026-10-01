@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: "%s · Websites With Punch",
   },
   description:
-    "Monitor uptime, SSL certificates, and domain expiry for your websites. Free for one site. Pro for ten at $12/mo. Business for fifty at $39/mo.",
+    "Monitor uptime, SSL certificates, and domain expiry for your websites. Free for one site, Pro for ten, Business for fifty. Pay monthly or yearly.",
   metadataBase: new URL("https://websiteswithpunch.com"),
   // Static SVG only — Next ImageResponse /icon routes crash on Windows paths with spaces
   icons: {

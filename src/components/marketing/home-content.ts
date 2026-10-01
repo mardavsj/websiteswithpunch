@@ -50,11 +50,11 @@ export const faqs = [
   },
   {
     q: "What’s free vs Pro vs Business?",
-    a: `Free monitors ${PLANS.free.siteLimit} site. Pro ($${PLANS.pro.price}/mo) covers up to ${PLANS.pro.siteLimit} sites. Business ($${PLANS.business.price}/mo) covers up to ${PLANS.business.siteLimit} sites. On Pro or Business, add optional site packs from the dashboard — they join your existing subscription.`,
+    a: `Free monitors ${PLANS.free.siteLimit} site. Pro covers up to ${PLANS.pro.siteLimit} sites. Business covers up to ${PLANS.business.siteLimit} sites. Pay monthly, or yearly for 2 months free; prices are in the Pricing section. On Pro or Business, add optional site packs from the dashboard — they join your existing subscription.`,
   },
   {
     q: "What if I need more than 10 or 50 sites?",
-    a: `On Pro, add optional +${SITE_PACKS.pro.sitesPerPack} site packs for $${SITE_PACKS.pro.pricePerMonth}/mo each (up to ${PLANS.pro.siteLimit + SITE_PACKS.pro.maxPacks * SITE_PACKS.pro.sitesPerPack} sites), then upgrade to Business. On Business, add +${SITE_PACKS.business.sitesPerPack} packs for $${SITE_PACKS.business.pricePerMonth}/mo each (up to ${PLANS.business.siteLimit + SITE_PACKS.business.maxPacks * SITE_PACKS.business.sitesPerPack} sites). Packs are added to your existing subscription — you pay for the rest of the current month today, then one bill on the same renewal date. Remove them anytime. You keep them until the end of the month you've paid for. Need more than that? Email hello@websiteswithpunch.com for a custom limit.`,
+    a: `On Pro, add optional +${SITE_PACKS.pro.sitesPerPack} site packs (up to ${PLANS.pro.siteLimit + SITE_PACKS.pro.maxPacks * SITE_PACKS.pro.sitesPerPack} sites), then upgrade to Business. On Business, add +${SITE_PACKS.business.sitesPerPack} packs (up to ${PLANS.business.siteLimit + SITE_PACKS.business.maxPacks * SITE_PACKS.business.sitesPerPack} sites). Packs join your existing subscription and bill the same way, monthly or yearly — you pay for the rest of the current billing period today, then one bill on the same renewal date. Remove them anytime. You keep them until the end of the period you've paid for. Need more than that? Email hello@websiteswithpunch.com for a custom limit.`,
   },
   {
     q: "Do I need a card to start?",
@@ -78,7 +78,7 @@ export const faqs = [
   },
   {
     q: "Can I cancel anytime?",
-    a: "Yes. Paid plans are month-to-month. Cancel from Your plan on the dashboard (or Manage billing). You keep your paid plan until the period ends, then Free. Nothing is deleted — extra sites are locked.",
+    a: "Yes. Paid plans renew each month or each year, whichever you chose. Cancel from Your plan on the dashboard (or Manage billing). You keep your paid plan until the month or year you've paid for ends, then Free. Nothing is deleted — extra sites are locked.",
   },
 ];
 

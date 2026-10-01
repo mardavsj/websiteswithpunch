@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { BillingInterval } from "@/lib/billing-interval";
 import type { PricingPlan } from "./pricing-content";
 
 function Dash({ className = "" }: { className?: string }) {
@@ -43,12 +44,14 @@ const cta = {
 
 /**
  * One plan: name + tag, who it's for, price + billing note, CTA, divider, feature list.
+ * Price, note and CTA link follow the Monthly / Annual toggle; everything else is fixed.
  * lg: each card is a subgrid spanning the parent's rows (6 blocks + 7 feature rows, the longest
  * list; update span_13 / row-span-7 if the lists grow),
  * so every block and every feature row sits at the same height across the three cards.
  */
-export function PricingCard({ plan }: { plan: PricingPlan }) {
+export function PricingCard({ plan, interval }: { plan: PricingPlan; interval: BillingInterval }) {
   const dark = plan.id === "pro";
+  const { price, note, href } = plan.pricing[interval];
   const soft = dark ? "text-solid-fg/60" : "text-muted";
   return (
     <div
@@ -61,13 +64,13 @@ export function PricingCard({ plan }: { plan: PricingPlan }) {
       <p className={`mt-2 text-sm leading-relaxed ${soft}`}>{plan.audience}</p>
 
       <p className="mt-6 flex items-baseline gap-1.5">
-        <span className="font-display text-5xl font-medium tracking-tight">${plan.price}</span>
+        <span className="font-display text-5xl font-medium tabular-nums tracking-tight">${price}</span>
         <span className={`text-sm ${soft}`}>/ month</span>
       </p>
-      <p className={`mt-2 text-xs ${soft}`}>{plan.note}</p>
+      <p className={`mt-2 text-xs ${soft}`}>{note}</p>
 
       <Link
-        href={plan.href}
+        href={href}
         className={`mt-6 block px-4 py-3 text-center text-sm font-semibold transition-colors ${cta[plan.id]}`}
       >
         {plan.cta}

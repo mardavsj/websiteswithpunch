@@ -1,22 +1,42 @@
 import { PLANS, SITE_PACKS, type PlanId } from "@/lib/plans";
+import { ANNUAL_PRICES, perMonthPrice, type BillingInterval } from "@/lib/billing-interval";
 
 const packCeiling = (id: "pro" | "business") =>
   PLANS[id].siteLimit + SITE_PACKS[id].maxPacks * SITE_PACKS[id].sitesPerPack;
 
-const perSite = (id: "pro" | "business") => (PLANS[id].price / PLANS[id].siteLimit).toFixed(2);
+/** Per-site cost per month on an interval: Pro $1.20 monthly, $1.00 annual. */
+const perSite = (id: "pro" | "business", interval: BillingInterval) =>
+  (perMonthPrice(id, interval) / PLANS[id].siteLimit).toFixed(2);
+
+/** What a paid card shows per interval. Price is always per month; annual notes the yearly bill. */
+export type PlanPricing = { price: number; note: string; href: string };
+
+const paidPricing = (id: "pro" | "business"): Record<BillingInterval, PlanPricing> => ({
+  month: {
+    price: PLANS[id].price,
+    note: `Billed monthly · $${perSite(id, "month")} per site`,
+    href: `/signup?plan=${id}&interval=monthly`,
+  },
+  year: {
+    price: perMonthPrice(id, "year"),
+    note: `Billed $${ANNUAL_PRICES[id]} yearly · $${perSite(id, "year")} per site`,
+    href: `/signup?plan=${id}&interval=annual`,
+  },
+});
 
 export type PlanFeature = { text: string; off?: boolean };
 
 export type PricingPlan = {
   id: PlanId;
   name: string;
-  price: number;
   audience: string;
-  note: string;
   cta: string;
-  href: string;
+  /** Free has one entry for both intervals. */
+  pricing: Record<BillingInterval, PlanPricing>;
   features: PlanFeature[];
 };
+
+const freePricing: PlanPricing = { price: PLANS.free.price, note: "No card needed", href: "/signup" };
 
 /** Rows shared word-for-word by every card (row 3 and 4). */
 const shared: PlanFeature[] = [
@@ -38,21 +58,17 @@ export const pricingPlans: PricingPlan[] = [
   {
     id: "free",
     name: PLANS.free.name,
-    price: PLANS.free.price,
     audience: "For the one site you can’t afford to lose.",
-    note: "No card needed",
     cta: "Get started free",
-    href: "/signup",
+    pricing: { month: freePricing, year: freePricing },
     features: [{ text: "1 monitored site" }, { text: "No site packs", off: true }, ...shared],
   },
   {
     id: "pro",
     name: PLANS.pro.name,
-    price: PLANS.pro.price,
     audience: "For freelancers and growing portfolios.",
-    note: `Billed monthly · $${perSite("pro")} per site`,
     cta: "Start with Pro",
-    href: "/signup?plan=pro",
+    pricing: paidPricing("pro"),
     features: [
       { text: `Up to ${PLANS.pro.siteLimit} monitored sites` },
       { text: `Optional +${SITE_PACKS.pro.sitesPerPack}-site packs, up to ${packCeiling("pro")} sites` },
@@ -63,11 +79,9 @@ export const pricingPlans: PricingPlan[] = [
   {
     id: "business",
     name: PLANS.business.name,
-    price: PLANS.business.price,
     audience: "For agencies and larger portfolios.",
-    note: `Billed monthly · $${perSite("business")} per site`,
     cta: "Start with Business",
-    href: "/signup?plan=business",
+    pricing: paidPricing("business"),
     features: [
       { text: `Up to ${PLANS.business.siteLimit} monitored sites` },
       { text: `Optional +${SITE_PACKS.business.sitesPerPack}-site packs, up to ${packCeiling("business")} sites` },
