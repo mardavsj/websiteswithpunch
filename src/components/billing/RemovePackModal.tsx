@@ -6,11 +6,12 @@ import type { PackPreview } from "@/components/billing/types";
 import {
   ModalShell,
   PreviewSkeleton,
+  NoRefundNote,
   secondaryBtn,
   useEscapeClose,
 } from "@/components/billing/modal-bits";
 
-/** Removal takes effect at renewal (monthly or yearly); nothing is charged or refunded today. */
+/** Removal takes effect at renewal (monthly or yearly); nothing is charged or credited today. */
 type RemoveProps = {
   open: boolean;
   plan: "pro" | "business";
@@ -68,7 +69,7 @@ export function RemovePackModal({ open, plan, loading, message, onClose, onConfi
         {preview && !previewLoading && (
           <>
             <p className="text-sm leading-relaxed text-muted">
-              Nothing is charged or refunded today.
+              Nothing is charged today.
             </p>
             {keepLimit != null && (
               <p className="text-sm leading-relaxed text-muted">
@@ -79,6 +80,7 @@ export function RemovePackModal({ open, plan, loading, message, onClose, onConfi
               From {renew} your plan includes {newLimit} sites and you&apos;ll pay{" "}
               {preview.newRecurringMonthlyFormatted}.
             </p>
+            <NoRefundNote keep />
           </>
         )}
       </div>

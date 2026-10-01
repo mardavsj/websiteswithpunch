@@ -2,6 +2,7 @@
 
 import { PLANS, type PlanId } from "@/lib/plans";
 import { KeepSitesPicker, type KeepSiteOption } from "@/components/KeepSitesPicker";
+import { NoRefundNote } from "@/components/billing/modal-bits";
 
 type Props = {
   open: boolean;
@@ -33,6 +34,7 @@ export function CancelPlanFlow({
       loading={loading}
       onClose={onClose}
       onConfirm={onConfirm}
+      skipPickWhenAll
       confirmDetail={(sel, locked) => (
         <>
           <p>
@@ -49,6 +51,7 @@ export function CancelPlanFlow({
           {sel[0] && (
             <p className="mt-2 font-medium text-ink">Staying active: {sel[0].name}</p>
           )}
+          <NoRefundNote keep className="mt-2" />
         </>
       )}
     />

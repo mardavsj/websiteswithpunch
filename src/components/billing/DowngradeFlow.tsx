@@ -1,6 +1,7 @@
 "use client";
 
 import { KeepSitesPicker, type KeepSiteOption } from "@/components/KeepSitesPicker";
+import { NoRefundNote } from "@/components/billing/modal-bits";
 
 type Props = {
   open: boolean;
@@ -33,9 +34,10 @@ export function DowngradeFlow({
       loading={loading}
       onClose={onClose}
       onConfirm={onConfirm}
+      skipPickWhenAll
       confirmDetail={(_sel, locked) => (
         <>
-          <p>Nothing is charged or refunded today.</p>
+          <p>Nothing is charged today.</p>
           <p className="mt-2">
             You keep Business until {when}. From {when} you&apos;ll pay {newPrice}.
           </p>
@@ -46,6 +48,7 @@ export function DowngradeFlow({
               will be hidden. Nothing is deleted. Upgrade anytime to unlock them.
             </p>
           )}
+          <NoRefundNote keep className="mt-2" />
         </>
       )}
     />
