@@ -115,7 +115,7 @@ export function ProfileSkeleton() {
 export function ContactSkeleton() {
   return (
     <div
-      className="mx-auto flex w-full max-w-6xl flex-1 items-center px-4 py-16 sm:px-6"
+      className="mx-auto flex w-full max-w-6xl flex-1 items-center [align-items:safe_center] px-4 py-16 sm:px-6"
       role="status"
       aria-busy="true"
     >

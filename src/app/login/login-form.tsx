@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { AuthHeading, AuthNotice } from "@/components/auth/AuthShell";
 import { PasswordField, SubmitButton, TextField, authLink, emailError } from "@/components/auth/fields";
 
@@ -23,7 +23,6 @@ function safeCallback(raw: string | null): string {
 type Errors = { email?: string; password?: string; form?: string };
 
 export function LoginForm() {
-  const router = useRouter();
   const params = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -54,9 +53,10 @@ export function LoginForm() {
       setErrors({ form: res?.error === "CredentialsSignin" ? "Incorrect email or password." : "Could not log in. Please try again." });
       return;
     }
-    // One navigation, no extra refresh: the button stays on "Logging in…" until the next page
-    // (or its loading skeleton) replaces this one, and the navbar switches at the same moment.
-    router.replace(callbackUrl);
+    // Full load, not router.replace: links prefetched while signed out (e.g. the footer's
+    // Dashboard) sit in the router cache as redirects to /login, and reusing one bounced between
+    // the two pages forever. The button stays on "Logging in…" until the next page shows.
+    window.location.replace(callbackUrl);
   }
 
   return (

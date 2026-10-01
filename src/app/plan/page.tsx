@@ -43,8 +43,8 @@ export default async function PlanPage() {
     createdAt: s.createdAt.toISOString(),
   }));
 
-  // Fills the viewport below the navbar (no footer, see SiteChrome): centred when it fits, starts
-  // at the top and scrolls when taller (safe alignment, the box grows with its content).
+  // Centred between the navbar and the footer (SiteChrome makes <main> a flex column filling that
+  // space); starts at the top and scrolls when taller (safe alignment, the box grows with it).
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 items-center [align-items:safe_center] px-4 py-10 sm:px-6">
       <div className="w-full">

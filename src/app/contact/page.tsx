@@ -17,10 +17,10 @@ const notes = [
 
 export default async function ContactPage({ searchParams }: { searchParams: { topic?: string } }) {
   const session = await getSession();
-  // Fills the viewport below the navbar like the auth pages (SiteChrome makes <main> a flex
-  // column with no footer here); content is centred vertically and scrolls when taller.
+  // Centred between the navbar and the footer (contact/layout.tsx makes <main> a flex column
+  // filling that space); starts at the top and scrolls when taller (safe alignment).
   return (
-    <div className="relative mx-auto flex w-full max-w-6xl flex-1 items-center px-4 py-16 sm:px-6">
+    <div className="relative mx-auto flex w-full max-w-6xl flex-1 items-center [align-items:safe_center] px-4 py-16 sm:px-6">
       <InAppBackLink />
       <div className="grid w-full gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
         <div>

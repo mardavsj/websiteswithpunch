@@ -97,8 +97,9 @@ export function SignupForm({
         router.push("/login");
         return;
       }
-      // Single navigation; the button keeps its loading label until the dashboard shows.
-      router.replace("/dashboard");
+      // Full load so no signed-out router-cache entry is reused (see login-form); the button
+      // keeps its loading label until the dashboard shows.
+      window.location.replace("/dashboard");
     } catch {
       setErrors({ form: "Network error. Check your connection and try again." });
       setLoading(false);

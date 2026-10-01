@@ -14,7 +14,7 @@ export default async function ProfilePage() {
   });
   if (!user) redirect("/login");
 
-  // Fills the viewport below the navbar (no footer, see SiteChrome), content centred.
+  // Centred between the navbar and the footer (SiteChrome makes <main> a flex column).
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 items-center [align-items:safe_center] px-4 py-10 sm:px-6">
       <div className="w-full">
