@@ -7,6 +7,7 @@ import { missingPriceMessage, stripePriceIdForPlan } from "@/lib/stripe-prices";
 import { planChangeItems } from "@/lib/plan-change";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import {
+  LATEST_INVOICE_EXPAND,
   derivePlanAndPacks,
   hostedInvoiceUrlFromSubscription,
   subscriptionNeedsPaymentAction,
@@ -68,7 +69,7 @@ export async function POST(req: Request) {
     try {
       const subscription = await stripe.subscriptions.retrieve(
         user.stripeSubscriptionId,
-        { expand: ["latest_invoice.payment_intent"] },
+        { expand: [LATEST_INVOICE_EXPAND] },
       );
       const blocked = await ensureNoPendingSwitch(stripe, subscription);
       if (blocked) return blocked;
@@ -93,7 +94,7 @@ export async function POST(req: Request) {
           planId,
           interval,
         },
-        expand: ["latest_invoice.payment_intent"],
+        expand: [LATEST_INVOICE_EXPAND],
       });
 
       if (subscriptionNeedsPaymentAction(updated)) {

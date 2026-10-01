@@ -56,6 +56,6 @@ export type PackPreview = {
   newRecurringMonthlyFormatted: string;
   recurringBreakdown: string;
   keepSiteLimitUntilRenewal?: number;
-  newSiteLimit?: number;
   newSiteLimitFromRenewal?: number;
+  newSiteLimit?: number;
 };

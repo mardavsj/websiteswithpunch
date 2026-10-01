@@ -12,6 +12,7 @@ import {
 import { missingPriceMessage, stripePriceIdForPack } from "@/lib/stripe-prices";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import {
+  LATEST_INVOICE_EXPAND,
   derivePlanAndPacks,
   findPackItem,
   hostedInvoiceUrlFromSubscription,
@@ -86,7 +87,7 @@ export async function POST() {
   try {
     const subscription = await stripe.subscriptions.retrieve(
       user.stripeSubscriptionId,
-      { expand: ["latest_invoice.payment_intent"] },
+      { expand: [LATEST_INVOICE_EXPAND] },
     );
 
     if (subscription.status !== "active" && subscription.status !== "trialing") {
@@ -184,7 +185,7 @@ export async function POST() {
         items,
         proration_behavior: "always_invoice",
         payment_behavior: "pending_if_incomplete",
-        expand: ["latest_invoice.payment_intent"],
+        expand: [LATEST_INVOICE_EXPAND],
       });
     } catch (err) {
       const stripeErr = err as { message?: string };

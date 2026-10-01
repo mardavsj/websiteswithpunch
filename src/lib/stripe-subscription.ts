@@ -176,6 +176,14 @@ export function hostedInvoiceUrlFromSubscription(
   return invoice.hosted_invoice_url || null;
 }
 
+/**
+ * Expand path for the latest invoice's PaymentIntents. Since Stripe API 2025-03-31 an invoice
+ * has no `payment_intent`; payments live in `invoice.payments` (must be expanded).
+ */
+export const LATEST_INVOICE_EXPAND = "latest_invoice.payments.data.payment.payment_intent";
+
+const NEEDS_ACTION = new Set(["requires_action", "requires_payment_method", "requires_confirmation"]);
+
 export function subscriptionNeedsPaymentAction(
   subscription: Stripe.Subscription,
 ): boolean {
@@ -183,16 +191,11 @@ export function subscriptionNeedsPaymentAction(
   const invoice = subscription.latest_invoice;
   if (!invoice || typeof invoice === "string") return false;
   if (invoice.status === "open" || invoice.status === "draft") {
-    const pi = invoice.payment_intent;
-    if (pi && typeof pi !== "string") {
-      if (
-        pi.status === "requires_action" ||
-        pi.status === "requires_payment_method" ||
-        pi.status === "requires_confirmation"
-      ) {
-        return true;
-      }
-    }
+    const needsAction = (invoice.payments?.data ?? []).some(({ payment }) => {
+      const pi = payment.payment_intent;
+      return Boolean(pi && typeof pi !== "string" && NEEDS_ACTION.has(pi.status));
+    });
+    if (needsAction) return true;
     if (invoice.hosted_invoice_url && invoice.status === "open") {
       const amountDue = invoice.amount_due ?? 0;
       if (amountDue > 0) return true;
