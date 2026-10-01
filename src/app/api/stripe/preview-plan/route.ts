@@ -9,6 +9,7 @@ import {
   type BillingInterval,
 } from "@/lib/billing-interval";
 import { planChangeItems, renewalAfterChange } from "@/lib/plan-change";
+import { pendingSwitchResponse } from "@/lib/schedule-guard";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { daysLeftInBillingPeriod, subscriptionPeriodEnd } from "@/lib/stripe-subscription";
 import {
@@ -77,6 +78,8 @@ async function previewPlan(req: Request) {
 
   try {
     const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+    const blocked = pendingSwitchResponse(subscription);
+    if (blocked) return blocked;
     const change = planChangeItems(subscription, currentPlan, targetPlan, interval);
     if (!change.ok) {
       return NextResponse.json({ error: change.error, code: change.code }, { status: change.status });

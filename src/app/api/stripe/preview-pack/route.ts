@@ -12,6 +12,7 @@ import {
 } from "@/lib/plans";
 import { missingPriceMessage, stripePriceIdForPack } from "@/lib/stripe-prices";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
+import { pendingSwitchResponse } from "@/lib/schedule-guard";
 import {
   buildRecurringBreakdown,
   daysLeftInBillingPeriod,
@@ -84,6 +85,8 @@ async function preview(action: Action) {
     const subscription = await stripe.subscriptions.retrieve(
       user.stripeSubscriptionId,
     );
+    const blocked = pendingSwitchResponse(subscription);
+    if (blocked) return blocked;
     // Packs bill on the subscription's interval (annual plan → annual pack price).
     const interval = subscriptionInterval(subscription);
     const existingPack = findPackItem(subscription);

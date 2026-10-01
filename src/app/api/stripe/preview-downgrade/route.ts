@@ -6,6 +6,7 @@ import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { subscriptionInterval, subscriptionPeriodEnd } from "@/lib/stripe-subscription";
 import { formatShortDate } from "@/lib/billing-format";
 import { formatPlanPrice } from "@/lib/billing-interval";
+import { pendingSwitchResponse } from "@/lib/schedule-guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,6 +35,8 @@ export async function GET() {
   }
 
   const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+  const blocked = pendingSwitchResponse(subscription);
+  if (blocked) return blocked;
   const end = subscriptionPeriodEnd(subscription);
   const interval = subscriptionInterval(subscription);
   const renew = end ? new Date(end * 1000) : null;
