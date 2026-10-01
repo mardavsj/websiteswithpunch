@@ -3,6 +3,9 @@
  * the new page's frame at once while its data loads. Grey blocks only, no motifs.
  */
 const bar = "animate-pulse bg-rule/50";
+/** Full-height pages (plan, profile): same frame as the real page, content centred. */
+const FULL =
+  "mx-auto flex w-full max-w-6xl flex-1 items-center [align-items:safe_center] px-4 py-10 sm:px-6";
 
 function Lines({ widths }: { widths: string[] }) {
   return (
@@ -73,14 +76,16 @@ export function SiteSkeleton() {
 
 export function PlanSkeleton() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6" role="status" aria-busy="true">
+    <div className={FULL} role="status" aria-busy="true">
       <Status />
-      <AppHeading />
-      <div className="mt-6 space-y-5">
-        <Card className="h-48" />
-        <div className="grid gap-5 md:grid-cols-2">
-          <Card className="h-56" />
-          <Card className="h-56" />
+      <div className="w-full">
+        <AppHeading />
+        <div className="mt-6 space-y-5">
+          <Card className="h-48" />
+          <div className="grid gap-5 md:grid-cols-2">
+            <Card className="h-56" />
+            <Card className="h-56" />
+          </div>
         </div>
       </div>
     </div>
@@ -89,17 +94,19 @@ export function PlanSkeleton() {
 
 export function ProfileSkeleton() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6" role="status" aria-busy="true">
+    <div className={FULL} role="status" aria-busy="true">
       <Status />
-      <AppHeading />
-      <div className="mt-8 max-w-lg space-y-5">
-        {[0, 1].map((i) => (
-          <div key={i}>
-            <div className={`h-4 w-20 ${bar}`} />
-            <div className={`mt-2 h-10 w-full ${bar}`} />
-          </div>
-        ))}
-        <div className={`h-9 w-32 ${bar}`} />
+      <div className="w-full">
+        <AppHeading />
+        <div className="mt-8 max-w-lg space-y-5">
+          {[0, 1].map((i) => (
+            <div key={i}>
+              <div className={`h-4 w-20 ${bar}`} />
+              <div className={`mt-2 h-10 w-full ${bar}`} />
+            </div>
+          ))}
+          <div className={`h-9 w-32 ${bar}`} />
+        </div>
       </div>
     </div>
   );

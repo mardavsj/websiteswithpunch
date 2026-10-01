@@ -43,28 +43,32 @@ export default async function PlanPage() {
     createdAt: s.createdAt.toISOString(),
   }));
 
+  // Fills the viewport below the navbar (no footer, see SiteChrome): centred when it fits, starts
+  // at the top and scrolls when taller (safe alignment, the box grows with its content).
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <h1 className="font-display text-2xl font-medium text-ink">My Plan</h1>
-      <p className="mt-1 text-sm text-muted">
-        {PLANS[plan].name} · {activeSites.length}/{limit} active
-        {lockedSites.length > 0 ? ` · ${lockedSites.length} locked` : ""}
-      </p>
-      <div className="mt-6">
-        <PlanPageClient
-          plan={plan}
-          sitePackCount={packCount}
-          siteCount={activeSites.length}
-          siteLimit={limit}
-          atLimit={atLimit}
-          remaining={remaining}
-          keepOptions={keepOptions}
-          cancelAtPeriodEnd={user.cancelAtPeriodEnd}
-          pendingPlan={user.pendingPlan}
-          pendingPlanAt={user.pendingPlanAt?.toISOString() ?? null}
-          lockedCount={lockedSites.length}
-          hasBilling={Boolean(user.stripeCustomerId)}
-        />
+    <div className="mx-auto flex w-full max-w-6xl flex-1 items-center [align-items:safe_center] px-4 py-10 sm:px-6">
+      <div className="w-full">
+        <h1 className="font-display text-2xl font-medium text-ink">My Plan</h1>
+        <p className="mt-1 text-sm text-muted">
+          {PLANS[plan].name} · {activeSites.length}/{limit} active
+          {lockedSites.length > 0 ? ` · ${lockedSites.length} locked` : ""}
+        </p>
+        <div className="mt-6">
+          <PlanPageClient
+            plan={plan}
+            sitePackCount={packCount}
+            siteCount={activeSites.length}
+            siteLimit={limit}
+            atLimit={atLimit}
+            remaining={remaining}
+            keepOptions={keepOptions}
+            cancelAtPeriodEnd={user.cancelAtPeriodEnd}
+            pendingPlan={user.pendingPlan}
+            pendingPlanAt={user.pendingPlanAt?.toISOString() ?? null}
+            lockedCount={lockedSites.length}
+            hasBilling={Boolean(user.stripeCustomerId)}
+          />
+        </div>
       </div>
     </div>
   );

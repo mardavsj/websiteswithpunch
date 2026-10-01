@@ -5,10 +5,10 @@ import { useSession } from "next-auth/react";
 
 /** Auth pages fill the viewport under the navbar and have no footer. */
 export const AUTH_ROUTES = ["/login", "/signup", "/forgot-password", "/reset-password"];
-/** Like the auth pages, /contact fills the viewport below the navbar and has no footer (for everyone). */
-export const FULL_HEIGHT_ROUTES = [...AUTH_ROUTES, "/contact"];
+/** Like the auth pages, these fill the viewport below the navbar and have no footer (for everyone). */
+export const FULL_HEIGHT_ROUTES = [...AUTH_ROUTES, "/contact", "/plan", "/profile"];
 /** Logged-in app pages get the slim app footer instead of the big marketing footer. */
-export const APP_ROUTES = ["/dashboard", "/plan", "/profile"];
+export const APP_ROUTES = ["/dashboard"];
 /** Public pages that also feel in-app (slim footer) when someone is signed in. */
 export const SHARED_ROUTES = ["/terms", "/privacy"];
 
@@ -24,10 +24,10 @@ export function isAppRoute(pathname: string | null): boolean {
 }
 
 /**
- * Picks the footer: none on auth pages and /contact (they fill the viewport); slim on app pages;
- * the big marketing footer on public pages. Terms/privacy depend on the session, which the
- * client resolves after load (the pages stay static), so they render no footer until it's
- * known: no wrong footer ever shows.
+ * Picks the footer: none on auth pages, contact, plan and profile (they fill the viewport); slim
+ * on the dashboard and site pages; the big marketing footer on public pages. Terms/privacy
+ * depend on the session, which the client resolves after load (the pages stay static), so they
+ * render no footer until it's known: no wrong footer ever shows.
  * Without JavaScript the session never resolves, so <noscript> keeps the public footer there.
  */
 export function SiteChrome({
