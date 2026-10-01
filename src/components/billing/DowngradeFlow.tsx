@@ -6,6 +6,8 @@ type Props = {
   open: boolean;
   keepOptions: KeepSiteOption[];
   renewsOn: string | null;
+  /** Pro price on the current interval, e.g. "$12/month" or "$120/year". */
+  newPrice?: string;
   loading: boolean;
   onClose: () => void;
   onConfirm: (siteIds: string[]) => void;
@@ -15,6 +17,7 @@ export function DowngradeFlow({
   open,
   keepOptions,
   renewsOn,
+  newPrice = "$12/month",
   loading,
   onClose,
   onConfirm,
@@ -34,7 +37,7 @@ export function DowngradeFlow({
         <>
           <p>Nothing is charged or refunded today.</p>
           <p className="mt-2">
-            You keep Business until {when}. From {when} you&apos;ll pay $12/month.
+            You keep Business until {when}. From {when} you&apos;ll pay {newPrice}.
           </p>
           {locked.length > 0 && (
             <p className="mt-2">

@@ -31,7 +31,7 @@ export function useBillingActions(opts: {
       return false;
     }
     toast(
-      `You keep ${PLANS[plan].name} until ${data.pendingPlanAtFormatted || "the end of the month"}. After that you're on Free (1 site). No more payments.`,
+      `You keep ${PLANS[plan].name} until ${data.pendingPlanAtFormatted || "the end of the period you've paid for"}. After that you're on Free (1 site). No more payments.`,
       "success",
     );
     await afterOk();
@@ -62,7 +62,7 @@ export function useBillingActions(opts: {
       return false;
     }
     toast(
-      `Nothing is charged or refunded today. You keep Business until ${data.pendingPlanAtFormatted || "renewal"}. From then you'll pay $12/month.`,
+      `Nothing is charged or refunded today. You keep Business until ${data.pendingPlanAtFormatted || "renewal"}. From then you'll pay ${data.newRecurringFormatted || "the Pro price"}.`,
       "success",
     );
     await afterOk();
@@ -100,6 +100,28 @@ export function useBillingActions(opts: {
     return true;
   }
 
+  /** Same plan, monthly → annual (in place; Stripe charges the year minus unused month). */
+  async function switchToAnnual(): Promise<string | null> {
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId: plan, interval: "annual" }),
+      });
+      const data = await res.json();
+      if (data.hostedInvoiceUrl || data.requiresAction) {
+        window.location.href = data.hostedInvoiceUrl;
+        return null;
+      }
+      if (!res.ok || !data.ok) return data.error || "Could not switch to annual billing.";
+      toast("You're now on annual billing.", "success");
+      await afterOk();
+      return null;
+    } catch {
+      return "Could not switch to annual billing.";
+    }
+  }
+
   async function undoPendingRemoval() {
     const res = await fetch("/api/stripe/checkout-pack", { method: "POST" });
     const data = await res.json();
@@ -118,6 +140,7 @@ export function useBillingActions(opts: {
     confirmDowngrade,
     previewNeedsKeepPicker,
     confirmPendingKeep,
+    switchToAnnual,
     undoPendingRemoval,
   };
 }

@@ -10,6 +10,8 @@ import { DowngradeFlow } from "@/components/billing/DowngradeFlow";
 import { PendingKeepSitesFlow } from "@/components/billing/PendingKeepSitesFlow";
 import { useBillingSummary } from "@/components/billing/useBillingSummary";
 import { useBillingActions } from "@/components/billing/useBillingActions";
+import { UpgradePlanModal } from "@/components/UpgradePlanModal";
+import { formatPlanPrice } from "@/lib/billing-interval";
 import type { SiteCapacityProps } from "@/components/billing/types";
 
 export type { SiteCapacityProps };
@@ -32,7 +34,11 @@ export function SiteCapacityActions({
   const { summary, loadSummary } = useBillingSummary(showBilling, sitePackCount);
   const actions = useBillingActions({ plan, loadSummary, toast });
   const [busy, setBusy] = useState(false);
-  const [flow, setFlow] = useState<"cancel" | "downgrade" | "pending-keep" | null>(null);
+  const [flow, setFlow] = useState<"cancel" | "downgrade" | "pending-keep" | "annual" | null>(
+    null,
+  );
+  const [annualError, setAnnualError] = useState<string | null>(null);
+  const interval = summary?.interval ?? "month";
 
   const hasPending = summary?.hasPendingRemoval ?? false;
   const pendingSites = summary?.pendingSitesToRemove ?? 0;
@@ -51,7 +57,7 @@ export function SiteCapacityActions({
   const canRemove = showBilling && effectivePacks > 0 && !allPacksAway;
   const nextPaymentLine =
     summary?.nextPaymentDateFormatted && summary.monthlyTotalFormatted
-      ? `Next payment: ${summary.monthlyTotalFormatted.replace("/month", "")} on ${summary.nextPaymentDateFormatted}`
+      ? `Next payment: ${summary.monthlyTotalFormatted.replace(/\/(month|year)$/, "")} on ${summary.nextPaymentDateFormatted}`
       : null;
 
   async function run(fn: () => Promise<boolean | null | void>) {
@@ -93,6 +99,8 @@ export function SiteCapacityActions({
         siteCount={siteCount}
         siteLimit={effectiveLimit}
         effectivePacks={effectivePacks}
+        intervalLabel={summary?.intervalLabel ?? null}
+        renewsOn={summary?.nextPaymentDateFormatted ?? null}
         monthlyTotalFormatted={summary?.monthlyTotalFormatted ?? null}
         nextPaymentLine={nextPaymentLine}
         cancelAtPeriodEnd={cancelAtPeriodEnd}
@@ -108,6 +116,14 @@ export function SiteCapacityActions({
         onUndoPack={() => run(actions.undoPendingRemoval)}
         onDowngrade={onDowngrade}
         onCancel={onCancel}
+        onSwitchAnnual={
+          summary?.interval === "month" && !pendingPlan && !cancelAtPeriodEnd
+            ? () => {
+                setAnnualError(null);
+                setFlow("annual");
+              }
+            : undefined
+        }
         packSlot={
           <PackActions
             plan={plan}
@@ -118,6 +134,7 @@ export function SiteCapacityActions({
             atLimit={atLimit}
             remaining={remaining}
             keepOptions={keepOptions}
+            interval={interval}
             onRefresh={loadSummary}
           />
         }
@@ -139,6 +156,7 @@ export function SiteCapacityActions({
         open={flow === "downgrade"}
         keepOptions={keepOptions}
         renewsOn={summary?.nextPaymentDateFormatted ?? null}
+        newPrice={formatPlanPrice("pro", interval)}
         loading={busy}
         onClose={() => setFlow(null)}
         onConfirm={async (ids) => {
@@ -146,6 +164,20 @@ export function SiteCapacityActions({
             if (await actions.confirmDowngrade(ids)) setFlow(null);
           });
         }}
+      />
+      <UpgradePlanModal
+        open={flow === "annual"}
+        targetPlan={plan}
+        loading={busy}
+        message={annualError}
+        onClose={() => setFlow(null)}
+        onConfirm={() =>
+          run(async () => {
+            const err = await actions.switchToAnnual();
+            setAnnualError(err);
+            if (!err) setFlow(null);
+          })
+        }
       />
       <PendingKeepSitesFlow
         open={flow === "pending-keep"}

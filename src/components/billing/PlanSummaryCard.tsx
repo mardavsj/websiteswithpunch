@@ -8,6 +8,9 @@ type Props = {
   siteCount: number;
   siteLimit: number;
   effectivePacks: number;
+  /** "Monthly" / "Annual" from billing-summary (null until loaded). */
+  intervalLabel?: string | null;
+  renewsOn?: string | null;
   monthlyTotalFormatted: string | null;
   nextPaymentLine: string | null;
   cancelAtPeriodEnd: boolean;
@@ -24,6 +27,8 @@ type Props = {
   onUndoPack: () => void;
   onDowngrade: () => void;
   onCancel: () => void;
+  /** Shown for monthly subscribers: switch this plan to annual billing. */
+  onSwitchAnnual?: () => void;
 };
 
 export function PlanSummaryCard({
@@ -31,6 +36,8 @@ export function PlanSummaryCard({
   siteCount,
   siteLimit,
   effectivePacks,
+  intervalLabel,
+  renewsOn,
   monthlyTotalFormatted,
   nextPaymentLine,
   cancelAtPeriodEnd,
@@ -47,6 +54,7 @@ export function PlanSummaryCard({
   onUndoPack,
   onDowngrade,
   onCancel,
+  onSwitchAnnual,
 }: Props) {
   return (
     <div className="rounded-none border border-rule bg-surface px-4 py-4">
@@ -55,9 +63,11 @@ export function PlanSummaryCard({
         <div>
           <p className="font-display text-lg font-medium text-ink">
             {PLANS[plan].name}
+            {intervalLabel ? ` · ${intervalLabel}` : ""}
             {effectivePacks > 0
               ? ` · ${effectivePacks} pack${effectivePacks === 1 ? "" : "s"}`
               : ""}
+            {renewsOn && !cancelAtPeriodEnd && !pendingPlan ? ` · renews ${renewsOn}` : ""}
           </p>
           <p className="mt-0.5 text-sm text-muted">
             {siteCount}/{siteLimit} active sites
@@ -128,7 +138,17 @@ export function PlanSummaryCard({
         </div>
       </div>
       {packSlot && <div className="mt-3">{packSlot}</div>}
-      <div className="mt-3 flex flex-wrap gap-2 border-t border-rule pt-3">
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 border-t border-rule pt-3">
+        {onSwitchAnnual && (
+          <button
+            type="button"
+            onClick={onSwitchAnnual}
+            disabled={loading}
+            className="text-xs font-medium text-accent underline-offset-2 hover:underline disabled:opacity-60"
+          >
+            Switch to annual billing (2 months free)
+          </button>
+        )}
         {plan === "business" && !pendingPlan && (
           <button
             type="button"

@@ -22,7 +22,7 @@ export function CancelPlanFlow({
   onClose,
   onConfirm,
 }: Props) {
-  const when = endsOn || "the end of the month";
+  const when = endsOn || "the end of the period you've paid for";
   return (
     <KeepSitesPicker
       open={open}
