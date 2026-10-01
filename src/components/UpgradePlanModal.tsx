@@ -1,45 +1,35 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-
-function PreviewSkeleton() {
-  return (
-    <div className="animate-pulse space-y-3" aria-hidden>
-      <div className="h-8 w-40 bg-rule/60" />
-      <div className="h-4 w-full bg-rule/40" />
-      <div className="h-4 w-5/6 bg-rule/40" />
-      <div className="h-4 w-4/6 bg-rule/40" />
-    </div>
-  );
-}
-
-function useEscapeClose(open: boolean, onClose: () => void) {
-  useEffect(() => {
-    if (!open) return;
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.body.style.overflow = prev;
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open, onClose]);
-}
+import { BillingIntervalToggle } from "@/components/BillingIntervalToggle";
+import {
+  ModalShell,
+  PreviewSkeleton,
+  primaryBtn,
+  secondaryBtn,
+  useEscapeClose,
+} from "@/components/billing/modal-bits";
+import { intervalParam, type BillingInterval } from "@/lib/billing-interval";
 
 type UpgradeProps = {
   open: boolean;
   loading: boolean;
   message: string | null;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: (interval: BillingInterval) => void;
+  /** "business" = Pro → Business; the current plan = switch to annual billing. */
+  targetPlan?: "pro" | "business";
+  /** Yearly subscribers stay yearly, so the toggle is hidden for them. */
+  currentInterval?: BillingInterval | null;
 };
 
 export type PlanPreview = {
   currentPlanName: string;
   targetPlanName: string;
+  interval?: BillingInterval;
+  samePlan?: boolean;
+  intervalChanges?: boolean;
+  keptPacks?: number;
   hadPacks: boolean;
   amountDueToday: number;
   amountDueTodayFormatted: string;
@@ -48,19 +38,57 @@ export type PlanPreview = {
   newRecurringMonthlyFormatted: string;
 };
 
-export function UpgradePlanModal({ open, loading, message, onClose, onConfirm }: UpgradeProps) {
+function costLine(p: PlanPreview, interval: BillingInterval): string {
+  if (p.samePlan) {
+    const what = p.keptPacks ? `${p.targetPlanName} and your site packs` : p.targetPlanName;
+    return `That's a full year of ${what}, minus the unused part of the month you already paid for.`;
+  }
+  if (p.intervalChanges) {
+    return `That's a full year of ${p.targetPlanName}, minus the unused part of what you already paid for ${p.currentPlanName} this month.`;
+  }
+  const period = interval === "year" ? "billing year" : "month";
+  return `That's the ${p.targetPlanName} price for the rest of this ${period}, minus what you already paid for ${p.currentPlanName} for the same time.`;
+}
+
+export function UpgradePlanModal({
+  open,
+  loading,
+  message,
+  onClose,
+  onConfirm,
+  targetPlan = "business",
+  currentInterval = "month",
+}: UpgradeProps) {
+  const switchOnly = targetPlan !== "business";
+  // Set when the server reports a yearly subscription (callers that don't know the interval).
+  const [serverYearly, setServerYearly] = useState(false);
+  const yearlyNow = currentInterval === "year" || serverYearly;
+  const locked = switchOnly || yearlyNow;
+  const [interval, setBilling] = useState<BillingInterval>(locked ? "year" : "month");
   const [preview, setPreview] = useState<PlanPreview | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) setServerYearly(false);
+    else setBilling(locked ? "year" : "month");
+  }, [open, locked]);
 
   const loadPreview = useCallback(async () => {
     setPreviewLoading(true);
     setPreviewError(null);
     setPreview(null);
     try {
-      const res = await fetch("/api/stripe/preview-plan?planId=business");
+      const res = await fetch(
+        `/api/stripe/preview-plan?planId=${targetPlan}&interval=${intervalParam(interval)}`,
+      );
       const data = await res.json();
       if (!res.ok) {
+        if (data.code === "ANNUAL_ONLY") {
+          setServerYearly(true);
+          setBilling("year");
+          return;
+        }
         setPreviewError(data.error || "Could not load preview.");
         return;
       }
@@ -70,7 +98,7 @@ export function UpgradePlanModal({ open, loading, message, onClose, onConfirm }:
     } finally {
       setPreviewLoading(false);
     }
-  }, []);
+  }, [targetPlan, interval]);
 
   useEffect(() => {
     if (open) void loadPreview();
@@ -81,81 +109,79 @@ export function UpgradePlanModal({ open, loading, message, onClose, onConfirm }:
 
   const renew = preview?.nextRenewalFormatted || "your next billing date";
   const todayZero = preview != null && preview.amountDueToday === 0;
+  const packs = preview?.keptPacks ?? 0;
+  const title = switchOnly ? "Switch to annual billing" : "Upgrade to Business";
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-solid/40 p-4"
-      onClick={onClose}
-      role="presentation"
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="upgrade-plan-title"
-        className="w-full max-w-lg rounded-none border border-rule bg-surface p-6 shadow-lg"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 id="upgrade-plan-title" className="font-display text-xl font-medium text-ink">
-          Upgrade to Business
-        </h2>
+    <ModalShell titleId="upgrade-plan-title" onClose={onClose}>
+      <h2 id="upgrade-plan-title" className="font-display text-xl font-medium text-ink">
+        {title}
+      </h2>
+      {!locked && (
+        <BillingIntervalToggle
+          value={interval}
+          onChange={setBilling}
+          disabled={loading}
+          className="mt-4"
+        />
+      )}
+      {!switchOnly && yearlyNow && (
+        <p className="mt-2 text-sm text-muted">You&apos;re billed yearly, so Business is billed yearly too.</p>
+      )}
 
-        <div className="mt-4 space-y-3">
-          {previewLoading && <PreviewSkeleton />}
-          {previewError && <p className="text-sm text-danger">{previewError}</p>}
-          {preview && !previewLoading && (
-            <>
-              {todayZero ? (
-                <p className="font-display text-2xl font-medium text-ink">Nothing to pay today.</p>
-              ) : (
-                <p className="font-display text-2xl font-medium text-ink">
-                  Pay {preview.amountDueTodayFormatted} today
-                </p>
-              )}
+      <div className="mt-4 space-y-3">
+        {previewLoading && <PreviewSkeleton />}
+        {previewError && <p className="text-sm text-danger">{previewError}</p>}
+        {preview && !previewLoading && (
+          <>
+            <p className="font-display text-2xl font-medium text-ink">
+              {todayZero ? "Nothing to pay today." : `Pay ${preview.amountDueTodayFormatted} today`}
+            </p>
+            <p className="text-sm leading-relaxed text-muted">{costLine(preview, interval)}</p>
+            {preview.hadPacks && (
               <p className="text-sm leading-relaxed text-muted">
-                That&apos;s the Business price for the rest of this month, minus what you already
-                paid for {preview.currentPlanName} this month.
+                Your extra site packs are no longer needed. Business includes 50 sites.
               </p>
-              {preview.hadPacks && (
-                <p className="text-sm leading-relaxed text-muted">
-                  Your extra site packs are no longer needed. Business includes 50 sites.
-                </p>
-              )}
+            )}
+            {packs > 0 && (
               <p className="text-sm leading-relaxed text-muted">
-                From {renew} you&apos;ll pay {preview.newRecurringMonthlyFormatted}.
+                Your {packs} site pack{packs === 1 ? "" : "s"} move{packs === 1 ? "s" : ""} to yearly
+                billing too, so everything renews on one date.
               </p>
-              {!todayZero && (
-                <p className="text-xs text-muted">
-                  Your bank may ask you to approve this payment. That&apos;s normal.
-                </p>
-              )}
-            </>
-          )}
-        </div>
-
-        {message && <p className="mt-3 text-xs text-amber-700 dark:text-amber-300">{message}</p>}
-        <div className="mt-5 flex gap-3">
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={loading || previewLoading || Boolean(previewError) || !preview}
-            className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-60"
-          >
-            {loading
-              ? "Working…"
-              : preview && !todayZero
-                ? `Pay ${preview.amountDueTodayFormatted} and upgrade`
-                : "Upgrade"}
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={loading}
-            className="rounded-none border border-rule px-4 py-2 text-sm text-ink hover:bg-accent-soft"
-          >
-            Cancel
-          </button>
-        </div>
+            )}
+            <p className="text-sm leading-relaxed text-muted">
+              From {renew} you&apos;ll pay {preview.newRecurringMonthlyFormatted}.
+              {preview.intervalChanges ? " Your billing date moves to today." : ""}
+            </p>
+            {!todayZero && (
+              <p className="text-xs text-muted">
+                Your bank may ask you to approve this payment. That&apos;s normal.
+              </p>
+            )}
+          </>
+        )}
       </div>
-    </div>
+
+      {message && <p className="mt-3 text-sm text-danger">{message}</p>}
+      <div className="mt-5 flex flex-wrap gap-3">
+        <button
+          type="button"
+          onClick={() => onConfirm(interval)}
+          disabled={loading || previewLoading || Boolean(previewError) || !preview}
+          className={primaryBtn}
+        >
+          {loading
+            ? "Working…"
+            : preview && !todayZero
+              ? `Pay ${preview.amountDueTodayFormatted} and ${switchOnly ? "switch" : "upgrade"}`
+              : switchOnly
+                ? "Switch to annual"
+                : "Upgrade"}
+        </button>
+        <button type="button" onClick={onClose} disabled={loading} className={secondaryBtn}>
+          Cancel
+        </button>
+      </div>
+    </ModalShell>
   );
 }
