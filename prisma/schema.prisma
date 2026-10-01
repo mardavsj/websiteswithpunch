@@ -39,6 +39,7 @@ model User {
   sessions                Session[]
   sites                   Site[]
   contactMessages         ContactMessage[]
+  passwordResetTokens     PasswordResetToken[]
 }
 
 model Account {
@@ -129,4 +130,17 @@ model ContactMessage {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+/// Password reset links. Only a SHA-256 hash of the token is stored; tokens are single-use and expire after 1 hour.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
