@@ -15,6 +15,7 @@ import {
   subscriptionPeriodEnd,
 } from "@/lib/stripe-subscription";
 import { setKeepOnDowngrade } from "@/lib/site-limits";
+import { ensureNoPendingSwitch } from "@/lib/schedule-guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -80,6 +81,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "You have no site packs to remove." }, { status: 400 });
   }
 
+  // Checked before keep-site changes so a blocked removal leaves nothing half-done.
+  const subscription = await stripe.subscriptions
+    .retrieve(user.stripeSubscriptionId)
+    .catch(() => null);
+  if (!subscription) {
+    return NextResponse.json({ error: "Could not load your subscription." }, { status: 500 });
+  }
+  const blocked = await ensureNoPendingSwitch(stripe, subscription);
+  if (blocked) return blocked;
+
   const nextPending = Math.max(0, currentTarget - 1);
   const newLimitFrom = getEffectiveSiteLimit(packPlan, nextPending);
   const activeCount = await prisma.site.count({
@@ -103,7 +114,6 @@ export async function POST(req: Request) {
   }
 
   try {
-    const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
     const packItem = findPackItem(subscription);
     const periodEnd = subscriptionPeriodEnd(subscription);
     if (!periodEnd) {

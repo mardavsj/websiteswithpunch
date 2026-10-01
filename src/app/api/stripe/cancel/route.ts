@@ -7,6 +7,7 @@ import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { subscriptionPeriodEnd } from "@/lib/stripe-subscription";
 import { setKeepOnDowngrade } from "@/lib/site-limits";
 import { formatShortDate } from "@/lib/billing-format";
+import { releaseSchedule } from "@/lib/schedule-guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -64,8 +65,12 @@ export async function POST(req: Request) {
   }
 
   try {
+    // A schedule (pending switch to monthly) blocks cancel_at_period_end; cancelling wins.
+    await releaseSchedule(stripe, await stripe.subscriptions.retrieve(user.stripeSubscriptionId));
+    // No proration: nothing is refunded or credited, the plan runs to the end of the period.
     const updated = await stripe.subscriptions.update(user.stripeSubscriptionId, {
       cancel_at_period_end: true,
+      proration_behavior: "none",
     });
     const end = subscriptionPeriodEnd(updated);
     const pendingPlanAt = end ? new Date(end * 1000) : null;

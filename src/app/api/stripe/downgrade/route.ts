@@ -15,6 +15,7 @@ import {
 } from "@/lib/stripe-subscription";
 import { setKeepOnDowngrade } from "@/lib/site-limits";
 import { formatShortDate } from "@/lib/billing-format";
+import { ensureNoPendingSwitch } from "@/lib/schedule-guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -61,6 +62,8 @@ export async function POST(req: Request) {
   if (!subscription) {
     return NextResponse.json({ error: "Could not load your subscription." }, { status: 500 });
   }
+  const blocked = await ensureNoPendingSwitch(stripe, subscription);
+  if (blocked) return blocked;
   const interval = subscriptionInterval(subscription);
   const priceId = stripePriceIdForPlan("pro", interval);
   if (!priceId) {
