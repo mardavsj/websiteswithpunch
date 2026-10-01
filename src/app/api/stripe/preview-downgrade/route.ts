@@ -3,8 +3,9 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getEffectivePlan, getEffectiveSiteLimit, PLANS } from "@/lib/plans";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
-import { subscriptionPeriodEnd } from "@/lib/stripe-subscription";
-import { formatMonthlyFromCents, formatShortDate } from "@/lib/billing-format";
+import { subscriptionInterval, subscriptionPeriodEnd } from "@/lib/stripe-subscription";
+import { formatShortDate } from "@/lib/billing-format";
+import { formatPlanPrice } from "@/lib/billing-interval";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,6 +35,7 @@ export async function GET() {
 
   const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
   const end = subscriptionPeriodEnd(subscription);
+  const interval = subscriptionInterval(subscription);
   const renew = end ? new Date(end * 1000) : null;
   const activeCount = await prisma.site.count({
     where: { userId: user.id, locked: false },
@@ -52,7 +54,8 @@ export async function GET() {
     newPlan: "pro",
     newPlanName: PLANS.pro.name,
     newSiteLimitFromRenewal: newLimit,
-    newRecurringMonthlyFormatted: formatMonthlyFromCents(PLANS.pro.price * 100),
+    interval,
+    newRecurringMonthlyFormatted: formatPlanPrice("pro", interval),
     activeCount,
     needsKeepPicker: activeCount > newLimit,
     maxKeep: newLimit,

@@ -3,16 +3,14 @@ import type Stripe from "stripe";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import {
-  getEffectivePlan,
-  getEffectiveSiteLimit,
-  PLANS,
-  stripePriceIdForPlan,
-} from "@/lib/plans";
+import { getEffectivePlan, getEffectiveSiteLimit } from "@/lib/plans";
+import { formatPlanPrice, planPrice } from "@/lib/billing-interval";
+import { missingPriceMessage, stripePriceIdForPlan } from "@/lib/stripe-prices";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import {
   findPackItem,
   findPlanItem,
+  subscriptionInterval,
   subscriptionPeriodEnd,
 } from "@/lib/stripe-subscription";
 import { setKeepOnDowngrade } from "@/lib/site-limits";
@@ -27,7 +25,8 @@ const schema = z.object({
 
 /**
  * Schedule Business → Pro at renewal:
- * - Swap plan price + remove Business packs with proration_behavior none
+ * - Swap plan price (Pro at the same interval: monthly or annual) + remove Business packs
+ *   with proration_behavior none
  * - Keep Business limit until pendingPlanAt
  */
 export async function POST(req: Request) {
@@ -50,14 +49,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Downgrade to Pro is only available from Business." }, { status: 400 });
   }
 
-  const priceId = stripePriceIdForPlan("pro");
-  if (!priceId) {
-    return NextResponse.json({ error: "Pro price is not configured." }, { status: 503 });
-  }
-
   const body = await req.json().catch(() => ({}));
   const parsed = schema.safeParse(body);
   const keepSiteIds = parsed.success ? parsed.data.keepSiteIds ?? [] : [];
+
+  // One interval per subscription: annual Business moves to annual Pro. Checked before any
+  // keep-site changes so a missing price leaves nothing half-done.
+  const subscription = await stripe.subscriptions
+    .retrieve(user.stripeSubscriptionId)
+    .catch(() => null);
+  if (!subscription) {
+    return NextResponse.json({ error: "Could not load your subscription." }, { status: 500 });
+  }
+  const interval = subscriptionInterval(subscription);
+  const priceId = stripePriceIdForPlan("pro", interval);
+  if (!priceId) {
+    return NextResponse.json(
+      { error: missingPriceMessage("plan", "pro", interval), code: "PRICE_MISSING" },
+      { status: 503 },
+    );
+  }
 
   const newLimit = getEffectiveSiteLimit("pro", 0);
   const activeCount = await prisma.site.count({
@@ -80,7 +91,6 @@ export async function POST(req: Request) {
   }
 
   try {
-    const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
     const planItem = findPlanItem(subscription);
     const packItem = findPackItem(subscription);
     const items: Stripe.SubscriptionUpdateParams.Item[] = [];
@@ -127,7 +137,9 @@ export async function POST(req: Request) {
       pendingPlanAtFormatted: formatShortDate(pendingPlanAt),
       keepLimitUntil: getEffectiveSiteLimit("business", user.sitePackCount),
       newLimitFrom: newLimit,
-      newMonthly: PLANS.pro.price,
+      interval,
+      newMonthly: planPrice("pro", interval),
+      newRecurringFormatted: formatPlanPrice("pro", interval),
     });
   } catch (err) {
     console.error("downgrade error", err);

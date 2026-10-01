@@ -8,6 +8,7 @@ import {
   resolvePackCountForLimit,
   SITE_PACKS,
 } from "@/lib/plans";
+import { intervalLabel, type BillingInterval } from "@/lib/billing-interval";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import {
   buildRecurringBreakdown,
@@ -15,10 +16,11 @@ import {
   findPlanItem,
   monthlyTotalCentsFromItems,
   priceUnitAmountCents,
+  subscriptionInterval,
   subscriptionPeriodEnd,
 } from "@/lib/stripe-subscription";
 import {
-  formatMonthlyFromCents,
+  formatRecurringFromCents,
   formatShortDate,
 } from "@/lib/billing-format";
 import {
@@ -29,7 +31,7 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** Next payment date + monthly total for the "Your plan" box. */
+/** Next payment date, billing interval + per-interval total for the "Your plan" box. */
 export async function GET() {
   const session = await getSession();
   if (!session?.user?.id) {
@@ -69,18 +71,11 @@ export async function GET() {
 
   let nextPaymentDate: string | null = null;
   let nextPaymentDateFormatted: string | null = null;
+  // Catalog fallback (monthly) until Stripe tells us the real interval and amounts.
+  let interval: BillingInterval = "month";
   let monthlyTotalCents =
     plan === "pro" || plan === "business"
-      ? Math.round(
-          (PLANS[plan].price +
-            (SITE_PACKS[plan as "pro" | "business"]
-              ? Math.min(
-                  packCount,
-                  SITE_PACKS[plan as "pro" | "business"].maxPacks,
-                ) * SITE_PACKS[plan as "pro" | "business"].pricePerMonth
-              : 0)) *
-            100,
-        )
+      ? monthlyTotalCentsFromItems(plan, packCount, null, null)
       : 0;
   let recurringBreakdown =
     plan === "pro" || plan === "business"
@@ -109,6 +104,7 @@ export async function GET() {
           nextPaymentDate = new Date(end * 1000).toISOString();
           nextPaymentDateFormatted = formatShortDate(nextPaymentDate);
         }
+        interval = subscriptionInterval(subscription);
         const planItem = findPlanItem(subscription);
         const packItem = findPackItem(subscription);
         const planCents = priceUnitAmountCents(planItem?.price);
@@ -121,6 +117,7 @@ export async function GET() {
           stripePackQty,
           planCents,
           packCents,
+          interval,
         );
         recurringBreakdown = buildRecurringBreakdown({
           plan: plan === "pro" || plan === "business" ? plan : "pro",
@@ -128,6 +125,7 @@ export async function GET() {
           planUnitCents: planCents,
           packUnitCents: packCents,
           currency,
+          interval,
         });
       }
     } catch (err) {
@@ -150,10 +148,12 @@ export async function GET() {
   return NextResponse.json({
     plan,
     planName: PLANS[plan].name,
+    interval: plan === "free" ? null : interval,
+    intervalLabel: plan === "free" ? null : intervalLabel(interval),
     sitePackCount: packCount,
     siteLimit,
     monthlyTotalCents,
-    monthlyTotalFormatted: formatMonthlyFromCents(monthlyTotalCents, currency),
+    monthlyTotalFormatted: formatRecurringFromCents(monthlyTotalCents, currency, interval),
     recurringBreakdown,
     nextPaymentDate,
     nextPaymentDateFormatted,
