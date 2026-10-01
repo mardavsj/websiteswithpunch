@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Privacy Policy" };
 
 export default function PrivacyPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+    <div className="relative mx-auto max-w-3xl px-4 py-16 sm:px-6">
       <InAppBackLink />
       <h1 className="font-display text-3xl font-medium text-ink">Privacy Policy</h1>
       <p className="mt-2 text-sm text-muted">Last updated: September 19, 2026</p>

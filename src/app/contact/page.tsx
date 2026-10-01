@@ -18,8 +18,8 @@ const notes = [
 export default async function ContactPage({ searchParams }: { searchParams: { topic?: string } }) {
   const session = await getSession();
   return (
-    <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-      <InAppBackLink className="mb-8" />
+    <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+      <InAppBackLink />
       <div className="grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
         <div>
           <p className="label-caps">Contact</p>

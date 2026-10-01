@@ -6,7 +6,6 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { AppFooter } from "@/components/AppFooter";
 import { SiteChrome } from "@/components/SiteChrome";
-import { getSession } from "@/lib/auth";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -45,15 +44,15 @@ export const metadata: Metadata = {
 
 const themeInitScript = `(function(){try{var t=localStorage.getItem("theme");if(t==="dark")document.documentElement.classList.add("dark");}catch(e){}})();`;
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSession();
+// No session read here: it would make every page dynamic. The client SessionProvider resolves it.
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className={`${inter.variable} ${spaceGrotesk.variable} font-body`}>
-        <Providers session={session}>
+        <Providers>
           <div className="flex min-h-screen flex-col">
             <Navbar />
             <SiteChrome footer={<Footer />} appFooter={<AppFooter />}>

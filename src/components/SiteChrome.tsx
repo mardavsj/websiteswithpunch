@@ -22,8 +22,10 @@ export function isAppRoute(pathname: string | null): boolean {
 }
 
 /**
- * Picks the footer: none on auth pages; slim on app pages, and on contact/terms/privacy when
- * signed in; the big marketing footer everywhere else.
+ * Picks the footer: none on auth pages; slim on app pages; the big marketing footer on public
+ * pages. Contact/terms/privacy depend on the session, which the client resolves after load (the
+ * pages stay static), so they render no footer until it's known: no wrong footer ever shows.
+ * Without JavaScript the session never resolves, so <noscript> keeps the public footer there.
  */
 export function SiteChrome({
   children,
@@ -37,12 +39,15 @@ export function SiteChrome({
   const pathname = usePathname();
   const { status } = useSession();
   const auth = isAuthRoute(pathname);
-  const slim =
-    isAppRoute(pathname) || (status === "authenticated" && matches(SHARED_ROUTES, pathname));
+  const shared = matches(SHARED_ROUTES, pathname);
+  let chosen: React.ReactNode = footer;
+  if (auth) chosen = null;
+  else if (shared && status === "loading") chosen = <noscript>{footer}</noscript>;
+  else if (isAppRoute(pathname) || (shared && status === "authenticated")) chosen = appFooter;
   return (
     <>
       <main className={auth ? "flex flex-1 flex-col" : "flex-1"}>{children}</main>
-      {auth ? null : slim ? appFooter : footer}
+      {chosen}
     </>
   );
 }
