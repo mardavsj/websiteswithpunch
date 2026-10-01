@@ -168,6 +168,9 @@ export function SignupForm({
         >
           {buttonLabel}
         </button>
+        {isPaid && (
+          <p className="text-center text-xs text-muted">Payments are non-refundable.</p>
+        )}
       </form>
       <p className="mt-4 text-center text-sm text-muted">
         Already have an account?{" "}

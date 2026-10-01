@@ -80,6 +80,10 @@ export const faqs = [
     q: "Can I cancel anytime?",
     a: "Yes. Paid plans renew each month or each year, whichever you chose. Cancel from Your plan on the dashboard (or Manage billing). You keep your paid plan until the month or year you've paid for ends, then Free. Nothing is deleted — extra sites are locked.",
   },
+  {
+    q: "Do you offer refunds?",
+    a: "No. All payments are non-refundable, including after you cancel. When you cancel, downgrade, remove a site pack or switch from annual to monthly billing, nothing is refunded or credited. You keep everything you've paid for until the end of the current billing period, and the change takes effect from your renewal date. Upgrades start right away and charge only for the rest of the current period.",
+  },
 ];
 
 export const proofMetrics = [
