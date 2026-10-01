@@ -31,9 +31,9 @@ export function PricingSection() {
         <div className="mt-8 flex flex-col gap-2 text-sm text-muted sm:flex-row sm:justify-between">
           <p>
             Need more than {maxSelfServeSites} sites?{" "}
-            <a href={customPlanHref} className="font-semibold text-ink underline-offset-2 hover:underline">
+            <Link href={customPlanHref} className="font-semibold text-ink underline-offset-2 hover:underline">
               Talk to us
-            </a>{" "}
+            </Link>{" "}
             about a custom plan.
           </p>
           <p>

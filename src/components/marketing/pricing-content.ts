@@ -95,4 +95,4 @@ export const pricingPlans: PricingPlan[] = [
 /** Highest self-serve limit (Business plus every pack); beyond this is a custom plan. */
 export const maxSelfServeSites = packCeiling("business");
 
-export const customPlanHref = "mailto:hello@websiteswithpunch.com?subject=Custom%20site%20limit";
+export const customPlanHref = "/contact?topic=custom-limits";

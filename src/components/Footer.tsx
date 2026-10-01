@@ -5,7 +5,7 @@ const EMAIL = "hello@websiteswithpunch.com";
 
 type FooterLink = { label: string; href: string };
 
-/** Every target exists: homepage section ids, app routes, legal pages or a real mailbox. */
+/** Every target exists: homepage section ids, app routes, legal pages and /contact. */
 const columns: { title: string; links: FooterLink[] }[] = [
   {
     title: "Product",
@@ -31,8 +31,8 @@ const columns: { title: string; links: FooterLink[] }[] = [
     title: "Support",
     links: [
       { label: "FAQ", href: "/#faq" },
-      { label: "Contact us", href: `mailto:${EMAIL}` },
-      { label: "Billing help", href: `mailto:${EMAIL}?subject=Billing` },
+      { label: "Contact us", href: "/contact" },
+      { label: "Billing help", href: "/contact?topic=billing" },
       { label: "Custom site limits", href: customPlanHref },
     ],
   },
@@ -49,11 +49,7 @@ const linkClass =
   "text-sm text-muted transition-colors hover:text-ink focus-visible:text-ink focus-visible:outline-none focus-visible:underline";
 
 function FooterAnchor({ href, label, className = linkClass }: FooterLink & { className?: string }) {
-  return href.startsWith("mailto:") ? (
-    <a href={href} className={className}>
-      {label}
-    </a>
-  ) : (
+  return (
     <Link href={href} className={className}>
       {label}
     </Link>
@@ -101,7 +97,7 @@ export function Footer() {
           <div className="flex flex-wrap gap-x-5 gap-y-2">
             <FooterAnchor href="/terms" label="Terms" className="hover:text-ink" />
             <FooterAnchor href="/privacy" label="Privacy" className="hover:text-ink" />
-            <FooterAnchor href={`mailto:${EMAIL}`} label="Contact" className="hover:text-ink" />
+            <FooterAnchor href="/contact" label="Contact" className="hover:text-ink" />
           </div>
         </div>
       </div>

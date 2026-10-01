@@ -54,7 +54,7 @@ export const faqs = [
   },
   {
     q: "What if I need more than 10 or 50 sites?",
-    a: `On Pro, add optional +${SITE_PACKS.pro.sitesPerPack} site packs (up to ${PLANS.pro.siteLimit + SITE_PACKS.pro.maxPacks * SITE_PACKS.pro.sitesPerPack} sites), then upgrade to Business. On Business, add +${SITE_PACKS.business.sitesPerPack} packs (up to ${PLANS.business.siteLimit + SITE_PACKS.business.maxPacks * SITE_PACKS.business.sitesPerPack} sites). Packs join your existing subscription and bill the same way, monthly or yearly — you pay for the rest of the current billing period today, then one bill on the same renewal date. Remove them anytime. You keep them until the end of the period you've paid for. Need more than that? Email hello@websiteswithpunch.com for a custom limit.`,
+    a: `On Pro, add optional +${SITE_PACKS.pro.sitesPerPack} site packs (up to ${PLANS.pro.siteLimit + SITE_PACKS.pro.maxPacks * SITE_PACKS.pro.sitesPerPack} sites), then upgrade to Business. On Business, add +${SITE_PACKS.business.sitesPerPack} packs (up to ${PLANS.business.siteLimit + SITE_PACKS.business.maxPacks * SITE_PACKS.business.sitesPerPack} sites). Packs join your existing subscription and bill the same way, monthly or yearly — you pay for the rest of the current billing period today, then one bill on the same renewal date. Remove them anytime. You keep them until the end of the period you've paid for. Need more than that? Send us a message from the Contact page for a custom limit.`,
   },
   {
     q: "Do I need a card to start?",
