@@ -5,14 +5,21 @@ import { FormEvent, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import type { PlanId } from "@/lib/plans";
-import { PLANS } from "@/lib/plans";
+import { intervalParam, type BillingInterval } from "@/lib/billing-interval";
+import { PASSWORD_MAX } from "@/lib/password-rules";
+import { AuthNotice } from "@/components/auth/AuthShell";
 import {
-  formatPlanPrice,
-  intervalParam,
-  perMonthPrice,
-  type BillingInterval,
-} from "@/lib/billing-interval";
-import { BillingIntervalToggle } from "@/components/BillingIntervalToggle";
+  PasswordField,
+  PasswordHint,
+  SubmitButton,
+  TextField,
+  authLink,
+  emailError,
+  newPasswordErrors,
+} from "@/components/auth/fields";
+import { SignupHeader, paidButtonLabel } from "./signup-header";
+
+type Errors = { name?: string; email?: string; password?: string; confirm?: string; form?: string };
 
 export function SignupForm({
   initialPlan = "free",
@@ -27,17 +34,31 @@ export function SignupForm({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState("");
+  const [errors, setErrors] = useState<Errors>({});
   const [loading, setLoading] = useState(false);
   const [interval, setBilling] = useState<BillingInterval>(initialInterval);
 
   const isPaid = initialPlan === "pro" || initialPlan === "business";
-  const plan = PLANS[initialPlan];
+
+  /** Server errors: a duplicate email (409) is shown on the email field, the rest above the form. */
+  function serverError(status: number, message: string) {
+    setErrors(status === 409 ? { email: message } : { form: message });
+    setLoading(false);
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    const next: Errors = {
+      name: name.trim() ? undefined : "Enter your name.",
+      email: emailError(email),
+      ...newPasswordErrors(password, confirm),
+    };
+    setErrors(next);
+    if (next.name || next.email || next.password || next.confirm) return;
+
     setLoading(true);
-    setError(null);
+    const cleanEmail = email.trim();
     try {
       if (isPaid) {
         const res = await fetch("/api/stripe/checkout-signup", {
@@ -45,40 +66,30 @@ export function SignupForm({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name,
-            email,
+            email: cleanEmail,
             password,
             planId: initialPlan,
             interval: intervalParam(interval),
           }),
         });
         const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || "Could not start checkout");
-          setLoading(false);
-          return;
-        }
+        if (!res.ok) return serverError(res.status, data.error || "Could not start checkout");
         if (data.url) {
           window.location.href = data.url;
           return;
         }
-        setError("Checkout unavailable");
-        setLoading(false);
-        return;
+        return serverError(500, "Checkout unavailable");
       }
 
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email: cleanEmail, password }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Signup failed");
-        setLoading(false);
-        return;
-      }
+      if (!res.ok) return serverError(res.status, data.error || "Signup failed");
       const login = await signIn("credentials", {
-        email,
+        email: cleanEmail.toLowerCase(),
         password,
         redirect: false,
       });
@@ -86,101 +97,97 @@ export function SignupForm({
         router.push("/login");
         return;
       }
-      router.push("/dashboard");
+      router.replace("/dashboard");
       router.refresh();
     } catch {
-      setError("Network error");
-    } finally {
+      setErrors({ form: "Network error. Check your connection and try again." });
       setLoading(false);
     }
   }
 
-  const title = isPaid ? `Start ${plan.name}` : "Create your account";
-  const paidId = initialPlan === "business" ? "business" : "pro";
-  const priceLabel = formatPlanPrice(paidId, interval);
-  const subtitle = isPaid
-    ? interval === "year"
-      ? `You'll pay ${priceLabel} ($${perMonthPrice(paidId, "year")}/mo, 2 months free) for up to ${plan.siteLimit} sites. Account is created after payment succeeds.`
-      : `You'll pay ${priceLabel} for up to ${plan.siteLimit} sites. Account is created after payment succeeds.`
-    : "Free plan includes 1 monitored site. Upgrade anytime for more sites.";
   const buttonLabel = loading
     ? isPaid
       ? "Redirecting to payment…"
-      : "Creating…"
+      : "Creating account…"
     : isPaid
-      ? `Continue to payment — ${priceLabel}`
+      ? paidButtonLabel(initialPlan, interval)
       : "Sign up free";
 
   return (
-    <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-16">
-      <h1 className="font-display text-2xl font-medium text-ink">{title}</h1>
-      {isPaid && (
-        <BillingIntervalToggle
-          value={interval}
-          onChange={setBilling}
-          disabled={loading}
-          className="mt-4 self-start"
-        />
-      )}
-      <p className={`${isPaid ? "mt-3" : "mt-2"} text-sm text-muted`}>{subtitle}</p>
-      {canceled && (
-        <p className="mt-3 rounded-none border border-amber-200 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
-          Checkout was canceled. You can try again when you&apos;re ready — no account was created.
-        </p>
-      )}
-      <form onSubmit={onSubmit} className="mt-8 space-y-4 rounded-none border border-rule bg-surface p-6">
-        <div>
-          <label className="text-sm font-medium text-ink">Name</label>
-          <input
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="mt-1.5 w-full rounded-none border border-rule bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-medium text-ink">Email</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1.5 w-full rounded-none border border-rule bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-medium text-ink">Password</label>
-          <input
-            type="password"
-            required
-            minLength={8}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1.5 w-full rounded-none border border-rule bg-bg px-3 py-2 text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-          />
-          <p className="mt-1 text-xs text-muted">At least 8 characters.</p>
-        </div>
-        {error && <p className="text-sm text-danger">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-none bg-accent py-2.5 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-60"
-        >
-          {buttonLabel}
-        </button>
-        {isPaid && (
-          <p className="text-center text-xs text-muted">Payments are non-refundable.</p>
+    <div className="flex flex-col">
+      <SignupHeader
+        planId={initialPlan}
+        interval={interval}
+        onInterval={setBilling}
+        loading={loading}
+        canceled={canceled}
+      />
+      <form onSubmit={onSubmit} noValidate className="mt-8 space-y-5">
+        {errors.form && (
+          <AuthNotice tone="error" className="">
+            {errors.form}
+          </AuthNotice>
         )}
+        <TextField
+          id="name"
+          label="Name"
+          autoComplete="name"
+          placeholder="Alex Morgan"
+          maxLength={100}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          error={errors.name}
+          disabled={loading}
+        />
+        <TextField
+          id="email"
+          label="Email"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          placeholder="you@company.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          error={errors.email}
+          disabled={loading}
+        />
+        <PasswordField
+          id="password"
+          label="Password"
+          autoComplete="new-password"
+          placeholder="Create a password"
+          maxLength={PASSWORD_MAX}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          error={errors.password}
+          hint={<PasswordHint password={password} />}
+          disabled={loading}
+        />
+        <PasswordField
+          id="confirm-password"
+          label="Confirm password"
+          autoComplete="new-password"
+          placeholder="Re-enter your password"
+          maxLength={PASSWORD_MAX}
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          error={errors.confirm}
+          disabled={loading}
+        />
+        <SubmitButton loading={loading}>{buttonLabel}</SubmitButton>
+        {isPaid && <p className="text-center text-xs text-muted">Payments are non-refundable.</p>}
       </form>
-      <p className="mt-4 text-center text-sm text-muted">
+      <p className="mt-6 text-sm text-muted">
         Already have an account?{" "}
-        <Link href="/login" className="font-medium text-accent hover:underline">
+        <Link href="/login" className={authLink}>
           Log in
         </Link>
         {isPaid && (
           <>
             {" · "}
-            <Link href="/signup" className="font-medium text-accent hover:underline">
+            <Link href="/signup" className={authLink}>
               Start free instead
             </Link>
           </>

@@ -1,8 +1,12 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import type { PlanId } from "@/lib/plans";
 import { parseInterval } from "@/lib/billing-interval";
+import { AuthShell } from "@/components/auth/AuthShell";
 import { SignupForm } from "./signup-form";
+
+export const metadata: Metadata = { title: "Create your account" };
 
 function parsePlan(raw: string | string[] | undefined): PlanId {
   const v = Array.isArray(raw) ? raw[0] : raw;
@@ -21,10 +25,12 @@ export default async function SignupPage({
   const initialPlan = parsePlan(searchParams.plan);
 
   return (
-    <SignupForm
-      initialPlan={initialPlan}
-      initialInterval={parseInterval(searchParams.interval)}
-      canceled={searchParams.canceled === "1"}
-    />
+    <AuthShell>
+      <SignupForm
+        initialPlan={initialPlan}
+        initialInterval={parseInterval(searchParams.interval)}
+        canceled={searchParams.canceled === "1"}
+      />
+    </AuthShell>
   );
 }
