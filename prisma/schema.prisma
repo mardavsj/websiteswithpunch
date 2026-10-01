@@ -38,6 +38,7 @@ model User {
   accounts                Account[]
   sessions                Session[]
   sites                   Site[]
+  contactMessages         ContactMessage[]
 }
 
 model Account {
@@ -113,4 +114,19 @@ model CheckResult {
   site       Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
 
   @@index([siteId, checkedAt])
+}
+
+/// Contact form submissions (backup copy; the team is also emailed via Resend).
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  topic     String   // general | billing | custom-limits | other
+  message   String
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  emailSent Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }
