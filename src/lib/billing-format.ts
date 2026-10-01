@@ -24,6 +24,16 @@ export function formatMonthlyFromCents(cents: number, currency = "usd"): string 
   return formatMonthlyFromDollars(cents / 100, currency);
 }
 
+/** "$18/month" or "$120/year" depending on the subscription's billing interval. */
+export function formatRecurringFromCents(
+  cents: number,
+  currency = "usd",
+  interval: "month" | "year" = "month",
+): string {
+  const monthly = formatMonthlyFromDollars(cents / 100, currency);
+  return interval === "year" ? monthly.replace(/\/month$/, "/year") : monthly;
+}
+
 /** "Oct 1" or "Oct 1, 2027" if not the current year. */
 export function formatShortDate(isoOrDate: string | Date | null | undefined): string | null {
   if (!isoOrDate) return null;

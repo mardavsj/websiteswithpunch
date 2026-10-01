@@ -7,6 +7,8 @@ import {
   type PlanId,
 } from "./plans";
 import { daysLeftUntil } from "./billing-format";
+import { packPrice, planPrice, type BillingInterval } from "./billing-interval";
+import { intervalOfPrice } from "./stripe-prices";
 
 /** Old separate pack Checkout subscriptions (metadata.type === site_pack). */
 export function isLegacyPackOnlySubscription(
@@ -28,6 +30,11 @@ export function findPackItem(
   subscription: Stripe.Subscription,
 ): Stripe.SubscriptionItem | undefined {
   return subscription.items.data.find((item) => isPackPriceId(item.price?.id));
+}
+
+/** Billing interval of the subscription, read from its plan line item. */
+export function subscriptionInterval(subscription: Stripe.Subscription): BillingInterval {
+  return intervalOfPrice(findPlanItem(subscription)?.price);
 }
 
 /** Derive plan + pack quantity from the main subscription's line items. */
@@ -95,21 +102,18 @@ export function buildRecurringBreakdown(opts: {
   planUnitCents: number | null;
   packUnitCents: number | null;
   currency?: string;
+  interval?: BillingInterval;
 }): string {
   const { plan, packCount } = opts;
   const planName = plan === "business" ? "Business" : plan === "pro" ? "Pro" : "Free";
   const config = getPackConfig(plan);
 
+  const interval = opts.interval ?? "month";
+  const paid = plan === "pro" || plan === "business" ? plan : null;
   const planDollars =
-    opts.planUnitCents != null
-      ? opts.planUnitCents / 100
-      : plan === "pro" || plan === "business"
-        ? PLANS[plan].price
-        : 0;
+    opts.planUnitCents != null ? opts.planUnitCents / 100 : paid ? planPrice(paid, interval) : 0;
   const packUnitDollars =
-    opts.packUnitCents != null
-      ? opts.packUnitCents / 100
-      : config?.pricePerMonth ?? 0;
+    opts.packUnitCents != null ? opts.packUnitCents / 100 : paid ? packPrice(paid, interval) : 0;
 
   const planPart = `$${trimMoney(planDollars)} ${planName}`;
   if (!config || packCount <= 0) return planPart;
@@ -138,19 +142,18 @@ export function monthlyTotalDollars(
   return base + packs * config.pricePerMonth;
 }
 
-/** Prefer Stripe unit amounts; fall back to catalog prices. */
+/** Per-interval total. Prefer Stripe unit amounts; fall back to catalog prices for the interval. */
 export function monthlyTotalCentsFromItems(
   plan: PlanId,
   packCount: number,
   planUnitCents: number | null,
   packUnitCents: number | null,
+  interval: BillingInterval = "month",
 ): number {
   const config = getPackConfig(plan);
-  const planCents =
-    planUnitCents ??
-    (plan === "pro" || plan === "business" ? PLANS[plan].price * 100 : 0);
-  const packUnit =
-    packUnitCents ?? (config ? config.pricePerMonth * 100 : 0);
+  const paid = plan === "pro" || plan === "business" ? plan : null;
+  const planCents = planUnitCents ?? (paid ? planPrice(paid, interval) * 100 : 0);
+  const packUnit = packUnitCents ?? (paid ? packPrice(paid, interval) * 100 : 0);
   const packs = config ? Math.max(0, Math.min(packCount, config.maxPacks)) : 0;
   return planCents + packs * packUnit;
 }
