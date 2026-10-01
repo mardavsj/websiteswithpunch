@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SITE_PACKS, canBuySitePack, type PlanId } from "@/lib/plans";
@@ -58,11 +59,16 @@ export function DashboardPackCta({
 
   if (!canBuy) {
     return (
-      <span
-        title="Contact hello@websiteswithpunch.com for custom limits."
-        className="rounded-none border border-rule bg-accent-soft px-4 py-2 text-sm text-muted"
-      >
-        Max packs reached
+      <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-2">
+        <span className="rounded-none border border-rule bg-accent-soft px-4 py-2 text-sm text-muted">
+          Max packs reached
+        </span>
+        <Link
+          href="/contact?topic=custom-limits"
+          className="text-sm text-muted underline-offset-2 hover:text-ink hover:underline"
+        >
+          Ask for a custom limit
+        </Link>
       </span>
     );
   }

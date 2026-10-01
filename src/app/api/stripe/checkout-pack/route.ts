@@ -156,7 +156,7 @@ export async function POST() {
       const hint =
         packPlan === "pro"
           ? `You've reached the max Pro packs (${maxSites} sites). Upgrade to Business for more capacity.`
-          : `You've reached the max Business packs (${maxSites} sites). Contact hello@websiteswithpunch.com for custom limits.`;
+          : `You've reached the max Business packs (${maxSites} sites). Contact us from the Contact page for a custom limit.`;
       return NextResponse.json(
         { error: hint, code: "PACK_LIMIT", maxPacks: config.maxPacks },
         { status: 403 },

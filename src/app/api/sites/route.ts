@@ -75,9 +75,9 @@ export async function POST(req: Request) {
       }
     } else {
       if (canBuySitePack("business", resolved.packCount)) {
-        upgradeHint = `Business site limit reached (${limit}). Buy a +${SITE_PACKS.business.sitesPerPack} site pack ($${SITE_PACKS.business.pricePerMonth}/mo) or contact hello@websiteswithpunch.com.`;
+        upgradeHint = `Business site limit reached (${limit}). Buy a +${SITE_PACKS.business.sitesPerPack} site pack ($${SITE_PACKS.business.pricePerMonth}/mo) or contact us from the Contact page for a custom limit.`;
       } else {
-        upgradeHint = `Business max capacity reached (${limit} sites). Contact hello@websiteswithpunch.com for a custom limit.`;
+        upgradeHint = `Business max capacity reached (${limit} sites). Contact us from the Contact page for a custom limit.`;
       }
     }
     return NextResponse.json(

@@ -1,7 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { PLANS, SITE_PACKS } from "@/lib/plans";
 import { packPrice, type BillingInterval } from "@/lib/billing-interval";
+
+function CustomLimitLink() {
+  return (
+    <Link href="/contact?topic=custom-limits" className="font-medium underline underline-offset-2">
+      Ask us for a custom limit
+    </Link>
+  );
+}
 
 type Props = {
   plan: "pro" | "business";
@@ -39,7 +48,7 @@ export function LimitBanners({
             ? `Add a +${pack.sitesPerPack} site pack for ${packCost} when you need more.`
             : plan === "pro"
               ? "Upgrade to Business for more capacity."
-              : "Contact hello@websiteswithpunch.com for custom limits."}
+              : <>Need more? <CustomLimitLink /></>}
         </div>
       )}
       {atLimit && (
@@ -50,7 +59,7 @@ export function LimitBanners({
               ? `Add a +${pack.sitesPerPack} site pack (${packCost}) to your subscription.`
               : plan === "pro"
                 ? "You've used all Pro packs (30 sites). Upgrade to Business for up to 50 sites plus packs."
-                : "You've used all Business packs (100 sites). Contact hello@websiteswithpunch.com for a custom limit."}
+                : <>You&apos;ve used all Business packs (100 sites). <CustomLimitLink /></>}
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {canBuy && (
