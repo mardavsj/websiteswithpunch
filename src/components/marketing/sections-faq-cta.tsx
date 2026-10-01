@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { faqs } from "./home-content";
 
 export function FaqSection() {
@@ -24,24 +23,4 @@ export function FaqSection() {
   );
 }
 
-export function FinalCtaSection() {
-  return (
-    <section className="bg-solid text-solid-fg">
-      <div className="mx-auto max-w-6xl px-4 py-24 text-center sm:px-6 sm:py-28">
-        <h2 className="font-display text-4xl font-medium tracking-tight sm:text-5xl lg:text-6xl">
-          Ready to punch downtime?
-        </h2>
-        <p className="mx-auto mt-5 max-w-xl text-base text-solid-fg/70 sm:text-lg">
-          Create a free account, add your first URL, and see status, SSL days, and domain days in
-          one dashboard.
-        </p>
-        <Link
-          href="/signup"
-          className="mt-10 inline-flex bg-accent px-8 py-3.5 text-sm font-semibold text-white hover:bg-accent-hover"
-        >
-          Create free account
-        </Link>
-      </div>
-    </section>
-  );
-}
+export { FinalCtaSection } from "./FinalCtaSection";
