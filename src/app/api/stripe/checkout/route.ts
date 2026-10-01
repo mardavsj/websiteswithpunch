@@ -1,25 +1,22 @@
 import { NextResponse } from "next/server";
-import type Stripe from "stripe";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import {
-  getEffectivePlan,
-  stripePriceIdForPlan,
-} from "@/lib/plans";
+import { getEffectivePlan } from "@/lib/plans";
+import { parseInterval, type BillingInterval } from "@/lib/billing-interval";
+import { missingPriceMessage, stripePriceIdForPlan } from "@/lib/stripe-prices";
+import { planChangeItems } from "@/lib/plan-change";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import {
   derivePlanAndPacks,
-  findPackItem,
-  findPlanItem,
   hostedInvoiceUrlFromSubscription,
   subscriptionNeedsPaymentAction,
 } from "@/lib/stripe-subscription";
 import { enforceSiteLimit } from "@/lib/site-limits";
 
 /**
- * First-time purchase → Stripe Checkout Session.
- * Existing subscriber upgrading (e.g. Pro → Business) → update subscription in place
- * (swap plan price, remove pack line items, set sitePackCount to 0).
+ * First-time purchase → Stripe Checkout Session at the chosen interval (monthly / annual).
+ * Existing subscriber upgrading (Pro → Business, or monthly → annual) → update in place via
+ * planChangeItems (plan change drops packs; interval switch moves packs to the matching price).
  */
 export async function POST(req: Request) {
   const session = await getSession();
@@ -43,26 +40,15 @@ export async function POST(req: Request) {
   }
 
   let planId: "pro" | "business" = "pro";
+  let interval: BillingInterval = "month";
   try {
     const body = await req.json();
     if (body?.planId === "business" || body?.planId === "pro") {
       planId = body.planId;
     }
+    interval = parseInterval(body?.interval);
   } catch {
-    // empty body → default Pro
-  }
-
-  const priceId = stripePriceIdForPlan(planId);
-  if (!priceId) {
-    return NextResponse.json(
-      {
-        error:
-          planId === "business"
-            ? "Business price is not configured. Set STRIPE_PRICE_ID_BUSINESS."
-            : "Pro price is not configured. Set STRIPE_PRICE_ID_PRO or STRIPE_PRICE_ID.",
-      },
-      { status: 503 },
-    );
+    // empty body → default Pro monthly
   }
 
   const user = await prisma.user.findUnique({
@@ -78,45 +64,20 @@ export async function POST(req: Request) {
 
   // In-place plan change for existing subscribers (avoids a second subscription)
   if (hasActiveSub && user.stripeSubscriptionId) {
-    if (currentPlan === planId) {
-      return NextResponse.json(
-        { error: `You are already on the ${planId === "pro" ? "Pro" : "Business"} plan.` },
-        { status: 400 },
-      );
-    }
-
-    // Downgrades (Business → Pro) use /api/stripe/downgrade (period-end, keep picker).
-    if (currentPlan === "business" && planId === "pro") {
-      return NextResponse.json(
-        {
-          error: "To switch to Pro, use Downgrade in Your plan (takes effect at renewal).",
-          code: "USE_DOWNGRADE",
-        },
-        { status: 400 },
-      );
-    }
-
     try {
       const subscription = await stripe.subscriptions.retrieve(
         user.stripeSubscriptionId,
         { expand: ["latest_invoice.payment_intent"] },
       );
 
-      const planItem = findPlanItem(subscription);
-      const packItem = findPackItem(subscription);
-      const items: Stripe.SubscriptionUpdateParams.Item[] = [];
-
-      if (planItem) {
-        items.push({ id: planItem.id, price: priceId });
-      } else {
-        items.push({ price: priceId, quantity: 1 });
+      const change = planChangeItems(subscription, currentPlan, planId, interval);
+      if (!change.ok) {
+        return NextResponse.json(
+          { error: change.error, code: change.code },
+          { status: change.status },
+        );
       }
-
-      // Always drop pack items when switching plans (Business includes 50 sites;
-      // Pro packs are a different price ID and must not carry over).
-      if (packItem) {
-        items.push({ id: packItem.id, deleted: true });
-      }
+      const { items, samePlan } = change;
 
       const updated = await stripe.subscriptions.update(subscription.id, {
         items,
@@ -127,6 +88,7 @@ export async function POST(req: Request) {
           ...subscription.metadata,
           userId: user.id,
           planId,
+          interval,
         },
         expand: ["latest_invoice.payment_intent"],
       });
@@ -151,14 +113,14 @@ export async function POST(req: Request) {
       }
 
       const derived = derivePlanAndPacks(updated);
-      // Prefer requested planId; packs cleared on plan switch
+      // Prefer requested planId; packs cleared on plan switch, kept on an interval switch
       await prisma.user.update({
         where: { id: user.id },
         data: {
           plan: planId,
-          sitePackCount: 0,
-          pendingSitePackCount: null,
-          pendingPackChangeAt: null,
+          ...(samePlan
+            ? {}
+            : { sitePackCount: 0, pendingSitePackCount: null, pendingPackChangeAt: null }),
           pendingPlan: null,
           pendingPlanAt: null,
           cancelAtPeriodEnd: false,
@@ -176,6 +138,7 @@ export async function POST(req: Request) {
       return NextResponse.json({
         ok: true,
         plan: planId,
+        interval,
         sitePackCount: derived.sitePackCount,
       });
     } catch (err) {
@@ -192,6 +155,14 @@ export async function POST(req: Request) {
   }
 
   // First-time / no active subscription → Checkout Session
+  const priceId = stripePriceIdForPlan(planId, interval);
+  if (!priceId) {
+    return NextResponse.json(
+      { error: missingPriceMessage("plan", planId, interval), code: "PRICE_MISSING" },
+      { status: 503 },
+    );
+  }
+
   let customerId = user.stripeCustomerId;
   if (!customerId) {
     const customer = await stripe.customers.create({
@@ -213,8 +184,8 @@ export async function POST(req: Request) {
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${baseUrl}/dashboard?upgraded=1`,
     cancel_url: `${baseUrl}/dashboard?canceled=1`,
-    metadata: { userId: user.id, planId },
-    subscription_data: { metadata: { userId: user.id, planId } },
+    metadata: { userId: user.id, planId, interval },
+    subscription_data: { metadata: { userId: user.id, planId, interval } },
   });
 
   return NextResponse.json({ url: checkout.url });

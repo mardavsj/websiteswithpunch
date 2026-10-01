@@ -1,29 +1,26 @@
 import { NextResponse } from "next/server";
-import type Stripe from "stripe";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getEffectivePlan, PLANS } from "@/lib/plans";
 import {
-  getEffectivePlan,
-  PLANS,
-  stripePriceIdForPlan,
-} from "@/lib/plans";
+  packPrice,
+  parseInterval,
+  planPrice,
+  type BillingInterval,
+} from "@/lib/billing-interval";
+import { planChangeItems, renewalAfterChange } from "@/lib/plan-change";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
-import {
-  daysLeftInBillingPeriod,
-  findPackItem,
-  findPlanItem,
-  subscriptionPeriodEnd,
-} from "@/lib/stripe-subscription";
+import { daysLeftInBillingPeriod, subscriptionPeriodEnd } from "@/lib/stripe-subscription";
 import {
   formatChargeToday,
-  formatMonthlyFromCents,
+  formatRecurringFromCents,
   formatShortDate,
 } from "@/lib/billing-format";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** Preview in-place plan change (e.g. Pro → Business). */
+/** Preview in-place plan change (Pro → Business, or monthly → annual) at ?interval=. */
 export async function GET(req: Request) {
   return previewPlan(req);
 }
@@ -48,21 +45,20 @@ async function previewPlan(req: Request) {
   }
 
   let targetPlan: "pro" | "business" = "business";
+  let interval: BillingInterval = "month";
   try {
     if (req.method === "GET") {
-      const t = new URL(req.url).searchParams.get("planId");
+      const params = new URL(req.url).searchParams;
+      const t = params.get("planId");
       if (t === "pro" || t === "business") targetPlan = t;
+      interval = parseInterval(params.get("interval"));
     } else {
       const body = await req.json();
       if (body?.planId === "pro" || body?.planId === "business") targetPlan = body.planId;
+      interval = parseInterval(body?.interval);
     }
   } catch {
-    // default business
-  }
-
-  const priceId = stripePriceIdForPlan(targetPlan);
-  if (!priceId) {
-    return NextResponse.json({ error: "Plan price is not configured." }, { status: 503 });
+    // default business monthly
   }
 
   const user = await prisma.user.findUnique({ where: { id: session.user.id } });
@@ -79,27 +75,11 @@ async function previewPlan(req: Request) {
     );
   }
 
-  if (currentPlan === targetPlan) {
-    return NextResponse.json({ error: "You are already on this plan." }, { status: 400 });
-  }
-
   try {
     const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
-    const planItem = findPlanItem(subscription);
-    const packItem = findPackItem(subscription);
-    const hadPacks =
-      (user.sitePackCount ?? 0) > 0 ||
-      (packItem?.quantity ?? 0) > 0 ||
-      (user.pendingSitePackCount != null && user.pendingSitePackCount >= 0);
-
-    const items: Stripe.InvoiceCreatePreviewParams.SubscriptionDetails.Item[] = [];
-    if (planItem) {
-      items.push({ id: planItem.id, price: priceId });
-    } else {
-      items.push({ price: priceId, quantity: 1 });
-    }
-    if (packItem) {
-      items.push({ id: packItem.id, deleted: true });
+    const change = planChangeItems(subscription, currentPlan, targetPlan, interval);
+    if (!change.ok) {
+      return NextResponse.json({ error: change.error, code: change.code }, { status: change.status });
     }
 
     const preview = await stripe.invoices.createPreview({
@@ -109,33 +89,40 @@ async function previewPlan(req: Request) {
           : subscription.customer.id,
       subscription: subscription.id,
       subscription_details: {
-        items,
+        items: change.items,
         proration_behavior: "create_prorations",
       },
     });
 
     const amountDueToday = preview.amount_due ?? 0;
     const currency = preview.currency || subscription.currency || "usd";
-    const periodEndSec = subscriptionPeriodEnd(subscription);
-    const nextRenewalIso = periodEndSec
-      ? new Date(periodEndSec * 1000).toISOString()
-      : null;
-    const targetPrice = PLANS[targetPlan].price * 100;
-    const newMonthlyCents = targetPrice;
+    const renewal = renewalAfterChange(
+      subscriptionPeriodEnd(subscription),
+      change.intervalChanges,
+      interval,
+    );
+    const nextRenewalIso = renewal ? renewal.toISOString() : null;
+    const newRecurringCents =
+      (planPrice(targetPlan, interval) + change.keptPacks * packPrice(targetPlan, interval)) * 100;
 
     return NextResponse.json({
       currentPlan,
       currentPlanName: currentPlan === "free" ? "Free" : PLANS[currentPlan].name,
+      currentInterval: change.currentInterval,
       targetPlan,
       targetPlanName: PLANS[targetPlan].name,
-      hadPacks: Boolean(hadPacks && (user.sitePackCount ?? 0) > 0),
+      interval,
+      samePlan: change.samePlan,
+      intervalChanges: change.intervalChanges,
+      keptPacks: change.keptPacks,
+      hadPacks: change.droppedPacks,
       amountDueToday,
       amountDueTodayFormatted: formatChargeToday(amountDueToday, currency),
       daysLeftInPeriod: daysLeftInBillingPeriod(subscription),
       nextRenewal: nextRenewalIso,
       nextRenewalFormatted: formatShortDate(nextRenewalIso),
-      newRecurringMonthlyCents: newMonthlyCents,
-      newRecurringMonthlyFormatted: formatMonthlyFromCents(newMonthlyCents, currency),
+      newRecurringMonthlyCents: newRecurringCents,
+      newRecurringMonthlyFormatted: formatRecurringFromCents(newRecurringCents, currency, interval),
       currency,
     });
   } catch (err) {

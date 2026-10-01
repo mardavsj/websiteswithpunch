@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { stripePriceIdForPlan } from "@/lib/plans";
+import { missingPriceMessage, stripePriceIdForPlan } from "@/lib/stripe-prices";
+import { intervalParam, parseInterval } from "@/lib/billing-interval";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 
 const schema = z.object({
@@ -10,6 +11,8 @@ const schema = z.object({
   email: z.string().email(),
   password: z.string().min(8).max(100),
   planId: z.enum(["pro", "business"]),
+  /** "monthly" (default) or "annual"; also accepts "month" / "year". */
+  interval: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -41,15 +44,11 @@ export async function POST(req: Request) {
     const { name, planId } = parsed.data;
     const email = parsed.data.email.toLowerCase().trim();
 
-    const priceId = stripePriceIdForPlan(planId);
+    const interval = parseInterval(parsed.data.interval);
+    const priceId = stripePriceIdForPlan(planId, interval);
     if (!priceId) {
       return NextResponse.json(
-        {
-          error:
-            planId === "business"
-              ? "Business price is not configured. Set STRIPE_PRICE_ID_BUSINESS."
-              : "Pro price is not configured. Set STRIPE_PRICE_ID_PRO or STRIPE_PRICE_ID.",
-        },
+        { error: missingPriceMessage("plan", planId, interval), code: "PRICE_MISSING" },
         { status: 503 },
       );
     }
@@ -70,17 +69,19 @@ export async function POST(req: Request) {
       customer_email: email,
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${baseUrl}/api/stripe/complete-signup?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/signup?plan=${planId}&canceled=1`,
+      cancel_url: `${baseUrl}/signup?plan=${planId}&interval=${intervalParam(interval)}&canceled=1`,
       metadata: {
         signup: "1",
         email,
         name: name.trim(),
         passwordHash,
         planId,
+        interval,
       },
       subscription_data: {
         metadata: {
           planId,
+          interval,
           email,
         },
       },
