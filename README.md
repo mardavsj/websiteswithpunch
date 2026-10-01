@@ -18,7 +18,7 @@
 ## Stack
 
 - Next.js 14 (App Router) + TypeScript + Tailwind CSS
-- Prisma + SQLite (easy local demo)
+- Prisma + PostgreSQL (e.g. [Neon](https://neon.tech))
 - NextAuth.js (credentials)
 - Stripe (optional locally)
 
@@ -27,11 +27,15 @@
 ```bash
 git clone https://github.com/mardavsj/websiteswithpunch.git
 cd websiteswithpunch
-cp .env.example .env
+cp .env.example .env   # then set DATABASE_URL to your Postgres / Neon connection string
 npm install
 npm run db:setup    # prisma db push + seed demo user
 npm run dev
 ```
+
+You need a PostgreSQL database. A free [Neon](https://neon.tech) project works: copy its
+connection string (Connect → keep `?sslmode=require`) into `DATABASE_URL`. A local Postgres
+works too, e.g. `postgresql://postgres:postgres@localhost:5432/wwp`.
 
 Open [http://localhost:3000](http://localhost:3000).
 
@@ -48,7 +52,7 @@ Log in → Dashboard → **Recheck** on Example.com to populate uptime/SSL/domai
 
 See `.env.example`. Required for local demo:
 
-- `DATABASE_URL`
+- `DATABASE_URL` (PostgreSQL connection string)
 - `NEXTAUTH_SECRET`
 - `NEXTAUTH_URL`
 - `CRON_SECRET`
@@ -62,7 +66,7 @@ Stripe vars are optional. Without them, the Upgrade CTA still appears; checkout/
 | `npm run dev` | Dev server |
 | `npm run build` | Generate Prisma client + production build |
 | `npm run start` | Start production server |
-| `npm run db:push` | Push Prisma schema to SQLite |
+| `npm run db:push` | Create/update tables in the Postgres database (`prisma db push`) |
 | `npm run db:seed` | Seed demo user + sample site |
 | `npm run db:setup` | Push + seed |
 
@@ -120,7 +124,7 @@ Without Stripe keys the product still demos fully for Free-plan monitoring.
 ## Deploy notes (websiteswithpunch.com)
 
 1. Host on Vercel (or similar) with Node runtime.
-2. Set all env vars; use a durable database in production (swap Prisma datasource to Postgres when you leave the demo SQLite file).
+2. Set all env vars, including `DATABASE_URL` for your production Postgres (Neon), then run `npx prisma db push` once against it (and again after schema changes).
 3. Set `NEXTAUTH_URL=https://websiteswithpunch.com`.
 4. Point Stripe webhook to `https://websiteswithpunch.com/api/stripe/webhook`.
 5. Schedule cron against `/api/cron/check` with `CRON_SECRET`.
