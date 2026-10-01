@@ -1,13 +1,14 @@
 "use client";
 
-import { PLANS } from "@/lib/plans";
-import { SITE_PACKS } from "@/lib/plans";
+import { PLANS, SITE_PACKS } from "@/lib/plans";
+import { packPrice, type BillingInterval } from "@/lib/billing-interval";
 
 type Props = {
   plan: "pro" | "business";
   atLimit: boolean;
   remaining: number;
   canBuy: boolean;
+  interval?: BillingInterval;
   loading: boolean;
   message: string | null;
   onAdd: () => void;
@@ -19,6 +20,7 @@ export function LimitBanners({
   atLimit,
   remaining,
   canBuy,
+  interval = "month",
   loading,
   message,
   onAdd,
@@ -26,13 +28,15 @@ export function LimitBanners({
 }: Props) {
   const pack = SITE_PACKS[plan];
   const showSoft = !atLimit && remaining <= 2;
+  // Pack price on the subscription's interval: "$6/mo" or "$60/yr".
+  const packCost = `$${packPrice(plan, interval)}/${interval === "year" ? "yr" : "mo"}`;
   return (
     <>
       {showSoft && (
         <div className="mt-3 rounded-none border border-amber-200 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
           Only {remaining} site slot{remaining === 1 ? "" : "s"} left on {PLANS[plan].name}.{" "}
           {canBuy
-            ? `Add a +${pack.sitesPerPack} site pack for $${pack.pricePerMonth}/mo when you need more.`
+            ? `Add a +${pack.sitesPerPack} site pack for ${packCost} when you need more.`
             : plan === "pro"
               ? "Upgrade to Business for more capacity."
               : "Contact hello@websiteswithpunch.com for custom limits."}
@@ -43,7 +47,7 @@ export function LimitBanners({
           <p className="text-sm font-medium text-ink">Site limit reached ({PLANS[plan].name})</p>
           <p className="mt-1 text-sm text-muted">
             {canBuy
-              ? `Add a +${pack.sitesPerPack} site pack ($${pack.pricePerMonth}/mo) to your subscription.`
+              ? `Add a +${pack.sitesPerPack} site pack (${packCost}) to your subscription.`
               : plan === "pro"
                 ? "You've used all Pro packs (30 sites). Upgrade to Business for up to 50 sites plus packs."
                 : "You've used all Business packs (100 sites). Contact hello@websiteswithpunch.com for a custom limit."}
@@ -56,7 +60,7 @@ export function LimitBanners({
                 disabled={loading}
                 className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-60"
               >
-                Buy +{pack.sitesPerPack} sites — ${pack.pricePerMonth}/mo
+                Buy +{pack.sitesPerPack} sites — {packCost}
               </button>
             )}
             {plan === "pro" && (
@@ -66,7 +70,7 @@ export function LimitBanners({
                 disabled={loading}
                 className="rounded-none border border-rule bg-surface px-4 py-2 text-sm font-medium text-ink hover:bg-surface disabled:opacity-60"
               >
-                Upgrade to Business — ${PLANS.business.price}/mo
+                Upgrade to Business
               </button>
             )}
           </div>

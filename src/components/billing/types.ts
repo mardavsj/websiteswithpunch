@@ -1,9 +1,13 @@
 import type { PlanId } from "@/lib/plans";
 import type { KeepSiteOption } from "@/components/KeepSitesPicker";
+import type { BillingInterval } from "@/lib/billing-interval";
 
 export type BillingSummary = {
   plan: PlanId;
   planName: string;
+  /** null on Free. */
+  interval?: BillingInterval | null;
+  intervalLabel?: string | null;
   sitePackCount: number;
   siteLimit: number;
   monthlyTotalFormatted: string;
@@ -32,4 +36,25 @@ export type SiteCapacityProps = {
   cancelAtPeriodEnd?: boolean;
   pendingPlan?: string | null;
   pendingPlanAt?: string | null;
+};
+
+/** /api/stripe/preview-pack response. Amounts follow the subscription's interval. */
+export type PackPreview = {
+  interval?: BillingInterval;
+  action?: "add" | "remove";
+  isUndo?: boolean;
+  sitesPerPack: number;
+  plan: PlanId;
+  planName: string;
+  siteCount?: number;
+  amountDueToday: number;
+  amountDueTodayFormatted: string;
+  daysLeftInPeriod: number | null;
+  nextRenewal: string | null;
+  nextRenewalFormatted: string | null;
+  newRecurringMonthlyFormatted: string;
+  recurringBreakdown: string;
+  keepSiteLimitUntilRenewal?: number;
+  newSiteLimitFromRenewal?: number;
+  newSiteLimit?: number;
 };

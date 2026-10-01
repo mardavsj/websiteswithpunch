@@ -11,6 +11,7 @@ import {
 } from "@/components/PackBillingModals";
 import { KeepSitesPicker, type KeepSiteOption } from "@/components/KeepSitesPicker";
 import { LimitBanners } from "@/components/billing/LimitBanners";
+import { intervalParam, type BillingInterval } from "@/lib/billing-interval";
 
 type Props = {
   plan: "pro" | "business";
@@ -21,6 +22,8 @@ type Props = {
   atLimit: boolean;
   remaining: number;
   keepOptions: KeepSiteOption[];
+  /** Subscription interval from billing-summary; packs and prices follow it. */
+  interval?: BillingInterval;
   onRefresh: () => Promise<void>;
 };
 
@@ -33,6 +36,7 @@ export function PackActions({
   atLimit,
   remaining,
   keepOptions,
+  interval = "month",
   onRefresh,
 }: Props) {
   const router = useRouter();
@@ -117,7 +121,7 @@ export function PackActions({
       }
       setModal(null);
       toast(
-        "Removal scheduled. You keep your sites until the end of the month you've paid for.",
+        `Removal scheduled. You keep your sites until the end of the ${interval === "year" ? "year" : "month"} you've paid for.`,
         "success",
       );
       await onRefresh();
@@ -129,14 +133,14 @@ export function PackActions({
     }
   }
 
-  async function confirmUpgrade() {
+  async function confirmUpgrade(nextInterval: BillingInterval) {
     setLoading("business");
     setMessage(null);
     try {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId: "business" }),
+        body: JSON.stringify({ planId: "business", interval: intervalParam(nextInterval) }),
       });
       const data = await res.json();
       if (data.hostedInvoiceUrl || data.requiresAction) {
@@ -155,9 +159,8 @@ export function PackActions({
         return;
       }
       setMessage(data.error || "Checkout unavailable.");
-      toast(data.error || "Checkout unavailable.", "error");
     } catch {
-      toast("Upgrade failed.", "error");
+      setMessage("Upgrade failed. Try again in a moment.");
     } finally {
       setLoading(null);
     }
@@ -193,6 +196,7 @@ export function PackActions({
         atLimit={atLimit}
         remaining={remaining}
         canBuy={canBuy}
+        interval={interval}
         loading={loading !== null}
         message={message}
         onAdd={() => setModal("add")}
@@ -219,6 +223,7 @@ export function PackActions({
         open={modal === "upgrade"}
         loading={loading === "business"}
         message={message}
+        currentInterval={interval}
         onClose={() => setModal(null)}
         onConfirm={confirmUpgrade}
       />
