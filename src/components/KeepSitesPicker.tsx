@@ -20,6 +20,8 @@ type Props = {
   onClose: () => void;
   onConfirm: (siteIds: string[]) => void;
   confirmDetail?: (selected: KeepSiteOption[], locked: KeepSiteOption[]) => ReactNode;
+  /** Go straight to the confirm step when every site fits (nothing to choose). */
+  skipPickWhenAll?: boolean;
 };
 
 export function KeepSitesPicker({
@@ -33,18 +35,20 @@ export function KeepSitesPicker({
   onClose,
   onConfirm,
   confirmDetail,
+  skipPickWhenAll = false,
 }: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [step, setStep] = useState<"pick" | "confirm">("pick");
+  const skipPick = skipPickWhenAll && Boolean(confirmDetail) && sites.length <= maxKeep;
 
   useEffect(() => {
     if (!open) return;
-    setStep("pick");
+    setStep(skipPick ? "confirm" : "pick");
     const init = initialSelected?.length
       ? initialSelected.slice(0, maxKeep)
       : sites.slice(0, maxKeep).map((s) => s.id);
     setSelected(new Set(init));
-  }, [open, maxKeep, sites, initialSelected]);
+  }, [open, maxKeep, sites, initialSelected, skipPick]);
 
   useEffect(() => {
     if (!open) return;
@@ -157,7 +161,7 @@ export function KeepSitesPicker({
           </>
         ) : (
           <>
-            <h2 className="font-display text-xl font-medium text-ink">Confirm</h2>
+            <h2 className="font-display text-xl font-medium text-ink">{skipPick ? title : "Confirm"}</h2>
             <div className="mt-3 text-sm leading-relaxed text-muted">
               {confirmDetail?.(selectedSites, lockedSites)}
             </div>
@@ -173,10 +177,10 @@ export function KeepSitesPicker({
               <button
                 type="button"
                 disabled={loading}
-                onClick={() => setStep("pick")}
+                onClick={() => (skipPick ? onClose() : setStep("pick"))}
                 className="rounded-none border border-rule px-4 py-2 text-sm text-ink hover:bg-accent-soft"
               >
-                Back
+                {skipPick ? "Keep my plan" : "Back"}
               </button>
             </div>
           </>

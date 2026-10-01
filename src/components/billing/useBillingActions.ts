@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { PLANS, type PlanId } from "@/lib/plans";
 import { useToast } from "@/components/Toast";
+import { BILLING_CHANGED } from "@/components/billing/useBillingSummary";
 
 type ToastFn = ReturnType<typeof useToast>["toast"];
 
@@ -16,6 +17,7 @@ export function useBillingActions(opts: {
 
   async function afterOk() {
     await loadSummary();
+    window.dispatchEvent(new Event(BILLING_CHANGED));
     router.refresh();
   }
 
@@ -62,7 +64,7 @@ export function useBillingActions(opts: {
       return false;
     }
     toast(
-      `Nothing is charged or refunded today. You keep Business until ${data.pendingPlanAtFormatted || "renewal"}. From then you'll pay ${data.newRecurringFormatted || "the Pro price"}.`,
+      `Nothing is charged today. You keep Business until ${data.pendingPlanAtFormatted || "renewal"}. From then you'll pay ${data.newRecurringFormatted || "the Pro price"}.`,
       "success",
     );
     await afterOk();
@@ -122,6 +124,35 @@ export function useBillingActions(opts: {
     }
   }
 
+  /** Annual → monthly at renewal (subscription schedule). Returns an error message or null. */
+  async function scheduleMonthly(): Promise<string | null> {
+    try {
+      const res = await fetch("/api/stripe/switch-interval", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) return data.error || "Could not schedule the switch to monthly.";
+      toast(
+        `Switch scheduled. You keep annual billing until ${data.switchAtFormatted || "your renewal date"}, then pay monthly.`,
+        "success",
+      );
+      await afterOk();
+      return null;
+    } catch {
+      return "Could not schedule the switch to monthly.";
+    }
+  }
+
+  async function cancelMonthlySwitch() {
+    const res = await fetch("/api/stripe/switch-interval", { method: "DELETE" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast(data.error || "Could not cancel the switch.", "error");
+      return false;
+    }
+    toast("Switch canceled. You stay on annual billing.", "success");
+    await afterOk();
+    return true;
+  }
+
   async function undoPendingRemoval() {
     const res = await fetch("/api/stripe/checkout-pack", { method: "POST" });
     const data = await res.json();
@@ -141,6 +172,8 @@ export function useBillingActions(opts: {
     previewNeedsKeepPicker,
     confirmPendingKeep,
     switchToAnnual,
+    scheduleMonthly,
+    cancelMonthlySwitch,
     undoPendingRemoval,
   };
 }
