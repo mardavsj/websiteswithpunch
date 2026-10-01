@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import type { PlanId } from "@/lib/plans";
+import { parseInterval } from "@/lib/billing-interval";
 import { SignupForm } from "./signup-form";
 
 function parsePlan(raw: string | string[] | undefined): PlanId {
@@ -12,7 +13,7 @@ function parsePlan(raw: string | string[] | undefined): PlanId {
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: { plan?: string; canceled?: string };
+  searchParams: { plan?: string; interval?: string; canceled?: string };
 }) {
   const session = await getSession();
   if (session?.user) redirect("/dashboard");
@@ -22,6 +23,7 @@ export default async function SignupPage({
   return (
     <SignupForm
       initialPlan={initialPlan}
+      initialInterval={parseInterval(searchParams.interval)}
       canceled={searchParams.canceled === "1"}
     />
   );

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { UpgradePlanModal } from "@/components/UpgradePlanModal";
+import { UpgradeModals } from "@/components/UpgradeModals";
 import { usePlanUpgrade } from "@/components/usePlanUpgrade";
 
 const itemClass =
@@ -16,15 +16,8 @@ export function ProfileMenu() {
   const [open, setOpen] = useState(false);
   const [hasBilling, setHasBilling] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-  const {
-    plan,
-    loading,
-    message,
-    upgradeOpen,
-    setUpgradeOpen,
-    checkout,
-    showUpgrades,
-  } = usePlanUpgrade();
+  const upgrade = usePlanUpgrade();
+  const { plan, loading, setUpgradeOpen, startCheckout, showUpgrades } = upgrade;
 
   useEffect(() => {
     if (!session?.user) return;
@@ -102,11 +95,11 @@ export function ProfileMenu() {
                     disabled={loading !== null}
                     onClick={() => {
                       setOpen(false);
-                      void checkout("pro");
+                      startCheckout("pro");
                     }}
                     className={`${accentItemClass} disabled:opacity-60`}
                   >
-                    {loading === "pro" ? "…" : "Upgrade to Pro"}
+                    Upgrade to Pro
                   </button>
                   <button
                     role="menuitem"
@@ -114,11 +107,11 @@ export function ProfileMenu() {
                     disabled={loading !== null}
                     onClick={() => {
                       setOpen(false);
-                      void checkout("business");
+                      startCheckout("business");
                     }}
                     className={`${accentItemClass} disabled:opacity-60`}
                   >
-                    {loading === "business" ? "…" : "Upgrade to Business"}
+                    Upgrade to Business
                   </button>
                 </>
               )}
@@ -173,15 +166,7 @@ export function ProfileMenu() {
           </button>
         </div>
       )}
-      {plan === "pro" && (
-        <UpgradePlanModal
-          open={upgradeOpen}
-          loading={loading === "business"}
-          message={message}
-          onClose={() => setUpgradeOpen(false)}
-          onConfirm={() => checkout("business")}
-        />
-      )}
+      {showUpgrades && <UpgradeModals upgrade={upgrade} />}
     </div>
   );
 }

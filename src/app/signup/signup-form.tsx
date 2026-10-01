@@ -6,12 +6,21 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import type { PlanId } from "@/lib/plans";
 import { PLANS } from "@/lib/plans";
+import {
+  formatPlanPrice,
+  intervalParam,
+  perMonthPrice,
+  type BillingInterval,
+} from "@/lib/billing-interval";
+import { BillingIntervalToggle } from "@/components/BillingIntervalToggle";
 
 export function SignupForm({
   initialPlan = "free",
+  initialInterval = "month",
   canceled = false,
 }: {
   initialPlan?: PlanId;
+  initialInterval?: BillingInterval;
   canceled?: boolean;
 }) {
   const router = useRouter();
@@ -20,6 +29,7 @@ export function SignupForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [interval, setBilling] = useState<BillingInterval>(initialInterval);
 
   const isPaid = initialPlan === "pro" || initialPlan === "business";
   const plan = PLANS[initialPlan];
@@ -38,6 +48,7 @@ export function SignupForm({
             email,
             password,
             planId: initialPlan,
+            interval: intervalParam(interval),
           }),
         });
         const data = await res.json();
@@ -85,24 +96,36 @@ export function SignupForm({
   }
 
   const title = isPaid ? `Start ${plan.name}` : "Create your account";
+  const paidId = initialPlan === "business" ? "business" : "pro";
+  const priceLabel = formatPlanPrice(paidId, interval);
   const subtitle = isPaid
-    ? `You'll pay $${plan.price}/mo for up to ${plan.siteLimit} sites. Account is created after payment succeeds.`
+    ? interval === "year"
+      ? `You'll pay ${priceLabel} ($${perMonthPrice(paidId, "year")}/mo, 2 months free) for up to ${plan.siteLimit} sites. Account is created after payment succeeds.`
+      : `You'll pay ${priceLabel} for up to ${plan.siteLimit} sites. Account is created after payment succeeds.`
     : "Free plan includes 1 monitored site. Upgrade anytime for more sites.";
   const buttonLabel = loading
     ? isPaid
       ? "Redirecting to payment…"
       : "Creating…"
     : isPaid
-      ? `Continue to payment — $${plan.price}/mo`
+      ? `Continue to payment — ${priceLabel}`
       : "Sign up free";
 
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-16">
       <h1 className="font-display text-2xl font-medium text-ink">{title}</h1>
-      <p className="mt-2 text-sm text-muted">{subtitle}</p>
+      {isPaid && (
+        <BillingIntervalToggle
+          value={interval}
+          onChange={setBilling}
+          disabled={loading}
+          className="mt-4 self-start"
+        />
+      )}
+      <p className={`${isPaid ? "mt-3" : "mt-2"} text-sm text-muted`}>{subtitle}</p>
       {canceled && (
         <p className="mt-3 rounded-none border border-amber-200 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
-          Checkout was canceled. You can try again when you're ready — no account was created.
+          Checkout was canceled. You can try again when you&apos;re ready — no account was created.
         </p>
       )}
       <form onSubmit={onSubmit} className="mt-8 space-y-4 rounded-none border border-rule bg-surface p-6">
