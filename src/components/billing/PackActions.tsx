@@ -11,6 +11,7 @@ import {
 } from "@/components/PackBillingModals";
 import { KeepSitesPicker, type KeepSiteOption } from "@/components/KeepSitesPicker";
 import { LimitBanners } from "@/components/billing/LimitBanners";
+import { NoRefundNote } from "@/components/billing/modal-bits";
 import { intervalParam, type BillingInterval } from "@/lib/billing-interval";
 
 type Props = {
@@ -238,12 +239,13 @@ export function PackActions({
         onConfirm={(ids) => confirmRemovePack(ids)}
         confirmDetail={(_sel, locked) => (
           <>
-            <p>Nothing is charged or refunded today.</p>
+            <p>Nothing is charged today.</p>
             <p className="mt-2">
               You keep all sites until {removePreview?.renew || "renewal"}. From then,{" "}
               {locked.length} site{locked.length === 1 ? "" : "s"} will be locked if still over the
               new limit. Nothing is deleted. Upgrade anytime to unlock them.
             </p>
+            <NoRefundNote keep className="mt-2" />
           </>
         )}
       />

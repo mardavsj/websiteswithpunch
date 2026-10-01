@@ -6,6 +6,7 @@ import { periodWord } from "@/lib/billing-interval";
 import type { PackPreview } from "@/components/billing/types";
 import {
   ModalShell,
+  NoRefundNote,
   PreviewSkeleton,
   primaryBtn,
   secondaryBtn,
@@ -112,6 +113,7 @@ export function AddPackModal({ open, plan, loading, message, onClose, onConfirm 
                 Your bank may ask you to approve this payment. That&apos;s normal.
               </p>
             )}
+            <NoRefundNote />
           </>
         )}
       </div>
