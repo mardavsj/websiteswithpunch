@@ -17,10 +17,12 @@ const notes = [
 
 export default async function ContactPage({ searchParams }: { searchParams: { topic?: string } }) {
   const session = await getSession();
+  // Fills the viewport below the navbar like the auth pages (SiteChrome makes <main> a flex
+  // column with no footer here); content is centred vertically and scrolls when taller.
   return (
-    <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+    <div className="relative mx-auto flex w-full max-w-6xl flex-1 items-center px-4 py-16 sm:px-6">
       <InAppBackLink />
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
+      <div className="grid w-full gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
         <div>
           <p className="label-caps">Contact</p>
           <h1 className="mt-4 font-display text-3xl font-medium tracking-tight text-ink sm:text-4xl">

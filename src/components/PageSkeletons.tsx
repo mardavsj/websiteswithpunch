@@ -107,9 +107,13 @@ export function ProfileSkeleton() {
 
 export function ContactSkeleton() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20" role="status" aria-busy="true">
+    <div
+      className="mx-auto flex w-full max-w-6xl flex-1 items-center px-4 py-16 sm:px-6"
+      role="status"
+      aria-busy="true"
+    >
       <Status />
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
+      <div className="grid w-full gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
         <div>
           <div className={`h-3 w-16 ${bar}`} />
           <div className={`mt-4 h-10 w-64 ${bar}`} />
