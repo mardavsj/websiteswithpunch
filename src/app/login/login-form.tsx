@@ -37,9 +37,6 @@ export function LoginForm() {
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-16">
       <h1 className="font-display text-2xl font-medium text-ink">Welcome back</h1>
-      <p className="mt-2 text-sm text-muted">
-        Log in to Websites With Punch. Demo: demo@websiteswithpunch.com / demo12345
-      </p>
       {paid && (
         <p className="mt-3 rounded-none border border-emerald-200 bg-emerald-50 dark:border-emerald-400/30 dark:bg-emerald-400/10 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-200">
           Payment successful — your account is ready. Log in with the email and password you just
