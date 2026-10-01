@@ -19,6 +19,7 @@ import {
   subscriptionNeedsPaymentAction,
 } from "@/lib/stripe-subscription";
 import { enforceSiteLimit } from "@/lib/site-limits";
+import { ensureNoPendingSwitch } from "@/lib/schedule-guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -97,6 +98,9 @@ export async function POST() {
         { status: 403 },
       );
     }
+
+    const blocked = await ensureNoPendingSwitch(stripe, subscription);
+    if (blocked) return blocked;
 
     const existingPack = findPackItem(subscription);
     const stripeQty = existingPack?.quantity ?? 0;

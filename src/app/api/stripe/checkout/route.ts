@@ -12,6 +12,7 @@ import {
   subscriptionNeedsPaymentAction,
 } from "@/lib/stripe-subscription";
 import { enforceSiteLimit } from "@/lib/site-limits";
+import { ensureNoPendingSwitch } from "@/lib/schedule-guard";
 
 /**
  * First-time purchase → Stripe Checkout Session at the chosen interval (monthly / annual).
@@ -69,6 +70,8 @@ export async function POST(req: Request) {
         user.stripeSubscriptionId,
         { expand: ["latest_invoice.payment_intent"] },
       );
+      const blocked = await ensureNoPendingSwitch(stripe, subscription);
+      if (blocked) return blocked;
 
       const change = planChangeItems(subscription, currentPlan, planId, interval);
       if (!change.ok) {
