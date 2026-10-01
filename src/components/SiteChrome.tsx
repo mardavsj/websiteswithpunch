@@ -1,11 +1,14 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 /** Auth pages fill the viewport under the navbar and have no footer. */
 export const AUTH_ROUTES = ["/login", "/signup", "/forgot-password", "/reset-password"];
 /** Logged-in app pages get the slim app footer instead of the big marketing footer. */
 export const APP_ROUTES = ["/dashboard", "/plan", "/profile"];
+/** Public pages that also feel in-app (slim footer) when someone is signed in. */
+export const SHARED_ROUTES = ["/contact", "/terms", "/privacy"];
 
 const matches = (routes: string[], pathname: string | null) =>
   !!pathname && routes.some((r) => pathname === r || pathname.startsWith(`${r}/`));
@@ -18,7 +21,10 @@ export function isAppRoute(pathname: string | null): boolean {
   return matches(APP_ROUTES, pathname);
 }
 
-/** Picks the footer by route: none on auth pages, slim on app pages, big everywhere else. */
+/**
+ * Picks the footer: none on auth pages; slim on app pages, and on contact/terms/privacy when
+ * signed in; the big marketing footer everywhere else.
+ */
 export function SiteChrome({
   children,
   footer,
@@ -29,11 +35,14 @@ export function SiteChrome({
   appFooter: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { status } = useSession();
   const auth = isAuthRoute(pathname);
+  const slim =
+    isAppRoute(pathname) || (status === "authenticated" && matches(SHARED_ROUTES, pathname));
   return (
     <>
       <main className={auth ? "flex flex-1 flex-col" : "flex-1"}>{children}</main>
-      {auth ? null : isAppRoute(pathname) ? appFooter : footer}
+      {auth ? null : slim ? appFooter : footer}
     </>
   );
 }

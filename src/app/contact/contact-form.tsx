@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRef, useState, type FormEvent } from "react";
+import { useSession } from "next-auth/react";
 import {
   CONTACT_TOPICS,
   MESSAGE_MAX,
@@ -27,6 +28,7 @@ export function ContactForm({
   initialEmail: string;
   initialTopic: ContactTopic;
 }) {
+  const signedIn = useSession().status === "authenticated";
   const [values, setValues] = useState({
     name: initialName,
     email: initialEmail,
@@ -87,8 +89,11 @@ export function ContactForm({
           get back to you within 1–2 business days.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link href="/" className="bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover">
-            Back to home
+          <Link
+            href={signedIn ? "/dashboard" : "/"}
+            className="bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"
+          >
+            {signedIn ? "Back to dashboard" : "Back to home"}
           </Link>
           <button
             type="button"

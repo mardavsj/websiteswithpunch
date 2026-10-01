@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getSession } from "@/lib/auth";
 import { parseTopic } from "@/lib/contact";
+import { InAppBackLink } from "@/components/InAppBackLink";
 import { ContactForm } from "./contact-form";
 
 export const metadata: Metadata = {
@@ -18,6 +19,7 @@ export default async function ContactPage({ searchParams }: { searchParams: { to
   const session = await getSession();
   return (
     <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+      <InAppBackLink className="mb-8" />
       <div className="grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
         <div>
           <p className="label-caps">Contact</p>

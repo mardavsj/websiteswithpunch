@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { InAppBackLink } from "@/components/InAppBackLink";
 
 export const metadata: Metadata = { title: "Privacy Policy" };
 
 export default function PrivacyPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+      <InAppBackLink />
       <h1 className="font-display text-3xl font-medium text-ink">Privacy Policy</h1>
       <p className="mt-2 text-sm text-muted">Last updated: September 19, 2026</p>
       <div className="mt-8 space-y-6 leading-relaxed text-ink">
