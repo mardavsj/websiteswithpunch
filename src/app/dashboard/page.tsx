@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import {
   getEffectivePlan,
   getUserEffectiveSiteLimit,
@@ -14,7 +13,7 @@ import { DashboardPackCta } from "@/components/DashboardPackCta";
 import { DashboardAddSiteButton } from "@/components/DashboardAddSiteButton";
 import { DashboardBanners } from "@/components/DashboardBanners";
 import { DashboardPendingBanner } from "@/components/DashboardPendingBanner";
-import { applyDuePendingAndEnforce } from "@/lib/site-limits";
+import { loadAccount } from "@/lib/account-load";
 import { toDashboardSite } from "@/lib/dashboard-sites";
 
 export const dynamic = "force-dynamic";
@@ -27,15 +26,8 @@ export default async function DashboardPage({
   const session = await getSession();
   if (!session?.user?.id) redirect("/login");
 
-  await applyDuePendingAndEnforce(session.user.id);
-
-  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  const { user, sites: sitesRaw } = await loadAccount(session.user.id);
   if (!user) redirect("/login");
-
-  const sitesRaw = await prisma.site.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: "desc" },
-  });
 
   const plan = getEffectivePlan(user.plan, user.stripeStatus);
   const resolved = resolvePackCountForLimit({

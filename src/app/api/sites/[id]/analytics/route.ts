@@ -71,6 +71,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         where: { siteId: site.id, checkedAt: to ? { gte: from, lte: to } : { gte: from } },
         orderBy: [{ checkedAt: "desc" }, { id: "desc" }],
         take: 5000,
+        select: { status: true, statusCode: true, latencyMs: true, error: true, checkedAt: true },
       })
     ).reverse();
 

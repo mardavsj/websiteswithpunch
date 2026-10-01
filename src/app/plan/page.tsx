@@ -1,13 +1,12 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import {
   getEffectivePlan,
   getUserEffectiveSiteLimit,
   PLANS,
   resolvePackCountForLimit,
 } from "@/lib/plans";
-import { applyDuePendingAndEnforce } from "@/lib/site-limits";
+import { loadAccount } from "@/lib/account-load";
 import { PlanPageClient } from "@/components/plan/PlanPageClient";
 
 export const dynamic = "force-dynamic";
@@ -16,14 +15,8 @@ export default async function PlanPage() {
   const session = await getSession();
   if (!session?.user?.id) redirect("/login");
 
-  await applyDuePendingAndEnforce(session.user.id);
-  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  const { user, sites } = await loadAccount(session.user.id);
   if (!user) redirect("/login");
-
-  const sites = await prisma.site.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: "desc" },
-  });
 
   const plan = getEffectivePlan(user.plan, user.stripeStatus);
   const resolved = resolvePackCountForLimit({

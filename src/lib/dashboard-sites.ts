@@ -1,4 +1,4 @@
-import type { Site } from "@prisma/client";
+import type { AccountSite } from "@/lib/account-load";
 import { toClientSite } from "@/lib/site-limits";
 
 /** What the dashboard passes to each SiteCard. */
@@ -16,7 +16,7 @@ export type DashboardSite = {
 };
 
 /** Locked sites get their metrics hidden (toClientSite); dates become ISO strings. */
-export function toDashboardSite(site: Site): DashboardSite {
+export function toDashboardSite(site: AccountSite): DashboardSite {
   const s = toClientSite(site);
   return {
     id: s.id,

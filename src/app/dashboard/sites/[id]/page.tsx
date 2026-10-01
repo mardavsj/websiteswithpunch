@@ -12,17 +12,17 @@ export default async function SiteAnalyticsPage({ params }: { params: { id: stri
   const session = await getSession();
   if (!session?.user?.id) redirect("/login");
 
-  const site = await prisma.site.findFirst({
-    where: { id: params.id, userId: session.user.id },
-  });
+  // Site + its freshest check (any kind, for the "Last check" label) in one parallel round trip;
+  // the check query is scoped to the owner too, so it can't leak another user's data.
+  const [site, latest] = await Promise.all([
+    prisma.site.findFirst({ where: { id: params.id, userId: session.user.id } }),
+    prisma.checkResult.findFirst({
+      where: { siteId: params.id, site: { userId: session.user.id } },
+      orderBy: [{ checkedAt: "desc" }, { id: "desc" }],
+      select: { checkedAt: true },
+    }),
+  ]);
   if (!site) notFound();
-
-  // Freshest check of any kind (history row), for the "Last check" label.
-  const latest = await prisma.checkResult.findFirst({
-    where: { siteId: site.id },
-    orderBy: [{ checkedAt: "desc" }, { id: "desc" }],
-    select: { checkedAt: true },
-  });
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">

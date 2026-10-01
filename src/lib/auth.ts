@@ -1,7 +1,24 @@
-import { NextAuthOptions, getServerSession } from "next-auth";
+import { NextAuthOptions, getServerSession, type Session, type User } from "next-auth";
+import type { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
+
+function withUser(token: JWT, user: User): JWT {
+  token.id = user.id;
+  token.plan = user.plan || "free";
+  token.stripeStatus = user.stripeStatus;
+  return token;
+}
+
+function session({ session, token }: { session: Session; token: JWT }): Session {
+  if (session.user) {
+    session.user.id = token.id as string;
+    session.user.plan = (token.plan as string) || "free";
+    session.user.stripeStatus = (token.stripeStatus as string | null) || null;
+  }
+  return session;
+}
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
@@ -34,13 +51,13 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger }) {
-      if (user) {
-        token.id = user.id;
-        token.plan = (user as { plan?: string }).plan || "free";
-        token.stripeStatus = (user as { stripeStatus?: string | null }).stripeStatus;
-      }
-      if (trigger === "update" || (!user && token.id)) {
+    /**
+     * Runs for the /api/auth/* routes (sign-in, the client's session fetch, update()). It re-reads
+     * plan/name from the DB so the navbar sees upgrades; server renders use readOnlyOptions below.
+     */
+    async jwt({ token, user }) {
+      if (user) return withUser(token, user);
+      if (token.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
           select: { plan: true, stripeStatus: true, name: true, email: true },
@@ -54,18 +71,20 @@ export const authOptions: NextAuthOptions = {
       }
       return token;
     },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        session.user.plan = (token.plan as string) || "free";
-        session.user.stripeStatus = (token.stripeStatus as string | null) || null;
-      }
-      return session;
-    },
+    session,
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
 
+/**
+ * Server components and API routes only need the signed-in user's id (pages read plan and
+ * limits from the DB themselves), so they decode the JWT cookie without a DB round trip.
+ */
+const readOnlyOptions: NextAuthOptions = {
+  ...authOptions,
+  callbacks: { jwt: ({ token }) => token, session },
+};
+
 export function getSession() {
-  return getServerSession(authOptions);
+  return getServerSession(readOnlyOptions);
 }
