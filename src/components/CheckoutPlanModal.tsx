@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { BillingIntervalToggle } from "@/components/BillingIntervalToggle";
-import { ModalShell, primaryBtn, secondaryBtn, useEscapeClose } from "@/components/billing/modal-bits";
+import {
+  ModalShell,
+  NoRefundNote,
+  primaryBtn,
+  secondaryBtn,
+  useEscapeClose,
+} from "@/components/billing/modal-bits";
 import { PLANS } from "@/lib/plans";
 import {
   ANNUAL_PRICES,
@@ -65,6 +71,7 @@ export function CheckoutPlanModal({ planId, loading, message, onClose, onConfirm
           Next you&apos;ll enter your card on Stripe&apos;s secure checkout. Nothing is charged until
           you confirm there.
         </p>
+        <NoRefundNote />
       </div>
 
       {message && <p className="mt-3 text-sm text-danger">{message}</p>}

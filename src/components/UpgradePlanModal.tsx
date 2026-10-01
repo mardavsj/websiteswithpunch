@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { BillingIntervalToggle } from "@/components/BillingIntervalToggle";
 import {
   ModalShell,
+  NoRefundNote,
   PreviewSkeleton,
   primaryBtn,
   secondaryBtn,
@@ -158,6 +159,7 @@ export function UpgradePlanModal({
                 Your bank may ask you to approve this payment. That&apos;s normal.
               </p>
             )}
+            <NoRefundNote />
           </>
         )}
       </div>
