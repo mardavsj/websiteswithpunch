@@ -14,10 +14,8 @@ import { DashboardPackCta } from "@/components/DashboardPackCta";
 import { DashboardAddSiteButton } from "@/components/DashboardAddSiteButton";
 import { DashboardBanners } from "@/components/DashboardBanners";
 import { DashboardPendingBanner } from "@/components/DashboardPendingBanner";
-import {
-  applyDuePendingAndEnforce,
-  toClientSite,
-} from "@/lib/site-limits";
+import { applyDuePendingAndEnforce } from "@/lib/site-limits";
+import { toDashboardSite } from "@/lib/dashboard-sites";
 
 export const dynamic = "force-dynamic";
 
@@ -63,18 +61,7 @@ export default async function DashboardPage({
   const planLabel = PLANS[plan].name;
   const displayName = user.name || "there";
 
-  const clientSites = sitesRaw.map((site) => {
-    const stripped = toClientSite(site as unknown as Record<string, unknown>);
-    return {
-      ...stripped,
-      lastCheckedAt:
-        site.locked || !site.lastCheckedAt
-          ? null
-          : site.lastCheckedAt.toISOString(),
-      locked: site.locked,
-      createdAt: site.createdAt.toISOString(),
-    };
-  });
+  const clientSites = sitesRaw.map(toDashboardSite);
 
   const downNow = activeSites.filter(
     (s) => s.status === "down" || s.status === "error",
@@ -187,23 +174,12 @@ export default async function DashboardPage({
           <div className="mt-8 space-y-5">
             {clientSites.map((site) => (
               <SiteCard
-                key={site.id as string}
+                key={site.id}
                 showAnalyticsLink={!showInlineAnalytics && !site.locked}
                 siteLimit={limit}
-                canUnlock={Boolean(site.locked) && canUnlock}
+                canUnlock={site.locked && canUnlock}
                 hasLockedSites={lockedSites.length > 0}
-                site={{
-                  id: site.id as string,
-                  name: site.name as string,
-                  url: site.url as string,
-                  status: site.status as string,
-                  lastCheckedAt: (site.lastCheckedAt as string | null) ?? null,
-                  lastStatusCode: (site.lastStatusCode as number | null) ?? null,
-                  lastLatencyMs: (site.lastLatencyMs as number | null) ?? null,
-                  sslDaysLeft: (site.sslDaysLeft as number | null) ?? null,
-                  domainDaysLeft: (site.domainDaysLeft as number | null) ?? null,
-                  locked: Boolean(site.locked),
-                }}
+                site={site}
               />
             ))}
             {showInlineAnalytics && <SiteAnalytics siteId={activeSites[0].id} />}

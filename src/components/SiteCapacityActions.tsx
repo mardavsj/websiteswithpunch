@@ -24,7 +24,6 @@ export function SiteCapacityActions({
   atLimit,
   remaining,
   keepOptions,
-  allSiteOptions: _allSiteOptions,
   cancelAtPeriodEnd: cancelProp,
   pendingPlan: pendingPlanProp,
 }: SiteCapacityProps) {

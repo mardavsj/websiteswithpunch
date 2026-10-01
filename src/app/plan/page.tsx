@@ -49,13 +49,6 @@ export default async function PlanPage() {
     url: s.url,
     createdAt: s.createdAt.toISOString(),
   }));
-  const allOptions = sites.map((s) => ({
-    id: s.id,
-    name: s.name,
-    url: s.url,
-    createdAt: s.createdAt.toISOString(),
-    locked: s.locked,
-  }));
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -73,7 +66,6 @@ export default async function PlanPage() {
           atLimit={atLimit}
           remaining={remaining}
           keepOptions={keepOptions}
-          allSiteOptions={allOptions}
           cancelAtPeriodEnd={user.cancelAtPeriodEnd}
           pendingPlan={user.pendingPlan}
           pendingPlanAt={user.pendingPlanAt?.toISOString() ?? null}

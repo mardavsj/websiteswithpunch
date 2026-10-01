@@ -26,8 +26,6 @@ export type BillingSummary = {
   paymentFailed?: boolean;
 };
 
-export type SiteOption = KeepSiteOption & { locked?: boolean };
-
 export type SiteCapacityProps = {
   plan: PlanId;
   sitePackCount: number;
@@ -36,7 +34,6 @@ export type SiteCapacityProps = {
   atLimit: boolean;
   remaining: number;
   keepOptions: KeepSiteOption[];
-  allSiteOptions: SiteOption[];
   cancelAtPeriodEnd?: boolean;
   pendingPlan?: string | null;
   pendingPlanAt?: string | null;
@@ -59,6 +56,6 @@ export type PackPreview = {
   newRecurringMonthlyFormatted: string;
   recurringBreakdown: string;
   keepSiteLimitUntilRenewal?: number;
-  newSiteLimitFromRenewal?: number;
   newSiteLimit?: number;
+  newSiteLimitFromRenewal?: number;
 };
