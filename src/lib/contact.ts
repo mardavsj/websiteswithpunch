@@ -19,6 +19,9 @@ export function parseTopic(value: unknown): ContactTopic {
   return CONTACT_TOPICS.some((t) => t.id === v) ? (v as ContactTopic) : "general";
 }
 
+/** Link to the contact form with its topic preselected (every link names one explicitly). */
+export const contactHref = (topic: ContactTopic) => `/contact?topic=${topic}`;
+
 export function topicLabel(id: ContactTopic): string {
   return CONTACT_TOPICS.find((t) => t.id === id)?.label ?? "General question";
 }

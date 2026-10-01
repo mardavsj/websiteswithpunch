@@ -1,38 +1,35 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
   CONTACT_TOPICS,
   MESSAGE_MAX,
+  contactHref,
+  parseTopic,
   validateContact,
   type ContactErrors,
-  type ContactTopic,
 } from "@/lib/contact";
 
 type Field = keyof ContactErrors;
 const ORDER: Field[] = ["name", "email", "topic", "message"];
 
 const inputBase =
-  "mt-1.5 w-full rounded-none border bg-bg px-3 py-2 text-sm text-ink outline-none focus:ring-2";
+  "mt-1.5 w-full rounded-none border bg-bg px-3 py-2 text-sm text-ink placeholder:text-muted/70 outline-none focus:ring-2";
 const inputClass = (bad: boolean) =>
   `${inputBase} ${bad ? "border-danger focus:border-danger focus:ring-danger/20" : "border-rule focus:border-accent focus:ring-accent/20"}`;
 
-export function ContactForm({
-  initialName,
-  initialEmail,
-  initialTopic,
-}: {
-  initialName: string;
-  initialEmail: string;
-  initialTopic: ContactTopic;
-}) {
+export function ContactForm({ initialName, initialEmail }: { initialName: string; initialEmail: string }) {
   const signedIn = useSession().status === "authenticated";
+  // The topic always follows the link: ?topic= is read on every navigation, including clicks
+  // made while already on /contact (the page stays mounted then, so state alone would go stale).
+  const urlTopic = parseTopic(useSearchParams().get("topic"));
   const [values, setValues] = useState({
     name: initialName,
     email: initialEmail,
-    topic: initialTopic as string,
+    topic: urlTopic as string,
     message: "",
     company: "",
   });
@@ -41,6 +38,18 @@ export function ContactForm({
   const [sending, setSending] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    setValues((v) => ({ ...v, topic: urlTopic }));
+    setErrors((e) => ({ ...e, topic: undefined }));
+    setSentTo(null);
+  }, [urlTopic]);
+
+  /** Keep the URL in step with the select, so following any topic link changes it back. */
+  function pickTopic(topic: string) {
+    set("topic", topic);
+    window.history.replaceState(null, "", contactHref(parseTopic(topic)));
+  }
 
   function set(field: keyof typeof values, value: string) {
     setValues((v) => ({ ...v, [field]: value }));
@@ -131,20 +140,20 @@ export function ContactForm({
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <label htmlFor="name" className="text-sm font-medium text-ink">Name</label>
-          <input id="name" name="name" autoComplete="name" value={values.name}
+          <input id="name" name="name" autoComplete="name" placeholder="Alex Morgan" value={values.name}
             onChange={(e) => set("name", e.target.value)} className={inputClass(!!errors.name)} {...aria("name")} />
           {err("name")}
         </div>
         <div>
           <label htmlFor="email" className="text-sm font-medium text-ink">Email</label>
-          <input id="email" name="email" type="email" autoComplete="email" value={values.email}
+          <input id="email" name="email" type="email" autoComplete="email" placeholder="you@company.com" value={values.email}
             onChange={(e) => set("email", e.target.value)} className={inputClass(!!errors.email)} {...aria("email")} />
           {err("email")}
         </div>
       </div>
       <div>
         <label htmlFor="topic" className="text-sm font-medium text-ink">Topic</label>
-        <select id="topic" name="topic" value={values.topic} onChange={(e) => set("topic", e.target.value)}
+        <select id="topic" name="topic" value={values.topic} onChange={(e) => pickTopic(e.target.value)}
           className={inputClass(!!errors.topic)} {...aria("topic")}>
           {CONTACT_TOPICS.map((t) => (
             <option key={t.id} value={t.id}>{t.label}</option>
@@ -155,6 +164,7 @@ export function ContactForm({
       <div>
         <label htmlFor="message" className="text-sm font-medium text-ink">Message</label>
         <textarea id="message" name="message" rows={7} maxLength={MESSAGE_MAX} value={values.message}
+          placeholder="How can we help? Include your site URL if it's about a specific site."
           onChange={(e) => set("message", e.target.value)}
           className={`${inputClass(!!errors.message)} resize-y`} {...aria("message")} />
         <div className="flex items-start justify-between gap-3">

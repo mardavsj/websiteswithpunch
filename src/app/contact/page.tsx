@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { getSession } from "@/lib/auth";
-import { parseTopic } from "@/lib/contact";
 import { InAppBackLink } from "@/components/InAppBackLink";
 import { ContactForm } from "./contact-form";
 
@@ -15,7 +14,7 @@ const notes = [
   { title: "Something not working", body: "Add the site URL and what you expected to see." },
 ];
 
-export default async function ContactPage({ searchParams }: { searchParams: { topic?: string } }) {
+export default async function ContactPage() {
   const session = await getSession();
   // Centred between the navbar and the footer (contact/layout.tsx makes <main> a flex column
   // filling that space); starts at the top and scrolls when taller (safe alignment).
@@ -44,7 +43,6 @@ export default async function ContactPage({ searchParams }: { searchParams: { to
         <ContactForm
           initialName={session?.user?.name ?? ""}
           initialEmail={session?.user?.email ?? ""}
-          initialTopic={parseTopic(searchParams.topic)}
         />
       </div>
     </div>

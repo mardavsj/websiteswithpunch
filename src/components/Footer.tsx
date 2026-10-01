@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { customPlanHref } from "@/components/marketing/pricing-content";
+import { contactHref } from "@/lib/contact";
 
 const EMAIL = "hello@websiteswithpunch.com";
 
@@ -32,8 +33,8 @@ const columns: { title: string; links: FooterLink[] }[] = [
     title: "Support",
     links: [
       { label: "FAQ", href: "/#faq" },
-      { label: "Contact us", href: "/contact" },
-      { label: "Billing help", href: "/contact?topic=billing" },
+      { label: "Contact us", href: contactHref("general") },
+      { label: "Billing help", href: contactHref("billing") },
       { label: "Custom site limits", href: customPlanHref },
     ],
   },
@@ -47,7 +48,7 @@ const columns: { title: string; links: FooterLink[] }[] = [
 ];
 
 const linkClass =
-  "text-sm text-muted transition-colors hover:text-ink focus-visible:text-ink focus-visible:outline-none focus-visible:underline";
+  "text-sm text-muted transition-colors hover:text-ink focus-visible:text-ink focus-visible:underline focus-visible:outline-none";
 
 function FooterAnchor({ href, label, className = linkClass }: FooterLink & { className?: string }) {
   return (
@@ -57,48 +58,53 @@ function FooterAnchor({ href, label, className = linkClass }: FooterLink & { cla
   );
 }
 
+/**
+ * Marketing footer: brand column on the left, four link columns on the right, then a quiet
+ * bottom bar. Generous padding and one hairline divider; no cards or decoration.
+ */
 export function Footer() {
   const year = new Date().getFullYear();
   return (
     <footer className="border-t border-rule bg-bg">
-      <div className="mx-auto max-w-6xl px-4 pb-10 pt-14 sm:px-6 sm:pt-16">
-        <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-4 lg:grid-cols-[minmax(0,1.6fr)_repeat(4,minmax(0,1fr))] lg:gap-x-8">
-          <div className="col-span-2 sm:col-span-4 lg:col-span-1 lg:pr-8">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="flex flex-col gap-12 pb-14 pt-16 sm:pb-16 sm:pt-20 lg:flex-row lg:gap-20 lg:pb-20">
+          <div className="max-w-sm lg:w-72 lg:shrink-0">
             <Link href="/" className="inline-flex items-center gap-2.5 font-display font-medium text-ink">
               <Image src="/logo.svg" alt="" width={32} height={32} unoptimized className="h-8 w-8 object-contain" />
               <span>Websites With Punch</span>
             </Link>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">
-              Uptime, SSL and domain expiry monitoring for the sites you can&apos;t afford to lose.
+            <p className="mt-5 max-w-xs text-sm leading-relaxed text-muted">
+              One calm dashboard for the websites you look after, so you spot problems before your
+              customers do.
             </p>
             <a
               href={`mailto:${EMAIL}`}
-              className="mt-4 inline-block text-sm font-medium text-ink underline-offset-4 hover:underline"
+              className="mt-6 inline-block text-sm text-ink underline decoration-rule underline-offset-4 transition-colors hover:decoration-ink"
             >
               {EMAIL}
             </a>
           </div>
-          {columns.map((col) => (
-            <nav key={col.title} aria-label={col.title}>
-              <p className="label-caps">{col.title}</p>
-              <ul className="mt-4 space-y-2.5">
-                {col.links.map((l) => (
-                  <li key={l.label}>
-                    <FooterAnchor {...l} />
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          ))}
+          <div className="grid flex-1 grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-4 sm:gap-x-8">
+            {columns.map((col) => (
+              <nav key={col.title} aria-label={col.title}>
+                <p className="label-caps">{col.title}</p>
+                <ul className="mt-5 space-y-3">
+                  {col.links.map((l) => (
+                    <li key={l.label}>
+                      <FooterAnchor {...l} />
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            ))}
+          </div>
         </div>
-      </div>
-      <div className="border-t border-rule">
-        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-5 text-xs text-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div className="flex flex-col gap-4 border-t border-rule py-8 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
           <p>© {year} Websites With Punch. All rights reserved.</p>
-          <div className="flex flex-wrap gap-x-5 gap-y-2">
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
             <FooterAnchor href="/terms" label="Terms" className="hover:text-ink" />
             <FooterAnchor href="/privacy" label="Privacy" className="hover:text-ink" />
-            <FooterAnchor href="/contact" label="Contact" className="hover:text-ink" />
+            <FooterAnchor href={contactHref("general")} label="Contact" className="hover:text-ink" />
           </div>
         </div>
       </div>

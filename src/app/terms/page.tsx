@@ -57,7 +57,7 @@ export default function TermsPage() {
         <h2 className="font-display text-xl font-medium text-ink">Contact</h2>
         <p className="text-muted">
           Questions? Use our{" "}
-          <Link className="text-accent hover:underline" href="/contact">
+          <Link className="text-accent hover:underline" href="/contact?topic=general">
             contact form
           </Link>{" "}
           or email{" "}
