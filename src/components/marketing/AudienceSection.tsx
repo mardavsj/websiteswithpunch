@@ -25,7 +25,7 @@ export function AudienceSection() {
   const [active, setActive] = useState(0);
 
   return (
-    <section className="border-b border-rule bg-bg">
+    <section id="who-its-for" className="border-b border-rule bg-bg">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
         <div className="max-w-xl">
           <h2 className="font-display text-3xl font-medium text-ink sm:text-4xl">Who it’s for</h2>

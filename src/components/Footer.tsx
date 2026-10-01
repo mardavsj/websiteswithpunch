@@ -1,39 +1,109 @@
 import Link from "next/link";
+import { customPlanHref } from "@/components/marketing/pricing-content";
+
+const EMAIL = "hello@websiteswithpunch.com";
+
+type FooterLink = { label: string; href: string };
+
+/** Every target exists: homepage section ids, app routes, legal pages or a real mailbox. */
+const columns: { title: string; links: FooterLink[] }[] = [
+  {
+    title: "Product",
+    links: [
+      { label: "What we monitor", href: "/#features" },
+      { label: "How it works", href: "/#how-it-works" },
+      { label: "Dashboard preview", href: "/#dashboard-preview" },
+      { label: "Who it's for", href: "/#who-its-for" },
+      { label: "Pricing", href: "/#pricing" },
+    ],
+  },
+  {
+    title: "Account",
+    links: [
+      { label: "Start free", href: "/signup" },
+      { label: "Log in", href: "/login" },
+      { label: "Dashboard", href: "/dashboard" },
+      { label: "Your plan", href: "/plan" },
+      { label: "Profile", href: "/profile" },
+    ],
+  },
+  {
+    title: "Support",
+    links: [
+      { label: "FAQ", href: "/#faq" },
+      { label: "Contact us", href: `mailto:${EMAIL}` },
+      { label: "Billing help", href: `mailto:${EMAIL}?subject=Billing` },
+      { label: "Custom site limits", href: customPlanHref },
+    ],
+  },
+  {
+    title: "Legal",
+    links: [
+      { label: "Terms of Service", href: "/terms" },
+      { label: "Privacy Policy", href: "/privacy" },
+    ],
+  },
+];
+
+const linkClass =
+  "text-sm text-muted transition-colors hover:text-ink focus-visible:text-ink focus-visible:outline-none focus-visible:underline";
+
+function FooterAnchor({ href, label, className = linkClass }: FooterLink & { className?: string }) {
+  return href.startsWith("mailto:") ? (
+    <a href={href} className={className}>
+      {label}
+    </a>
+  ) : (
+    <Link href={href} className={className}>
+      {label}
+    </Link>
+  );
+}
 
 export function Footer() {
+  const year = new Date().getFullYear();
   return (
     <footer className="border-t border-rule bg-bg">
-      <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div className="flex items-start gap-3">
-          <img
-            src="/logo.svg"
-            alt="Websites With Punch"
-            className="mt-0.5 h-8 w-8 object-contain"
-          />
-          <div>
-            <p className="font-display font-medium text-ink">Websites With Punch</p>
-            <p className="mt-1 text-sm text-muted">
-              Uptime, SSL, and domain monitoring that hits hard.
+      <div className="mx-auto max-w-6xl px-4 pb-10 pt-14 sm:px-6 sm:pt-16">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-4 lg:grid-cols-[minmax(0,1.6fr)_repeat(4,minmax(0,1fr))] lg:gap-x-8">
+          <div className="col-span-2 sm:col-span-4 lg:col-span-1 lg:pr-8">
+            <Link href="/" className="inline-flex items-center gap-2.5 font-display font-medium text-ink">
+              <img src="/logo.svg" alt="" className="h-8 w-8 object-contain" />
+              <span>Websites With Punch</span>
+            </Link>
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">
+              Uptime, SSL and domain expiry monitoring for the sites you can&apos;t afford to lose.
             </p>
+            <a
+              href={`mailto:${EMAIL}`}
+              className="mt-4 inline-block text-sm font-medium text-ink underline-offset-4 hover:underline"
+            >
+              {EMAIL}
+            </a>
           </div>
-        </div>
-        <div className="flex flex-wrap gap-4 text-sm text-muted">
-          <Link href="/#pricing" className="hover:text-ink">
-            Pricing
-          </Link>
-          <Link href="/privacy" className="hover:text-ink">
-            Privacy
-          </Link>
-          <Link href="/terms" className="hover:text-ink">
-            Terms
-          </Link>
-          <a href="mailto:hello@websiteswithpunch.com" className="hover:text-ink">
-            Contact
-          </a>
+          {columns.map((col) => (
+            <nav key={col.title} aria-label={col.title}>
+              <p className="label-caps">{col.title}</p>
+              <ul className="mt-4 space-y-2.5">
+                {col.links.map((l) => (
+                  <li key={l.label}>
+                    <FooterAnchor {...l} />
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ))}
         </div>
       </div>
-      <div className="border-t border-rule py-4 text-center text-xs text-muted">
-        © {new Date().getFullYear()} websiteswithpunch.com — All rights reserved.
+      <div className="border-t border-rule">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-5 text-xs text-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <p>© {year} Websites With Punch. All rights reserved.</p>
+          <div className="flex flex-wrap gap-x-5 gap-y-2">
+            <FooterAnchor href="/terms" label="Terms" className="hover:text-ink" />
+            <FooterAnchor href="/privacy" label="Privacy" className="hover:text-ink" />
+            <FooterAnchor href={`mailto:${EMAIL}`} label="Contact" className="hover:text-ink" />
+          </div>
+        </div>
       </div>
     </footer>
   );

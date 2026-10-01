@@ -2,7 +2,7 @@ import { faqs } from "./home-content";
 
 export function FaqSection() {
   return (
-    <section className="border-b border-rule bg-bg">
+    <section id="faq" className="border-b border-rule bg-bg">
       <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.4fr)] lg:gap-16">
           <aside className="lg:sticky lg:top-24 lg:self-start">

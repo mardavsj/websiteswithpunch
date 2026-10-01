@@ -50,6 +50,8 @@
 
 html {
   scroll-behavior: smooth;
+  /* Anchor targets clear the sticky navbar. */
+  scroll-padding-top: 4.5rem;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

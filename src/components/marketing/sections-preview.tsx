@@ -18,7 +18,7 @@ function Caption({ className }: { className: string }) {
  */
 export function ProductPreviewSection() {
   return (
-    <section className="border-b border-rule bg-bg">
+    <section id="dashboard-preview" className="border-b border-rule bg-bg">
       <div className="relative mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] px-4 py-20 sm:px-6 sm:py-24 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:[@media(min-height:1000px)]:grid-cols-[minmax(0,340px)_minmax(0,1fr)] lg:grid-rows-[auto_1fr_auto_1fr_auto] lg:gap-x-10">
         {/* lg: pt = stage border + padding, so the copy starts level with the window's top edge. */}
         <div className="lg:col-start-1 lg:row-start-1 lg:pb-6 lg:pt-[13px]">
