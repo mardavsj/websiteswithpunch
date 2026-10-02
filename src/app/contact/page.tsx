@@ -31,6 +31,9 @@ export default async function ContactPage() {
             Questions about monitoring, your plan or a custom site limit? Send us a message and a
             real person will read it. We aim to reply within 1–2 business days.
           </p>
+          <p className="mt-3 max-w-md text-sm text-muted">
+            Websites With Punch is a product operated by Makvion Technologies.
+          </p>
           <dl className="mt-10 max-w-md border-t border-rule">
             {notes.map((n) => (
               <div key={n.title} className="border-b border-rule py-4">

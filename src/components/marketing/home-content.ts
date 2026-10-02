@@ -54,7 +54,7 @@ export const faqs = [
   },
   {
     q: "What if I need more than 10 or 50 sites?",
-    a: `On Pro, add optional +${SITE_PACKS.pro.sitesPerPack} site packs (up to ${PLANS.pro.siteLimit + SITE_PACKS.pro.maxPacks * SITE_PACKS.pro.sitesPerPack} sites), then upgrade to Business. On Business, add +${SITE_PACKS.business.sitesPerPack} packs (up to ${PLANS.business.siteLimit + SITE_PACKS.business.maxPacks * SITE_PACKS.business.sitesPerPack} sites). Packs join your existing subscription and bill the same way, monthly or yearly — you pay for the rest of the current billing period today, then one bill on the same renewal date. Remove them anytime. You keep them until the end of the period you've paid for. Need more than that? Send us a message from the Contact page for a custom limit.`,
+    a: `On Pro, add optional +${SITE_PACKS.pro.sitesPerPack} site packs (up to ${PLANS.pro.siteLimit + SITE_PACKS.pro.maxPacks * SITE_PACKS.pro.sitesPerPack} sites), then upgrade to Business. On Business, add +${SITE_PACKS.business.sitesPerPack} packs (up to ${PLANS.business.siteLimit + SITE_PACKS.business.maxPacks * SITE_PACKS.business.sitesPerPack} sites). Packs join your existing subscription and bill the same way, monthly or yearly. When you add a pack, you're charged for the remaining portion of the current billing period, then it follows your normal renewal date. You can remove packs anytime, and the removal takes effect at your next renewal. You keep the additional capacity until the end of the period you've paid for. Need more than that? Send us a message from the Contact page for a custom limit.`,
   },
   {
     q: "Do I need a card to start?",
@@ -78,11 +78,11 @@ export const faqs = [
   },
   {
     q: "Can I cancel anytime?",
-    a: "Yes. Paid plans renew each month or each year, whichever you chose. Cancel from Your plan on the dashboard (or Manage billing). You keep your paid plan until the month or year you've paid for ends, then Free. Nothing is deleted — extra sites are locked.",
+    a: "Yes. Paid plans renew automatically each month or year, depending on the billing period you choose. You can cancel from Your plan on the dashboard or through Manage billing. When you cancel, your current plan remains active until the end of the billing period you've already paid for. After that, your account moves to the Free plan. Nothing is deleted — sites beyond the Free plan limit are locked.",
   },
   {
     q: "Do you offer refunds?",
-    a: "No. All payments are non-refundable, including after you cancel. When you cancel, downgrade, remove a site pack or switch from annual to monthly billing, nothing is refunded or credited. You keep everything you've paid for until the end of the current billing period, and the change takes effect from your renewal date. Upgrades start right away and charge only for the rest of the current period.",
+    a: "Payments are generally non-refundable, including after you cancel. When you cancel, downgrade, remove a site pack, or switch from annual to monthly billing, no refund or credit is provided for the remaining time in the current billing period. You keep your current plan and capacity until the end of the period you've paid for, and the change takes effect at renewal. Upgrades take effect immediately and may be charged on a prorated basis. Refunds may be provided where required by applicable law.",
   },
 ];
 

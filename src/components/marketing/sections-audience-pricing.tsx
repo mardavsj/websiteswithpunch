@@ -28,7 +28,15 @@ export function PricingSection() {
           ))}
         </div>
 
-        <div className="mt-8 flex flex-col gap-2 text-sm text-muted sm:flex-row sm:justify-between">
+        <p className="mt-8 text-sm text-muted">
+          Subscriptions renew automatically. Cancel anytime. See our{" "}
+          <Link href="/terms" className="underline underline-offset-4 hover:text-ink">
+            Terms of Service
+          </Link>{" "}
+          for billing, cancellation, and refund details.
+        </p>
+
+        <div className="mt-2 flex flex-col gap-2 text-sm text-muted sm:flex-row sm:justify-between">
           <p>
             Need more than {maxSelfServeSites} sites?{" "}
             <Link href={customPlanHref} className="font-semibold text-ink underline-offset-2 hover:underline">

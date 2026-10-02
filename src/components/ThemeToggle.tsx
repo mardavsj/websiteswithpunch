@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type Theme = "light" | "dark";
+export type Theme = "light" | "dark";
 
 function applyTheme(theme: Theme) {
   document.documentElement.classList.toggle("dark", theme === "dark");
@@ -13,32 +13,36 @@ function applyTheme(theme: Theme) {
   }
 }
 
-export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>("light");
+/**
+ * Current theme plus a setter. Reads the class on <html> (set before paint by the layout script)
+ * and watches it, so every switch on the page (navbar and footer) stays in step.
+ * `mounted` is false during SSR and the first client render, so markup matches.
+ */
+export function useTheme() {
+  const [theme, setThemeState] = useState<Theme>("light");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    const root = document.documentElement;
+    const read = () => setThemeState(root.classList.contains("dark") ? "dark" : "light");
+    read();
     setMounted(true);
-    try {
-      const stored = localStorage.getItem("theme");
-      setTheme(stored === "dark" ? "dark" : "light");
-    } catch {
-      setTheme("light");
-    }
+    const observer = new MutationObserver(read);
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
   }, []);
 
-  function toggle() {
-    const next: Theme = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    applyTheme(next);
-  }
+  return { theme, mounted, setTheme: applyTheme };
+}
 
+export function ThemeToggle() {
+  const { theme, mounted, setTheme } = useTheme();
   const isDark = mounted && theme === "dark";
 
   return (
     <button
       type="button"
-      onClick={toggle}
+      onClick={() => setTheme(isDark ? "light" : "dark")}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
       className="inline-flex h-8 w-8 items-center justify-center rounded-none border border-rule text-ink hover:bg-accent-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
