@@ -2,10 +2,16 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { NO_INDEX } from "@/lib/site-config";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { LoginForm } from "./login-form";
 
-export const metadata: Metadata = { title: "Log in" };
+export const metadata: Metadata = {
+  title: "Log in",
+  description: "Log in to your Websites With Punch dashboard.",
+  alternates: { canonical: "/login" },
+  robots: NO_INDEX,
+};
 
 export default async function LoginPage() {
   const session = await getSession();

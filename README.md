@@ -69,6 +69,7 @@ Stripe vars are optional. Without them, the Upgrade CTA still appears; checkout/
 | `npm run db:push` | Create/update tables in the Postgres database (`prisma db push`) |
 | `npm run db:seed` | Seed demo user + sample site |
 | `npm run db:setup` | Push + seed |
+| `npm run indexnow` | Optional, after a deploy: ping IndexNow (Bing etc.) with every sitemap URL, or `npm run indexnow -- /path` for specific pages. Needs `public/<key>.txt` live first |
 
 ## Cron / scheduled checks
 

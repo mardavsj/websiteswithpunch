@@ -5,7 +5,8 @@ import { getEffectivePlan } from "@/lib/plans";
 import { parseInterval, type BillingInterval } from "@/lib/billing-interval";
 import { missingPriceMessage, stripePriceIdForPlan } from "@/lib/stripe-prices";
 import { planChangeItems } from "@/lib/plan-change";
-import { getStripe, isStripeConfigured } from "@/lib/stripe";
+import { getStripe, isStripeConfigured, stripeUserMessage } from "@/lib/stripe";
+import { MINUTE, rateLimit, tooMany } from "@/lib/rate-limit";
 import {
   LATEST_INVOICE_EXPAND,
   derivePlanAndPacks,
@@ -25,6 +26,8 @@ export async function POST(req: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const limited = await rateLimit([{ key: `checkout:user:${session.user.id}`, limit: 10, windowMs: 10 * MINUTE }]);
+  if (!limited.ok) return tooMany(limited.retryAfterSec);
 
   if (!isStripeConfigured()) {
     return NextResponse.json(
@@ -147,10 +150,9 @@ export async function POST(req: Request) {
       });
     } catch (err) {
       console.error("in-place plan change error", err);
-      const stripeErr = err as { message?: string };
       return NextResponse.json(
         {
-          error: stripeErr.message || "Could not change plan.",
+          error: stripeUserMessage(err, "Could not change plan. Please try again or contact us."),
           code: "PAYMENT_FAILED",
         },
         { status: 402 },
@@ -167,30 +169,34 @@ export async function POST(req: Request) {
     );
   }
 
-  let customerId = user.stripeCustomerId;
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: user.email,
-      name: user.name || undefined,
-      metadata: { userId: user.id },
+  try {
+    let customerId = user.stripeCustomerId;
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        name: user.name || undefined,
+        metadata: { userId: user.id },
+      });
+      customerId = customer.id;
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { stripeCustomerId: customerId },
+      });
+    }
+
+    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+    const checkout = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer: customerId,
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${baseUrl}/dashboard?upgraded=1`,
+      cancel_url: `${baseUrl}/dashboard?canceled=1`,
+      metadata: { userId: user.id, planId, interval },
+      subscription_data: { metadata: { userId: user.id, planId, interval } },
     });
-    customerId = customer.id;
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { stripeCustomerId: customerId },
-    });
+    return NextResponse.json({ url: checkout.url });
+  } catch (err) {
+    console.error("checkout session error", err);
+    return NextResponse.json({ error: "Could not start checkout. Please try again." }, { status: 502 });
   }
-
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-  const checkout = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    customer: customerId,
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${baseUrl}/dashboard?upgraded=1`,
-    cancel_url: `${baseUrl}/dashboard?canceled=1`,
-    metadata: { userId: user.id, planId, interval },
-    subscription_data: { metadata: { userId: user.id, planId, interval } },
-  });
-
-  return NextResponse.json({ url: checkout.url });
 }

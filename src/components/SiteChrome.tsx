@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 /** Auth pages fill the viewport under the navbar and have no footer. */
-export const AUTH_ROUTES = ["/login", "/signup", "/forgot-password", "/reset-password"];
+export const AUTH_ROUTES = ["/login", "/signup", "/forgot-password", "/reset-password", "/verify-email"];
 /** Logged-in app pages get the slim app footer instead of the big marketing footer. */
 export const APP_ROUTES = ["/dashboard", "/plan", "/profile"];
 /** Public pages that also feel in-app (slim footer) when someone is signed in. */

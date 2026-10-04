@@ -14,7 +14,7 @@ export function IntroLine() {
           <div className="flex justify-center lg:justify-end">
             <Image
               src="/logo.svg"
-              alt="Websites With Punch"
+              alt="Websites With Punch logo"
               width={176}
               height={176}
               unoptimized

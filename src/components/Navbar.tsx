@@ -16,15 +16,19 @@ export function Navbar() {
   const { data, status: rawStatus } = useSession();
   // While a sign-in is navigating away from /login or /signup, keep the guest navbar so it
   // switches together with the page instead of flipping over the still-visible form.
-  const guestOnly = GUEST_ONLY.includes(usePathname() ?? "");
+  const pathname = usePathname() ?? "";
+  const guestOnly = GUEST_ONLY.includes(pathname);
   const session = guestOnly ? null : data;
+  // Unverified accounts can only use /verify-email: no upgrade buttons or account menu anywhere.
+  const unverified = session?.user?.verified === false;
+  const verifying = pathname === "/verify-email" || unverified;
   const status = guestOnly ? "unauthenticated" : rawStatus;
 
   return (
     <header className="sticky top-0 z-50 border-b border-rule bg-bg/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl min-w-0 items-center justify-between gap-2 px-4 py-4 sm:px-6">
         <Link
-          href={session ? "/dashboard" : "/"}
+          href={unverified ? "/verify-email" : session ? "/dashboard" : "/"}
           className="flex min-w-0 items-center gap-2 font-display text-sm font-medium text-ink sm:gap-2.5 sm:text-base"
         >
           <Image
@@ -39,8 +43,15 @@ export function Navbar() {
           <span className="truncate">Websites With Punch</span>
         </Link>
         <nav className="flex shrink-0 items-center gap-2 text-sm">
-          {status === "loading" ? (
-            <ThemeToggle />
+          {status === "loading" || verifying ? (
+            <>
+              {unverified && pathname !== "/verify-email" && (
+                <Link href="/verify-email" className="px-3 py-1.5 font-medium text-accent hover:bg-accent-soft">
+                  Verify email
+                </Link>
+              )}
+              <ThemeToggle />
+            </>
           ) : session ? (
             <>
               <NavUpgradeButtons />
@@ -49,6 +60,12 @@ export function Navbar() {
             </>
           ) : (
             <>
+              <Link
+                href="/tools"
+                className="hidden rounded-none px-3 py-1.5 text-ink hover:bg-accent-soft md:inline-flex"
+              >
+                Free tools
+              </Link>
               <Link
                 href="/login"
                 className="hidden rounded-none px-3 py-1.5 text-ink hover:bg-accent-soft md:inline-flex"

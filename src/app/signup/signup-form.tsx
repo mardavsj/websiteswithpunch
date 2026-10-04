@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import type { PlanId } from "@/lib/plans";
@@ -38,6 +38,9 @@ export function SignupForm({
   const [errors, setErrors] = useState<Errors>({});
   const [loading, setLoading] = useState(false);
   const [interval, setBilling] = useState<BillingInterval>(initialInterval);
+  // Spam checks (see lib/spam.ts): a hidden honeypot and how long the form was open.
+  const [website, setWebsite] = useState("");
+  const openedAt = useRef(Date.now());
 
   const isPaid = initialPlan === "pro" || initialPlan === "business";
 
@@ -60,31 +63,10 @@ export function SignupForm({
     setLoading(true);
     const cleanEmail = email.trim();
     try {
-      if (isPaid) {
-        const res = await fetch("/api/stripe/checkout-signup", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name,
-            email: cleanEmail,
-            password,
-            planId: initialPlan,
-            interval: intervalParam(interval),
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok) return serverError(res.status, data.error || "Could not start checkout");
-        if (data.url) {
-          window.location.href = data.url;
-          return;
-        }
-        return serverError(500, "Checkout unavailable");
-      }
-
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email: cleanEmail, password }),
+        body: JSON.stringify({ name, email: cleanEmail, password, website, elapsedMs: Date.now() - openedAt.current }),
       });
       const data = await res.json();
       if (!res.ok) return serverError(res.status, data.error || "Signup failed");
@@ -97,9 +79,10 @@ export function SignupForm({
         router.push("/login");
         return;
       }
-      // Full load so no signed-out router-cache entry is reused (see login-form); the button
-      // keeps its loading label until the dashboard shows.
-      window.location.replace("/dashboard");
+      // Next: the emailed code. Paid plans go to checkout right after verifying, so every paying
+      // account has a confirmed address. Full load so no signed-out router-cache entry is reused.
+      const next = isPaid ? `?plan=${initialPlan}&interval=${intervalParam(interval)}` : "";
+      window.location.replace(`/verify-email${next}`);
     } catch {
       setErrors({ form: "Network error. Check your connection and try again." });
       setLoading(false);
@@ -107,9 +90,7 @@ export function SignupForm({
   }
 
   const buttonLabel = loading
-    ? isPaid
-      ? "Redirecting to payment…"
-      : "Creating account…"
+    ? "Creating account…"
     : isPaid
       ? paidButtonLabel(initialPlan, interval)
       : "Sign up free";
@@ -123,7 +104,7 @@ export function SignupForm({
         loading={loading}
         canceled={canceled}
       />
-      <form onSubmit={onSubmit} noValidate className="mt-8 space-y-5">
+      <form onSubmit={onSubmit} noValidate className="relative mt-8 space-y-5">
         {errors.form && (
           <AuthNotice tone="error" className="">
             {errors.form}
@@ -177,8 +158,18 @@ export function SignupForm({
           error={errors.confirm}
           disabled={loading}
         />
+        <div aria-hidden className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden">
+          <label htmlFor="website">Website</label>
+          <input id="website" name="website" tabIndex={-1} autoComplete="off" value={website}
+            onChange={(e) => setWebsite(e.target.value)} />
+        </div>
         <SubmitButton loading={loading}>{buttonLabel}</SubmitButton>
-        {isPaid && <p className="text-center text-xs text-muted">Payments are non-refundable.</p>}
+        {isPaid && (
+          <p className="text-center text-xs text-muted">
+            We&apos;ll email you a 6-digit code first, then take you to payment. Payments are
+            non-refundable.
+          </p>
+        )}
       </form>
       <p className="mt-6 text-sm text-muted">
         Already have an account?{" "}

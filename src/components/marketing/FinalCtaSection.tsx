@@ -32,10 +32,10 @@ function FirstCheckReadout() {
         </p>
         {readout.map((r) => (
           <p key={r.k} className="grid grid-cols-[4.25rem_minmax(0,1fr)] gap-x-2">
-            <span className="text-solid-fg/45">{r.k}</span>
+            <span className="text-solid-fg/55">{r.k}</span>
             <span className="truncate">
               <span className={r.tone}>{r.v}</span>
-              <span className="text-solid-fg/45"> · {r.note}</span>
+              <span className="text-solid-fg/55"> · {r.note}</span>
             </span>
           </p>
         ))}

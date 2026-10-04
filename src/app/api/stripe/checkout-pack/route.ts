@@ -10,7 +10,8 @@ import {
   type PackPlanId,
 } from "@/lib/plans";
 import { missingPriceMessage, stripePriceIdForPack } from "@/lib/stripe-prices";
-import { getStripe, isStripeConfigured } from "@/lib/stripe";
+import { getStripe, isStripeConfigured, stripeUserMessage } from "@/lib/stripe";
+import { MINUTE, rateLimit, tooMany } from "@/lib/rate-limit";
 import {
   LATEST_INVOICE_EXPAND,
   derivePlanAndPacks,
@@ -33,6 +34,8 @@ export async function POST() {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const limited = await rateLimit([{ key: `checkout-pack:user:${session.user.id}`, limit: 10, windowMs: 10 * MINUTE }]);
+  if (!limited.ok) return tooMany(limited.retryAfterSec);
 
   if (!isStripeConfigured()) {
     return NextResponse.json(
@@ -188,13 +191,13 @@ export async function POST() {
         expand: [LATEST_INVOICE_EXPAND],
       });
     } catch (err) {
-      const stripeErr = err as { message?: string };
       console.error("checkout-pack payment error", err);
       return NextResponse.json(
         {
-          error:
-            stripeErr.message ||
+          error: stripeUserMessage(
+            err,
             "Payment failed. No site pack was added. Update your card in Manage billing and try again.",
+          ),
           code: "PAYMENT_FAILED",
         },
         { status: 402 },

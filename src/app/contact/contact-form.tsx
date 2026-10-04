@@ -38,6 +38,7 @@ export function ContactForm({ initialName, initialEmail }: { initialName: string
   const [sending, setSending] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const openedAt = useRef(Date.now());
 
   useEffect(() => {
     setValues((v) => ({ ...v, topic: urlTopic }));
@@ -72,7 +73,7 @@ export function ContactForm({ initialName, initialEmail }: { initialName: string
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...check.data, company: values.company }),
+        body: JSON.stringify({ ...check.data, company: values.company, elapsedMs: Date.now() - openedAt.current }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {

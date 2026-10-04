@@ -1,4 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
@@ -6,6 +8,14 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { AppFooter } from "@/components/AppFooter";
 import { SiteChrome } from "@/components/SiteChrome";
+import {
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_URL,
+  TAGLINE,
+  THEME_DARK,
+  THEME_LIGHT,
+} from "@/lib/site-config";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -20,26 +30,41 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Websites With Punch — Uptime, SSL & Domain Monitoring",
-    template: "%s · Websites With Punch",
+    default: `${SITE_NAME}: Uptime, SSL & Domain Expiry Monitoring`,
+    template: `%s · ${SITE_NAME}`,
   },
-  description:
-    "Monitor uptime, SSL certificates, and domain expiry for your websites. Free for one site, Pro for ten, Business for fifty. Pay monthly or yearly.",
-  metadataBase: new URL("https://websiteswithpunch.com"),
-  // Static SVG only — Next ImageResponse /icon routes crash on Windows paths with spaces
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
   icons: {
-    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/favicon.svg", type: "image/svg+xml" }],
-    shortcut: "/favicon.svg",
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   openGraph: {
-    title: "Websites With Punch",
-    description: "Website health monitoring with punch — uptime, SSL, and domain expiry.",
-    url: "https://websiteswithpunch.com",
-    siteName: "Websites With Punch",
     type: "website",
+    siteName: SITE_NAME,
+    url: SITE_URL,
+    title: `${SITE_NAME}: ${TAGLINE}`,
+    description: SITE_DESCRIPTION,
+    locale: "en_US",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME}: ${TAGLINE}`,
+    description: SITE_DESCRIPTION,
+  },
+  formatDetection: { telephone: false, email: false, address: false },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: THEME_LIGHT },
+    { media: "(prefers-color-scheme: dark)", color: THEME_DARK },
+  ],
 };
 
 const themeInitScript = `(function(){try{var t=localStorage.getItem("theme");if(t==="dark")document.documentElement.classList.add("dark");}catch(e){}})();`;
@@ -60,6 +85,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </SiteChrome>
           </div>
         </Providers>
+        {/* Cookie-free Vercel Web Analytics + Speed Insights (only on Vercel deployments). */}
+        {process.env.VERCEL ? (
+          <>
+            <Analytics />
+            <SpeedInsights />
+          </>
+        ) : null}
       </body>
     </html>
   );

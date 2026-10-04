@@ -4,7 +4,8 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { runSiteCheck } from "@/lib/site-check-run";
 import { applyDuePendingAndEnforce, toClientSite } from "@/lib/site-limits";
-import { assertHostnameResolves } from "@/lib/dns-check";
+import { assertHostnameResolves, assertPublicSite } from "@/lib/dns-check";
+import { MINUTE, clientIp, rateLimit, tooMany } from "@/lib/rate-limit";
 import {
   SiteUrlError,
   findSiteByHostKey,
@@ -12,8 +13,8 @@ import {
 } from "@/lib/url";
 
 const schema = z.object({
-  name: z.string().min(1).max(120).optional(),
-  url: z.string().min(3).max(500).optional(),
+  name: z.string().trim().min(1).max(120).optional(),
+  url: z.string().trim().min(3).max(500).optional(),
 });
 
 async function ownedSite(userId: string, id: string) {
@@ -56,14 +57,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     );
   }
 
-  const body = await req.json();
+  const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
   const data: { name?: string; url?: string } = {};
   let pathWasStripped = false;
   let hostKey: string | undefined;
-  if (parsed.data.name) data.name = parsed.data.name.trim();
+  if (parsed.data.name) data.name = parsed.data.name;
   if (parsed.data.url) {
     // 1) normalize (+ ICANN suffix)
     let normalized;
@@ -111,6 +112,12 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
           },
           { status: 400 },
         );
+      }
+
+      // 3b) SSRF guard: public addresses only.
+      const publicCheck = await assertPublicSite(normalized.hostKey);
+      if (!publicCheck.ok) {
+        return NextResponse.json({ error: publicCheck.error, code: "BLOCKED_TARGET" }, { status: 400 });
       }
     }
   }
@@ -166,6 +173,13 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (body?.action !== "check") {
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   }
+
+  // Each site already has a once-a-minute slot; this caps one account cycling many sites.
+  const limited = await rateLimit([
+    { key: `recheck:user:${session.user.id}`, limit: 120, windowMs: 10 * MINUTE },
+    { key: `recheck:ip:${clientIp(req)}`, limit: 240, windowMs: 10 * MINUTE },
+  ]);
+  if (!limited.ok) return tooMany(limited.retryAfterSec, "Too many rechecks. Please wait a few minutes.");
 
   // auto = auto refresh tick (same once-per-minute slot, no domain lookup).
   const outcome = await runSiteCheck(site, { auto: body?.auto === true });

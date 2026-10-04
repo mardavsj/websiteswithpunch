@@ -15,7 +15,8 @@ import {
   currentEffectiveLimit,
   toClientSite,
 } from "@/lib/site-limits";
-import { assertHostnameResolves } from "@/lib/dns-check";
+import { assertHostnameResolves, assertPublicSite } from "@/lib/dns-check";
+import { HOUR, clientIp, rateLimit, tooMany } from "@/lib/rate-limit";
 import {
   SiteUrlError,
   findSiteByHostKey,
@@ -23,8 +24,8 @@ import {
 } from "@/lib/url";
 
 const schema = z.object({
-  name: z.string().min(1).max(120),
-  url: z.string().min(3).max(500),
+  name: z.string().trim().min(1).max(120),
+  url: z.string().trim().min(3).max(500),
 });
 
 export async function GET() {
@@ -47,6 +48,12 @@ export async function POST(req: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const limited = await rateLimit([
+    { key: `add-site:user:${session.user.id}`, limit: 30, windowMs: HOUR },
+    { key: `add-site:ip:${clientIp(req)}`, limit: 60, windowMs: HOUR },
+  ]);
+  if (!limited.ok) return tooMany(limited.retryAfterSec, "You've added a lot of sites in a short time. Please try again later.");
 
   await applyDuePendingAndEnforce(session.user.id);
 
@@ -86,7 +93,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const body = await req.json();
+  const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid name or URL" }, { status: 400 });
@@ -145,13 +152,19 @@ export async function POST(req: Request) {
     );
   }
 
+  // 3b) SSRF guard: the domain must only resolve to public addresses.
+  const publicCheck = await assertPublicSite(hostKey);
+  if (!publicCheck.ok) {
+    return NextResponse.json({ error: publicCheck.error, code: "BLOCKED_TARGET" }, { status: 400 });
+  }
+
   // 4) create
   let site;
   try {
     site = await prisma.site.create({
       data: {
         userId: user.id,
-        name: parsed.data.name.trim(),
+        name: parsed.data.name,
         url,
         status: "pending",
         locked: false,

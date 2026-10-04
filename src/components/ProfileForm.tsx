@@ -73,6 +73,9 @@ export function ProfileForm({
           id="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          placeholder="Your name"
+          autoComplete="name"
+          maxLength={80}
           required
           className="mt-1 w-full border border-rule bg-bg px-3 py-2 text-sm"
         />
@@ -89,6 +92,7 @@ export function ProfileForm({
           autoComplete="current-password"
           value={currentPassword}
           onChange={(e) => setCurrentPassword(e.target.value)}
+          placeholder="Current password"
           className="mt-1 w-full border border-rule bg-bg px-3 py-2 text-sm"
         />
         <label className="mt-3 block text-sm text-muted" htmlFor="new">
@@ -100,6 +104,7 @@ export function ProfileForm({
           autoComplete="new-password"
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
+          placeholder="At least 8 characters"
           minLength={8}
           className="mt-1 w-full border border-rule bg-bg px-3 py-2 text-sm"
         />

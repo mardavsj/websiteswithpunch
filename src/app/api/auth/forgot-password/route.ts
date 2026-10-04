@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { HOUR, MINUTE, clientIp, rateLimit, tooMany } from "@/lib/rate-limit";
 import { createResetToken } from "@/lib/password-reset";
 import { resetLink, sendResetEmail } from "@/lib/auth-email";
 
@@ -10,8 +10,6 @@ export const dynamic = "force-dynamic";
 
 const schema = z.object({ email: z.string().trim().email().max(200) });
 const NEUTRAL = "If an account exists, we've sent a reset link.";
-const FIFTEEN_MIN = 15 * 60 * 1000;
-const HOUR = 60 * 60 * 1000;
 
 /**
  * Request a reset link. The reply is the same whether or not the account exists, so the form
@@ -29,17 +27,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
   }
 
-  const limited = rateLimit(`forgot:ip:${clientIp(req)}`, 5, FIFTEEN_MIN);
-  if (!limited.ok) {
-    return NextResponse.json(
-      { error: "Too many reset requests. Please wait a few minutes and try again." },
-      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
-    );
+  const ipLimited = await rateLimit([{ key: `forgot:ip:${clientIp(req)}`, limit: 5, windowMs: 15 * MINUTE }]);
+  if (!ipLimited.ok) {
+    return tooMany(ipLimited.retryAfterSec, "Too many reset requests. Please wait a few minutes and try again.");
   }
 
   const email = parsed.data.email.toLowerCase();
-  // Per-address cap: over it we still answer neutrally, we just don't send another email.
-  if (!rateLimit(`forgot:email:${email}`, 3, HOUR).ok) {
+  // Per-address cap: over it we still answer neutrally (no enumeration), we just don't send.
+  if (!(await rateLimit([{ key: `forgot:email:${email}`, limit: 3, windowMs: HOUR }])).ok) {
     return NextResponse.json({ ok: true, message: NEUTRAL });
   }
 

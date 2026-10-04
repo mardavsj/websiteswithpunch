@@ -187,6 +187,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
+  // Idempotency: Stripe retries and can deliver an event twice. Claim the event id first; a
+  // duplicate is acknowledged without re-running. If handling fails the claim is released so
+  // Stripe's retry can process it.
+  try {
+    await prisma.stripeEvent.create({ data: { id: event.id, type: event.type } });
+  } catch (err) {
+    if ((err as { code?: string })?.code === "P2002") {
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+    console.error("Webhook idempotency claim failed", err);
+    return NextResponse.json({ error: "Handler failed" }, { status: 500 });
+  }
+
   try {
     switch (event.type) {
       case "checkout.session.completed": {
@@ -366,6 +379,7 @@ export async function POST(req: Request) {
     }
   } catch (err) {
     console.error("Webhook handler error", err);
+    await prisma.stripeEvent.delete({ where: { id: event.id } }).catch(() => undefined);
     return NextResponse.json({ error: "Handler failed" }, { status: 500 });
   }
 

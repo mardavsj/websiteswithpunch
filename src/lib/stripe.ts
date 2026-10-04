@@ -14,3 +14,12 @@ export function isStripeConfigured(): boolean {
   const hasPro = Boolean(stripePriceIdForPlan("pro"));
   return hasKeys && hasPro;
 }
+
+/**
+ * Text safe to show for a failed Stripe call: card errors carry a customer-facing message
+ * ("Your card was declined."); anything else (config, invalid price id…) gets the fallback.
+ */
+export function stripeUserMessage(err: unknown, fallback: string): string {
+  const e = err as { type?: string; message?: string };
+  return e?.type === "StripeCardError" && e.message ? e.message : fallback;
+}

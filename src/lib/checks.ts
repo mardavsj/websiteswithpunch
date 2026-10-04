@@ -2,6 +2,9 @@ import tls from "tls";
 import { URL } from "url";
 import { normalizeSiteUrl } from "./url";
 import { checkDomainExpiry, type DomainResult } from "./checks-domain";
+import { guardedLookup, isBlockedIp } from "./net-guard";
+import { describeRequestError, probeOnce } from "./safe-request";
+import net from "node:net";
 
 export type { DomainResult };
 export { checkDomainExpiry };
@@ -19,8 +22,6 @@ export type SslResult = {
   daysLeft: number | null;
   error: string | null;
 };
-
-const UA = "WebsitesWithPunch-Monitor/1.0";
 
 function checkTargetUrl(rawUrl: string): string {
   try {
@@ -55,38 +56,28 @@ function isTlsHostnameError(err: unknown): boolean {
   return /CERT_ALTNAME|hostname\/IP does not match|altname|SSL|TLS|fetch failed/i.test(msg);
 }
 
-async function fetchUptimeOnce(url: string): Promise<UptimeResult> {
+/** Per-hop and whole-check time limits for the uptime request. */
+const HOP_TIMEOUT_MS = 10_000;
+const UPTIME_BUDGET_MS = 15_000;
+const MAX_REDIRECTS = 5;
+
+/**
+ * GET the site, following up to MAX_REDIRECTS redirects by hand: every hop is re-validated
+ * (http/https only, allowed ports, public addresses only) before we connect, so a public URL
+ * can't bounce us to 127.0.0.1 or the cloud metadata address.
+ */
+export async function fetchUptimeOnce(url: string): Promise<UptimeResult> {
   const started = Date.now();
   let current = url;
   try {
-    for (let hop = 0; hop < 5; hop++) {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15000);
-      let res: Response;
-      try {
-        res = await fetch(current, {
-          method: "GET",
-          redirect: "manual",
-          signal: controller.signal,
-          headers: { "User-Agent": UA, Accept: "*/*" },
-          cache: "no-store",
-        });
-      } finally {
-        clearTimeout(timeout);
-      }
+    for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+      const left = UPTIME_BUDGET_MS - (Date.now() - started);
+      if (left <= 0) throw Object.assign(new Error("Timed out"), { code: "ETIMEDOUT" });
+      const res = await probeOnce(current, Math.min(HOP_TIMEOUT_MS, left));
 
-      if (res.status >= 300 && res.status < 400) {
-        const loc = res.headers.get("location");
-        if (!loc) {
-          return {
-            status: "up",
-            statusCode: res.status,
-            latencyMs: Date.now() - started,
-            error: null,
-            finalUrl: current,
-          };
-        }
-        current = new URL(loc, current).toString();
+      if (res.status >= 300 && res.status < 400 && res.location) {
+        if (hop === MAX_REDIRECTS) break;
+        current = new URL(res.location, current).toString();
         continue;
       }
 
@@ -96,7 +87,7 @@ async function fetchUptimeOnce(url: string): Promise<UptimeResult> {
         statusCode: res.status,
         latencyMs: Date.now() - started,
         error: ok ? null : `HTTP ${res.status}`,
-        finalUrl: res.url || current,
+        finalUrl: current,
       };
     }
     return {
@@ -111,7 +102,7 @@ async function fetchUptimeOnce(url: string): Promise<UptimeResult> {
       status: "error",
       statusCode: null,
       latencyMs: Date.now() - started,
-      error: err instanceof Error ? err.message : "Request failed",
+      error: describeRequestError(err),
       finalUrl: null,
     };
   }
@@ -136,8 +127,19 @@ export async function checkUptime(rawUrl: string): Promise<UptimeResult> {
 
 function sslConnect(host: string, port: number): Promise<SslResult> {
   return new Promise((resolve) => {
+    if ((port !== 443 && port !== 8443) || (net.isIP(host) && isBlockedIp(host))) {
+      resolve({ expiresAt: null, daysLeft: null, error: "Blocked: private or reserved address" });
+      return;
+    }
     const socket = tls.connect(
-      { host, port, servername: host, rejectUnauthorized: false, timeout: 10000 },
+      {
+        host,
+        port,
+        servername: net.isIP(host) ? undefined : host,
+        rejectUnauthorized: false,
+        timeout: 8000,
+        lookup: guardedLookup as never,
+      },
       () => {
         try {
           const cert = socket.getPeerCertificate();
@@ -149,18 +151,19 @@ function sslConnect(host: string, port: number): Promise<SslResult> {
           const expiresAt = new Date(cert.valid_to);
           const daysLeft = Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
           resolve({ expiresAt, daysLeft, error: null });
-        } catch (err) {
+        } catch {
           socket.destroy();
           resolve({
             expiresAt: null,
             daysLeft: null,
-            error: err instanceof Error ? err.message : "SSL read failed",
+            error: "SSL read failed",
           });
         }
       },
     );
     socket.on("error", (err) => {
-      resolve({ expiresAt: null, daysLeft: null, error: err.message });
+      socket.destroy();
+      resolve({ expiresAt: null, daysLeft: null, error: describeRequestError(err) });
     });
     socket.on("timeout", () => {
       socket.destroy();

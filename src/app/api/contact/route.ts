@@ -3,13 +3,12 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { validateContact } from "@/lib/contact";
 import { sendContactEmail } from "@/lib/contact-email";
-import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { HOUR, clientIp, rateLimit, tooMany } from "@/lib/rate-limit";
+import { looksLikeBot } from "@/lib/spam";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const LIMIT = 5;
-const WINDOW_MS = 60 * 60 * 1000;
 
 /**
  * Contact form: validate, save to ContactMessage (backup, so nothing is lost), then email the
@@ -19,12 +18,13 @@ export async function POST(req: Request) {
   let body: Record<string, unknown>;
   try {
     body = (await req.json()) as Record<string, unknown>;
+    if (!body || typeof body !== "object" || Array.isArray(body)) throw new Error("bad body");
   } catch {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
-  // Honeypot: real visitors never see this field. Pretend success, store nothing.
-  if (typeof body.company === "string" && body.company.trim() !== "") {
+  // Honeypot / filled-too-fast: pretend success, store nothing.
+  if (looksLikeBot(body, "company")) {
     return NextResponse.json({ ok: true });
   }
 
@@ -36,11 +36,14 @@ export async function POST(req: Request) {
     );
   }
 
-  const limited = rateLimit(`contact:${clientIp(req)}`, LIMIT, WINDOW_MS);
+  const limited = await rateLimit([
+    { key: `contact:ip:${clientIp(req)}`, limit: 5, windowMs: HOUR },
+    { key: `contact:email:${parsed.data.email.toLowerCase()}`, limit: 5, windowMs: HOUR },
+  ]);
   if (!limited.ok) {
-    return NextResponse.json(
-      { error: "You've sent several messages in a short time. Please try again in an hour." },
-      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    return tooMany(
+      limited.retryAfterSec,
+      "You've sent several messages in a short time. Please try again in an hour.",
     );
   }
 
@@ -48,7 +51,7 @@ export async function POST(req: Request) {
     const session = await getSession();
     const userId = session?.user?.id ?? null;
     const row = await prisma.contactMessage.create({
-      data: { ...parsed.data, userId, emailSent: false },
+      data: { ...parsed.data, email: parsed.data.email.toLowerCase(), userId, emailSent: false },
     });
 
     const result = await sendContactEmail({ ...parsed.data, userId, id: row.id });

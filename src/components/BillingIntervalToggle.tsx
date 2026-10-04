@@ -58,7 +58,7 @@ export function BillingIntervalToggle({
             {o.value === "year" && (
               <span
                 className={`px-1.5 py-1 text-[10px] font-semibold uppercase leading-none tracking-[0.06em] ${
-                  on ? "bg-accent text-white" : "bg-accent-soft text-accent"
+                  on ? "bg-accent text-white" : "bg-accent-soft text-accent-hover dark:text-accent"
                 }`}
               >
                 2 months free

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { MINUTE, clientIp, rateLimit, tooMany } from "@/lib/rate-limit";
 import { resetPasswordWithToken } from "@/lib/password-reset";
 import { PASSWORD_MAX, PASSWORD_MIN } from "@/lib/password-rules";
 
@@ -33,13 +33,8 @@ export async function POST(req: Request) {
     );
   }
 
-  const limited = rateLimit(`reset:ip:${clientIp(req)}`, 10, 15 * 60 * 1000);
-  if (!limited.ok) {
-    return NextResponse.json(
-      { error: "Too many attempts. Please wait a few minutes and try again." },
-      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
-    );
-  }
+  const limited = await rateLimit([{ key: `reset:ip:${clientIp(req)}`, limit: 10, windowMs: 15 * MINUTE }]);
+  if (!limited.ok) return tooMany(limited.retryAfterSec);
 
   try {
     const result = await resetPasswordWithToken(parsed.data.token, parsed.data.password);

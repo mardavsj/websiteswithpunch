@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { NO_INDEX } from "@/lib/site-config";
 import type { PlanId } from "@/lib/plans";
 import { parseInterval } from "@/lib/billing-interval";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { SignupForm } from "./signup-form";
 
-export const metadata: Metadata = { title: "Create your account" };
+export const metadata: Metadata = {
+  title: "Create your account",
+  description: "Start monitoring uptime, SSL and domain expiry. Free for one site.",
+  alternates: { canonical: "/signup" },
+  robots: NO_INDEX,
+};
 
 function parsePlan(raw: string | string[] | undefined): PlanId {
   const v = Array.isArray(raw) ? raw[0] : raw;

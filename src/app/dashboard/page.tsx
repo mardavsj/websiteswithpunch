@@ -15,6 +15,7 @@ import { DashboardBanners } from "@/components/DashboardBanners";
 import { DashboardPendingBanner } from "@/components/DashboardPendingBanner";
 import { loadAccount } from "@/lib/account-load";
 import { toDashboardSite } from "@/lib/dashboard-sites";
+import { RememberLayout } from "@/components/skeleton/shape";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,16 @@ export default async function DashboardPage({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+      <RememberLayout
+        plan={plan}
+        active={activeSites.length}
+        locked={lockedSites.length}
+        limit={limit}
+        billing={Boolean(user.stripeCustomerId)}
+        cards={sitesRaw
+          .slice(0, 12)
+          .map((s): [number, number, number] => [s.name.length, s.url.length, s.locked ? 1 : 0])}
+      />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="font-display text-2xl font-medium text-ink">

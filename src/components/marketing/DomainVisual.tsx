@@ -36,7 +36,7 @@ export function DomainVisual() {
               <span className="absolute -translate-x-1/2 font-medium text-accent" style={{ left: TODAY }}>
                 Today
               </span>
-              <span className="absolute -translate-x-1/2 text-amber-600 dark:text-amber-400" style={{ left: ALERT }}>
+              <span className="absolute -translate-x-1/2 text-amber-700 dark:text-amber-400" style={{ left: ALERT }}>
                 30 d
               </span>
             </div>

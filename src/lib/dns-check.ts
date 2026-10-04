@@ -1,4 +1,5 @@
 import dns from "node:dns/promises";
+import { BlockedTargetError, assertPublicHost } from "./net-guard";
 
 export type DnsCheckResult =
   | { ok: true }
@@ -86,4 +87,29 @@ export async function assertHostnameResolves(hostname: string): Promise<DnsCheck
 
   if (timedOut) return { ok: true };
   return result;
+}
+
+/**
+ * Add/edit-time SSRF guard: the domain must resolve only to public addresses. NXDOMAIN is
+ * handled by assertHostnameResolves; a slow or failed lookup here is allowed through because
+ * every check re-validates the address at connect time (and each redirect hop) anyway.
+ */
+export async function assertPublicSite(
+  hostname: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const host = hostname.toLowerCase().replace(/^www\./, "");
+  const verdict = await Promise.race([
+    assertPublicHost(host).then(
+      () => "ok" as const,
+      (err) => (err instanceof BlockedTargetError ? ("blocked" as const) : ("unknown" as const)),
+    ),
+    new Promise<"unknown">((r) => setTimeout(() => r("unknown"), 4000)),
+  ]);
+  if (verdict === "blocked") {
+    return {
+      ok: false,
+      error: "This domain points to a private or reserved network address, so it can't be monitored.",
+    };
+  }
+  return { ok: true };
 }

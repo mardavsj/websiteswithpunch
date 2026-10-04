@@ -46,7 +46,7 @@ export const faqs = [
   },
   {
     q: "How often do checks run?",
-    a: "Uptime checks run on a regular schedule so you see recent status and latency on the dashboard. SSL and domain expiry are refreshed so days-remaining stay useful — not stale.",
+    a: "Every site is checked once a day in the background: uptime and response time, SSL certificate expiry and domain expiry. Open a site to recheck it on demand (once a minute), or turn on auto refresh to recheck every 60 seconds while the page is open.",
   },
   {
     q: "What’s free vs Pro vs Business?",
@@ -65,8 +65,8 @@ export const faqs = [
     a: "We use best-effort RDAP/WHOIS lookups. Most common TLDs work well; some registries are sparse or rate-limited. Treat it as an early warning, not a legal registrar notice.",
   },
   {
-    q: "Will you spam me with alerts?",
-    a: "The goal is signal, not noise: clear status on the dashboard and practical warnings around SSL and domain windows — not a firehose of every transient blip.",
+    q: "Do you send alerts?",
+    a: "Not today. Everything shows on your dashboard: up/down status, response time, and clear warnings as SSL and domain expiry dates get close. Open it whenever you like, or recheck a site on demand.",
   },
   {
     q: "What happens to my sites if I downgrade or cancel?",

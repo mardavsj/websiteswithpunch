@@ -8,16 +8,25 @@ const EMAIL = "hello@websiteswithpunch.com";
 
 type FooterLink = { label: string; href: string };
 
-/** Honest links only: homepage sections and the contact form with its topic preselected. */
+/** Honest links only: real pages, homepage sections and the contact form with its topic preselected. */
 const columns: { title: string; links: FooterLink[] }[] = [
   {
     title: "Product",
     links: [
-      { label: "What we monitor", href: "/#features" },
+      { label: "Uptime monitoring", href: "/uptime-monitoring" },
+      { label: "SSL monitoring", href: "/ssl-certificate-monitoring" },
+      { label: "Domain expiry monitoring", href: "/domain-expiry-monitoring" },
       { label: "How it works", href: "/#how-it-works" },
-      { label: "Dashboard preview", href: "/#dashboard-preview" },
-      { label: "Who it's for", href: "/#who-its-for" },
       { label: "Pricing", href: "/#pricing" },
+    ],
+  },
+  {
+    title: "Free tools",
+    links: [
+      { label: "SSL checker", href: "/tools/ssl-checker" },
+      { label: "Domain expiry checker", href: "/tools/domain-expiry-checker" },
+      { label: "Website down checker", href: "/tools/website-down-checker" },
+      { label: "All free tools", href: "/tools" },
     ],
   },
   {
@@ -49,7 +58,7 @@ export function Footer() {
   return (
     <footer className="overflow-hidden border-t border-rule bg-bg">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="grid gap-12 pb-16 pt-16 sm:pt-20 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] md:gap-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-24 lg:pb-20">
+        <div className="grid gap-12 pb-16 pt-16 sm:pt-20 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)] md:gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)] lg:gap-20 lg:pb-20">
           <div>
             <Link href="/" className="inline-flex items-center gap-3 text-ink">
               <Image src="/logo.svg" alt="" width={36} height={36} unoptimized className="h-9 w-9 object-contain" />
@@ -62,14 +71,14 @@ export function Footer() {
               One calm dashboard for the websites you look after.
             </p>
             <p className="mt-8 text-xs text-muted">Questions? Write to us</p>
-            <a
-              href={`mailto:${EMAIL}`}
+            <Link
+              href={contactHref("general")}
               className="mt-1.5 inline-block font-display text-base font-medium text-ink underline decoration-rule underline-offset-[6px] transition-colors hover:decoration-ink"
             >
               {EMAIL}
-            </a>
+            </Link>
           </div>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:gap-x-10">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 sm:gap-x-8">
             {columns.map((col) => (
               <nav key={col.title} aria-labelledby={`footer-${col.title}`}>
                 <h2 id={`footer-${col.title}`} className="font-display text-sm font-medium text-ink">

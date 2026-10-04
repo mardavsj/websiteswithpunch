@@ -50,7 +50,14 @@ export function LoginForm() {
     }).catch(() => null);
     if (!res || res.error) {
       setLoading(false);
-      setErrors({ form: res?.error === "CredentialsSignin" ? "Incorrect email or password." : "Could not log in. Please try again." });
+      setErrors({
+        form:
+          res?.error === "CredentialsSignin"
+            ? "Incorrect email or password."
+            : res?.error === "RATE_LIMITED"
+              ? "Too many login attempts. Please wait 15 minutes and try again."
+              : "Could not log in. Please try again.",
+      });
       return;
     }
     // Full load, not router.replace: links prefetched while signed out (e.g. the footer's

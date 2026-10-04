@@ -4,6 +4,8 @@ import { InAppBackLink } from "@/components/InAppBackLink";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
+  description: "The terms that apply when you use Websites With Punch.",
+  alternates: { canonical: "/terms" },
 };
 
 export default function TermsPage() {
@@ -173,14 +175,7 @@ export default function TermsPage() {
           >
             contact form
           </Link>{" "}
-          or email{" "}
-          <a
-            className="text-accent hover:underline"
-            href="mailto:hello@websiteswithpunch.com"
-          >
-            hello@websiteswithpunch.com
-          </a>
-          .
+          or write to hello@websiteswithpunch.com.
         </p>
       </div>
     </div>

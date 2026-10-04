@@ -6,6 +6,7 @@ import { ContactForm } from "./contact-form";
 export const metadata: Metadata = {
   title: "Contact",
   description: "Questions about monitoring, billing or custom site limits? Send us a message.",
+  alternates: { canonical: "/contact" },
 };
 
 const notes = [

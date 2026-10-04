@@ -1,0 +1,33 @@
+# Websites With Punch
+
+> Websites With Punch is a website health monitor for freelancers, agencies and small businesses. It checks each website you add once a day for uptime and response time, SSL certificate expiry and domain expiry, and shows all three on one dashboard. It is a product by Makvion Technologies.
+
+## What it does
+- Uptime: a daily HTTPS request to each site's homepage (following up to 5 redirects) records up/down status, the HTTP status code and the response time. 2xx and 3xx count as up; 4xx and 5xx count as down.
+- SSL certificate expiry: reads the live certificate on port 443 daily and shows the days left (amber at 30 days, red at 7).
+- Domain expiry: looks up the registrable domain's expiry date daily over RDAP, with a WHOIS fallback, and shows the days left (amber at 30 days, red at 7). Best effort: some country-code registries don't publish expiry dates.
+- On demand: any site can be rechecked from its page (once a minute per site), and an opt-in auto refresh rechecks every 60 seconds while the page is open.
+- History: up to 90 days of checks per site, with response-time charts (24 hours, 7 days, 30 days, all), uptime percentage, last downtime and a Health Score.
+- Not included: no email, SMS or chat alerts, no public status pages, and checks run from a single location (not multi-region).
+
+## Pricing (USD)
+- Free: 1 site, $0.
+- Pro: up to 10 sites, $12/month or $120/year; optional +5 site packs ($6/month each, up to 30 sites).
+- Business: up to 50 sites, $42/month or $420/year; optional +10 site packs ($9/month each, up to 100 sites).
+- Yearly billing gives 2 months free. No card needed for the Free plan.
+
+## Free tools (no signup)
+- [SSL checker](https://www.websiteswithpunch.com/tools/ssl-checker): issuer, expiry date, days left, covered hostnames and browser trust for any public domain.
+- [Domain expiry checker](https://www.websiteswithpunch.com/tools/domain-expiry-checker): registrar, expiry date and days left via RDAP.
+- [Website down checker](https://www.websiteswithpunch.com/tools/website-down-checker): status code, response time and final URL from our server.
+
+## Key pages
+- [Home](https://www.websiteswithpunch.com/)
+- [Uptime monitoring](https://www.websiteswithpunch.com/uptime-monitoring)
+- [SSL certificate monitoring](https://www.websiteswithpunch.com/ssl-certificate-monitoring)
+- [Domain expiry monitoring](https://www.websiteswithpunch.com/domain-expiry-monitoring)
+- [Pricing](https://www.websiteswithpunch.com/#pricing)
+- [FAQ](https://www.websiteswithpunch.com/#faq)
+- [Contact](https://www.websiteswithpunch.com/contact)
+- [Terms](https://www.websiteswithpunch.com/terms)
+- [Privacy](https://www.websiteswithpunch.com/privacy)

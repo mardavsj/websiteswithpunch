@@ -5,6 +5,7 @@
 import { createHash, randomBytes, timingSafeEqual } from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
+import { sendPasswordChangedEmail } from "./auth-email";
 
 export const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
@@ -63,17 +64,27 @@ export async function resetPasswordWithToken(
   if (found.state !== "valid") return found.state;
   const { row } = found;
   const password = await bcrypt.hash(newPassword, 12);
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const claimed = await tx.passwordResetToken.updateMany({
       where: { id: row.id, usedAt: null, expiresAt: { gt: now } },
       data: { usedAt: now },
     });
     if (claimed.count !== 1) return "used" as const;
     await tx.user.update({ where: { id: row.userId }, data: { password } });
+    // The emailed link proves the address works, so an unverified account becomes verified.
+    await tx.user.updateMany({ where: { id: row.userId, emailVerified: null }, data: { emailVerified: now } });
     await tx.passwordResetToken.updateMany({
       where: { userId: row.userId, usedAt: null },
       data: { usedAt: now },
     });
     return "ok" as const;
   });
+  if (result === "ok") {
+    const user = await prisma.user.findUnique({ where: { id: row.userId }, select: { email: true, name: true } });
+    if (user) {
+      const sent = await sendPasswordChangedEmail(user.email, user.name).catch(() => null);
+      if (sent && !sent.sent) console.warn("[password-reset] changed-notice not sent:", sent.reason);
+    }
+  }
+  return result;
 }

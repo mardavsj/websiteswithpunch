@@ -4,6 +4,8 @@ import { InAppBackLink } from "@/components/InAppBackLink";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
+  description: "How Websites With Punch collects, uses and protects your information.",
+  alternates: { canonical: "/privacy" },
 };
 
 export default function PrivacyPage() {
@@ -16,7 +18,7 @@ export default function PrivacyPage() {
       </h1>
 
       <p className="mt-2 text-sm text-muted">
-        Last updated: October 1, 2026
+        Last updated: October 4, 2026
       </p>
 
       <div className="mt-8 space-y-6 leading-relaxed text-ink">
@@ -63,8 +65,18 @@ export default function PrivacyPage() {
             the service.
           </li>
           <li>
-            <strong>Communications:</strong> information you provide when you
-            contact us for support or otherwise communicate with us.
+            <strong>Communications:</strong> messages you send through our
+            contact form (your name, email, topic and message) are stored in
+            our database so none are lost, and are also emailed to our team.
+          </li>
+          <li>
+            <strong>Email verification:</strong> at sign-up we email a 6-digit
+            code and store only a hashed copy, which expires after 10 minutes.
+            Unverified accounts with no sites are deleted after about 48 hours.
+          </li>
+          <li>
+            <strong>Free tools:</strong> domains entered in our free checkers
+            are looked up live, cached briefly and not linked to an account.
           </li>
         </ul>
 
@@ -98,6 +110,47 @@ export default function PrivacyPage() {
           subscription identifiers, payment status, and billing-related
           information necessary to manage your account. We do not store your
           full payment card number on our systems.
+        </p>
+
+        <h2 className="font-display text-xl font-medium text-ink">
+          Service Providers
+        </h2>
+
+        <ul className="list-disc space-y-2 pl-5 text-muted">
+          <li>
+            <strong>Vercel</strong> hosts the website and app. We use Vercel
+            Web Analytics and Speed Insights to count page views and measure
+            page speed; they use no cookies and don&apos;t track you across
+            other sites.
+          </li>
+          <li>
+            <strong>Neon</strong> hosts our database (in Singapore).
+          </li>
+          <li>
+            <strong>Stripe</strong> processes payments for paid plans.
+          </li>
+          <li>
+            <strong>Resend</strong> delivers our transactional email: sign-up
+            verification codes, password reset links, password change
+            confirmations and contact form messages to our team.
+          </li>
+          <li>
+            To find domain expiry dates we send your site&apos;s domain name
+            (never your account details) to public RDAP and WHOIS lookup
+            services.
+          </li>
+        </ul>
+
+        <h2 className="font-display text-xl font-medium text-ink">
+          Cookies
+        </h2>
+
+        <p className="text-muted">
+          We only use cookies needed to keep you signed in (a session cookie
+          and related security cookies). We don&apos;t use advertising or
+          tracking cookies. Your light/dark theme choice, and a small layout
+          hint (site counts and name lengths) used to draw loading screens,
+          are kept in your browser&apos;s local storage.
         </p>
 
         <h2 className="font-display text-xl font-medium text-ink">
@@ -142,8 +195,9 @@ export default function PrivacyPage() {
         </p>
 
         <p className="text-muted">
-          Monitoring and check history may be automatically deleted or pruned
-          periodically in accordance with our operational requirements.
+          Individual check results are kept for about 100 days and then
+          deleted automatically; your sites&apos; current status stays until
+          you remove them.
         </p>
 
         <h2 className="font-display text-xl font-medium text-ink">
@@ -206,14 +260,7 @@ export default function PrivacyPage() {
           >
             contact form
           </Link>{" "}
-          or email{" "}
-          <a
-            className="text-accent hover:underline"
-            href="mailto:hello@websiteswithpunch.com"
-          >
-            hello@websiteswithpunch.com
-          </a>
-          .
+          or write to hello@websiteswithpunch.com.
         </p>
       </div>
     </div>

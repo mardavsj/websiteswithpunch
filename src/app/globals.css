@@ -7,11 +7,11 @@
   --bg: 45 14% 96%;
   --surface: 45 20% 99.5%;
   --ink: 216 35% 6%;
-  --muted: 220 9% 46%;
+  --muted: 220 9% 44%;
   --rule: 216 35% 6% / 0.12;
-  --accent: 216 84% 53%;
+  --accent: 216 84% 49%;
   --accent-soft: 216 60% 85% / 0.3;
-  --accent-hover: 216 84% 45%;
+  --accent-hover: 216 84% 42%;
   /* Always-black band/buttons (hero, CTA, Recheck) — same in light and dark */
   --solid: 216 35% 6%;
   --solid-fg: 45 14% 96%;
@@ -30,7 +30,7 @@
   --bg: 220 8% 20%;
   --surface: 220 7% 24%;
   --ink: 220 10% 91%;
-  --muted: 220 6% 65%;
+  --muted: 220 6% 69%;
   --rule: 220 10% 91% / 0.16;
   --accent: 213 90% 62%;
   --accent-soft: 213 70% 55% / 0.22;
@@ -128,5 +128,32 @@ h6 {
   }
   to {
     stroke-dashoffset: 0;
+  }
+}
+
+/* Loading skeletons. `.sk` wraps an invisible copy of the real text (or a button's real label),
+   so every grey bar has the exact height, width and wrapping of what replaces it. */
+.sk {
+  color: transparent !important;
+  background-color: hsl(var(--ink) / 0.06);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  user-select: none;
+  pointer-events: none;
+  animation: sk-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+.sk-ring {
+  stroke: hsl(var(--ink) / 0.06);
+  animation: sk-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes sk-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sk,
+  .sk-ring {
+    animation: none;
   }
 }

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { lockedRangeNotice, type RangeKey } from "@/lib/analytics";
 import { SiteAnalyticsBody, type AnalyticsPayload } from "./SiteAnalyticsBody";
 import { EmptyHistory, StaleBanner } from "./AnalyticsNotices";
+import { AnalyticsBodySkeleton, AutoUpdateSkeleton } from "@/components/skeleton/AnalyticsSkeleton";
 import { AnalyticsHeader } from "./AnalyticsHeader";
 import { AutoUpdateControl } from "./AutoUpdateControl";
 import { SiteRecheckProvider, useSiteRecheckContext } from "./SiteRecheckProvider";
@@ -150,6 +151,8 @@ function SiteAnalyticsPanel({ siteId, compact = false }: Props) {
         live={
           data && !siteLocked ? (
             <AutoUpdateControl rc={rc} />
+          ) : !data && loading ? (
+            <AutoUpdateSkeleton />
           ) : null
         }
       />
@@ -165,7 +168,7 @@ function SiteAnalyticsPanel({ siteId, compact = false }: Props) {
 
       <div
         key={data?.range ?? "loading"}
-        className={`mt-5 transition-opacity duration-300 ${fade && !loading ? "opacity-100" : "opacity-40"}`}
+        className={`mt-5 transition-opacity duration-300 ${!data || (fade && !loading) ? "opacity-100" : "opacity-40"}`}
       >
         {error && (
           <p className="mb-5 rounded-none border border-rose-200 bg-rose-50 dark:border-rose-400/30 dark:bg-rose-400/10 px-3 py-2 text-sm text-danger">
@@ -173,13 +176,7 @@ function SiteAnalyticsPanel({ siteId, compact = false }: Props) {
           </p>
         )}
 
-        {loading && !data && (
-          <div className="grid gap-3 sm:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-28 animate-pulse border border-rule bg-accent-soft/40" />
-            ))}
-          </div>
-        )}
+        {loading && !data && <AnalyticsBodySkeleton />}
 
         {data && !siteLocked && data.empty && (
           <EmptyHistory data={data} {...recheckProps} />
