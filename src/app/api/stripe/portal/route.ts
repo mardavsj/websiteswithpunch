@@ -17,20 +17,20 @@ export async function POST() {
 
   if (!isStripeConfigured()) {
     return NextResponse.json(
-      { error: "Stripe is not configured. See README for setup." },
+      { error: "The billing portal is unavailable right now." },
       { status: 503 }
     );
   }
 
   const stripe = getStripe();
   if (!stripe) {
-    return NextResponse.json({ error: "Stripe unavailable" }, { status: 503 });
+    return NextResponse.json({ error: "Billing unavailable" }, { status: 503 });
   }
 
   const user = await prisma.user.findUnique({ where: { id: session.user.id } });
   if (!user?.stripeCustomerId) {
     return NextResponse.json(
-      { error: "No Stripe customer on file. Upgrade first." },
+      { error: "No billing account yet. Upgrade to a paid plan first." },
       { status: 400 }
     );
   }

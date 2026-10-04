@@ -50,11 +50,15 @@ export const faqs = [
   },
   {
     q: "What’s free vs Pro vs Business?",
-    a: `Free monitors ${PLANS.free.siteLimit} site. Pro covers up to ${PLANS.pro.siteLimit} sites. Business covers up to ${PLANS.business.siteLimit} sites. Pay monthly, or yearly for 2 months free; prices are in the Pricing section. On Pro or Business, add optional site packs from the dashboard — they join your existing subscription.`,
+    a: `Free monitors ${PLANS.free.siteLimit} site. Pro covers up to ${PLANS.pro.siteLimit} sites. Business covers up to ${PLANS.business.siteLimit} sites. Pay monthly, or yearly for 2 months free; prices in USD are on the Pricing page. On Pro or Business, add optional site packs from the dashboard — they join your existing subscription.`,
   },
   {
     q: "What if I need more than 10 or 50 sites?",
     a: `On Pro, add optional +${SITE_PACKS.pro.sitesPerPack} site packs (up to ${PLANS.pro.siteLimit + SITE_PACKS.pro.maxPacks * SITE_PACKS.pro.sitesPerPack} sites), then upgrade to Business. On Business, add +${SITE_PACKS.business.sitesPerPack} packs (up to ${PLANS.business.siteLimit + SITE_PACKS.business.maxPacks * SITE_PACKS.business.sitesPerPack} sites). Packs join your existing subscription and bill the same way, monthly or yearly. When you add a pack, you're charged for the remaining portion of the current billing period, then it follows your normal renewal date. You can remove packs anytime, and the removal takes effect at your next renewal. You keep the additional capacity until the end of the period you've paid for. Need more than that? Send us a message from the Contact page for a custom limit.`,
+  },
+  {
+    q: "What exactly am I paying for?",
+    a: "A subscription to our online website monitoring software (SaaS). There's nothing to install or ship: you sign in and use the dashboard in your browser, right after you sign up.",
   },
   {
     q: "Do I need a card to start?",
@@ -66,7 +70,7 @@ export const faqs = [
   },
   {
     q: "Do you send alerts?",
-    a: "Not today. Everything shows on your dashboard: up/down status, response time, and clear warnings as SSL and domain expiry dates get close. Open it whenever you like, or recheck a site on demand.",
+    a: "No. Everything shows on your dashboard: up/down status, response time, and clear warnings as SSL and domain expiry dates get close. Open it whenever you like, or recheck a site on demand.",
   },
   {
     q: "What happens to my sites if I downgrade or cancel?",
@@ -82,7 +86,7 @@ export const faqs = [
   },
   {
     q: "Do you offer refunds?",
-    a: "Payments are generally non-refundable, including after you cancel. When you cancel, downgrade, remove a site pack, or switch from annual to monthly billing, no refund or credit is provided for the remaining time in the current billing period. You keep your current plan and capacity until the end of the period you've paid for, and the change takes effect at renewal. Upgrades take effect immediately and may be charged on a prorated basis. Refunds may be provided where required by applicable law.",
+    a: "Payments are non-refundable, including after you cancel. When you cancel, downgrade, remove a site pack, or switch from annual to monthly billing, no refund or credit is provided for the remaining time in the current billing period. You keep your current plan and capacity until the end of the period you've paid for, and the change takes effect at renewal. Upgrades take effect immediately and may be charged on a prorated basis. The only exceptions (duplicate charges, billing errors, or a paid plan we couldn't provide) are set out in our Refund & Cancellation Policy, linked in the footer.",
   },
 ];
 

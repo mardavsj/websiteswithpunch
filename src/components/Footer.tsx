@@ -17,7 +17,7 @@ const columns: { title: string; links: FooterLink[] }[] = [
       { label: "SSL monitoring", href: "/ssl-certificate-monitoring" },
       { label: "Domain expiry monitoring", href: "/domain-expiry-monitoring" },
       { label: "How it works", href: "/#how-it-works" },
-      { label: "Pricing", href: "/#pricing" },
+      { label: "Pricing", href: "/pricing" },
     ],
   },
   {
@@ -43,6 +43,7 @@ const columns: { title: string; links: FooterLink[] }[] = [
 const legal: FooterLink[] = [
   { label: "Terms of Service", href: "/terms" },
   { label: "Privacy Policy", href: "/privacy" },
+  { label: "Refund Policy", href: "/refund-policy" },
 ];
 
 const linkClass =
@@ -99,9 +100,9 @@ export function Footer() {
         </div>
         <div className="flex flex-col gap-5 border-t border-rule py-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
-            <p>© {year} Websites With Punch. All rights reserved. | A product by Makvion Technologies.</p>
+            <p>© {year} Websites With Punch. All rights reserved. | A product by Makvion Technologies, India.</p>
           </div>
-          <nav aria-label="Legal" className="flex gap-5 ml-auto">
+          <nav aria-label="Legal" className="flex flex-wrap gap-x-5 gap-y-2 sm:ml-auto">
             {legal.map((l) => (
               <Link key={l.href} href={l.href} className="transition-colors hover:text-ink">
                 {l.label}

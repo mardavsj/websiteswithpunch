@@ -3,6 +3,7 @@ import { HowDashboardVisual } from "./HowDashboardVisual";
 import { HowFirstCheckVisual } from "./HowFirstCheckVisual";
 import { StepNode, StepRail } from "./how-parts";
 import { InView } from "./InView";
+import { TourBlock } from "./TourBlock";
 import { howSteps } from "./home-content";
 
 const visuals = [HowAddSiteVisual, HowFirstCheckVisual, HowDashboardVisual];
@@ -39,6 +40,7 @@ export function HowItWorksSection() {
             );
           })}
         </ol>
+        <TourBlock />
       </div>
     </section>
   );

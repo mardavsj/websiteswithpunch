@@ -17,7 +17,7 @@ import {
   emailError,
   newPasswordErrors,
 } from "@/components/auth/fields";
-import { SignupHeader, paidButtonLabel } from "./signup-header";
+import { SignupConsent, SignupHeader, paidButtonLabel } from "./signup-header";
 
 type Errors = { name?: string; email?: string; password?: string; confirm?: string; form?: string };
 
@@ -166,10 +166,10 @@ export function SignupForm({
         <SubmitButton loading={loading}>{buttonLabel}</SubmitButton>
         {isPaid && (
           <p className="text-center text-xs text-muted">
-            We&apos;ll email you a 6-digit code first, then take you to payment. Payments are
-            non-refundable.
+            We&apos;ll email you a 6-digit code first, then take you to payment.
           </p>
         )}
+        <SignupConsent paid={isPaid} />
       </form>
       <p className="mt-6 text-sm text-muted">
         Already have an account?{" "}

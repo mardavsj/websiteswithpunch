@@ -13,11 +13,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
   });
   return [
     page("/", 1, "weekly"),
+    page("/pricing", 0.8),
     ...FEATURE_LINKS.map((l) => page(l.href, 0.8)),
     page("/tools", 0.7),
     ...TOOL_LINKS.map((l) => page(l.href, 0.8)),
     page("/contact", 0.5, "yearly"),
     page("/terms", 0.3, "yearly"),
     page("/privacy", 0.3, "yearly"),
+    page("/refund-policy", 0.3, "yearly"),
   ];
 }

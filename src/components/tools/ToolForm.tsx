@@ -59,7 +59,7 @@ export function ToolForm({ kind, label, placeholder, button }: Props) {
 
   const id = `tool-${kind}`;
   return (
-    <div className="border border-rule bg-surface p-5 sm:p-8">
+    <div>
       <form onSubmit={submit} noValidate>
         <label htmlFor={id} className="text-sm font-medium text-ink">{label}</label>
         <div className="mt-2 flex flex-col gap-3 sm:flex-row">

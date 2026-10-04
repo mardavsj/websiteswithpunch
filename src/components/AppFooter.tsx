@@ -8,6 +8,7 @@ const links = [
   { label: "Contact", href: "/contact?topic=general" },
   { label: "Terms", href: "/terms" },
   { label: "Privacy", href: "/privacy" },
+  { label: "Refunds", href: "/refund-policy" },
 ];
 
 export function AppFooter() {
@@ -39,7 +40,8 @@ export function AppFooter() {
         </nav>
       </div>
       <div className="border-t border-rule py-4 text-center text-xs text-muted">
-        © {new Date().getFullYear()} Websites With Punch. All rights reserved. | A product by Makvion Technologies.
+        © {new Date().getFullYear()} Websites With Punch. All rights reserved. | A product by Makvion Technologies,
+        India. | hello@websiteswithpunch.com
       </div>
     </footer>
   );

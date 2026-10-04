@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, type ReactNode } from "react";
 import { ModalPortal, DIALOG_SCROLL } from "@/components/ModalPortal";
 
@@ -67,12 +68,19 @@ export const primaryBtn =
 export const secondaryBtn =
   "rounded-none border border-rule px-4 py-2 text-sm text-ink hover:bg-accent-soft";
 
-/** No-refunds line for billing windows. keep = also say the paid-for time isn't credited. */
+/**
+ * No-refunds line for billing windows, linking the policy (new tab, so the window stays open).
+ * keep = also say the paid-for time isn't credited.
+ */
 export function NoRefundNote({ keep = false, className = "" }: { keep?: boolean; className?: string }) {
   return (
     <p className={`text-xs text-muted ${className}`}>
       Payments are non-refundable
-      {keep ? ", so there's no refund or credit for time you've already paid for" : ""}.
+      {keep ? ", so there's no refund or credit for time you've already paid for" : ""}. See our{" "}
+      <Link href="/refund-policy" target="_blank" rel="noopener" className="underline underline-offset-2 hover:text-ink">
+        Refund &amp; Cancellation Policy
+      </Link>
+      .
     </p>
   );
 }

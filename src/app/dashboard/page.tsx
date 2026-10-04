@@ -94,7 +94,7 @@ export default async function DashboardPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <DashboardAddSiteButton atLimit={atLimit} />
+          <DashboardAddSiteButton atLimit={atLimit} pickUpPending />
           <DashboardPackCta plan={plan} sitePackCount={packCount} />
         </div>
       </div>

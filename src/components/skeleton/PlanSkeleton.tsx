@@ -124,7 +124,7 @@ export function PlanSkeleton() {
               <Sk>
                 {billing
                   ? "Loading billing history…"
-                  : "Billing history appears after you upgrade and have a Stripe customer on file."}
+                  : "Billing history appears here after your first payment on a paid plan."}
               </Sk>
             </p>
           </div>

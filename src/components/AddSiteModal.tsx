@@ -8,9 +8,12 @@ import { SiteForm } from "@/components/SiteForm";
 type Props = {
   open: boolean;
   onClose: () => void;
+  /** Prefill (a site checked on the homepage before signing up). */
+  initialName?: string;
+  initialUrl?: string;
 };
 
-export function AddSiteModal({ open, onClose }: Props) {
+export function AddSiteModal({ open, onClose, initialName, initialUrl }: Props) {
   const router = useRouter();
 
   useEffect(() => {
@@ -49,6 +52,8 @@ export function AddSiteModal({ open, onClose }: Props) {
           <SiteForm
             key="add-site-form"
             mode="create"
+            initialName={initialName}
+            initialUrl={initialUrl}
             onCancel={onClose}
             onSuccess={() => {
               onClose();

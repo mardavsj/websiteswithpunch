@@ -45,11 +45,11 @@ export function GuestMenu() {
         >
           <Link
             role="menuitem"
-            href="/tools"
+            href="/pricing"
             onClick={() => setOpen(false)}
             className="flex min-h-11 items-center px-3 text-sm text-ink hover:bg-accent-soft focus:bg-accent-soft md:min-h-0 md:py-2"
           >
-            Free tools
+            Pricing
           </Link>
           <Link
             role="menuitem"

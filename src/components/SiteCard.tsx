@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { StatusBadge } from "./StatusBadge";
 import { EditSiteModal } from "./EditSiteModal";
 import { DeleteSiteButton } from "./DeleteSiteButton";
 import { formatDate } from "@/lib/utils";
@@ -11,7 +10,7 @@ import { RecheckError, recheckSite } from "@/lib/site-check-client";
 import { useRecheckCooldown } from "./useRecheckCooldown";
 import { useSiteRecheckContext } from "./SiteRecheckProvider";
 import { StopAutoButton } from "./AutoUpdateControl";
-import { DaysPill, latestOf } from "./SiteCardParts";
+import { CARD_BTN, SiteCardHead, SiteCardMetrics, latestOf } from "./SiteCardParts";
 
 type Site = {
   id: string;
@@ -141,39 +140,15 @@ export function SiteCard({
 
   return (
     <article className="rounded-none border border-rule bg-surface p-5 transition hover:border-ink/20">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <h3 className="truncate font-display text-lg font-medium text-ink">{site.name}</h3>
-          <StatusBadge status={site.status} />
-        </div>
-        <a
-          href={site.url}
-          target="_blank"
-          rel="noreferrer"
-          title={site.url}
-          className="min-w-0 max-w-[50%] shrink truncate text-right text-sm text-accent hover:underline"
-        >
-          {site.url}
-        </a>
-      </div>
+      <SiteCardHead name={site.name} url={site.url} status={site.status} />
 
-      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <div className="rounded-none border border-rule bg-surface px-3 py-2">
-          <p className="text-xs text-muted">Last check</p>
-          <p className="text-sm font-medium text-ink">
-            {formatDate(latestOf(site.lastCheckedAt, site.lastSeenAt))}
-          </p>
-        </div>
-        <div className="rounded-none border border-rule bg-surface px-3 py-2">
-          <p className="text-xs text-muted">Latency / code</p>
-          <p className="text-sm font-medium text-ink">
-            {site.lastLatencyMs != null ? `${site.lastLatencyMs}ms` : "—"}
-            {site.lastStatusCode != null ? ` · ${site.lastStatusCode}` : ""}
-          </p>
-        </div>
-        <DaysPill days={site.sslDaysLeft} label="SSL left" />
-        <DaysPill days={site.domainDaysLeft} label="Domain left" />
-      </div>
+      <SiteCardMetrics
+        lastCheck={formatDate(latestOf(site.lastCheckedAt, site.lastSeenAt))}
+        latencyMs={site.lastLatencyMs}
+        statusCode={site.lastStatusCode}
+        sslDaysLeft={site.sslDaysLeft}
+        domainDaysLeft={site.domainDaysLeft}
+      />
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap gap-2">
@@ -187,7 +162,7 @@ export function SiteCard({
                   ? "Recheck is limited to once per minute"
                   : undefined
             }
-            className="rounded-none bg-solid px-3 py-1.5 text-xs font-medium tabular-nums text-solid-fg hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-75"
+            className={CARD_BTN.recheck}
           >
             {checking
               ? "Checking…"
@@ -201,7 +176,7 @@ export function SiteCard({
           {showAnalyticsLink && (
             <Link
               href={`/dashboard/sites/${site.id}`}
-              className="rounded-none bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover"
+              className={CARD_BTN.analytics}
             >
               Analytics →
             </Link>
@@ -211,7 +186,7 @@ export function SiteCard({
           <button
             type="button"
             onClick={() => setEditOpen(true)}
-            className="rounded-none border border-rule px-3 py-1.5 text-xs font-medium text-ink hover:bg-accent-soft"
+            className={CARD_BTN.edit}
           >
             Edit
           </button>

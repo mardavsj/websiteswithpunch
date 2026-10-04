@@ -42,6 +42,8 @@ const nextConfig = {
       { source: "/:path*", headers: securityHeaders },
       // Signed-in pages and API replies never belong in a shared cache.
       // (/api/tools/* sets its own short public cache for the free checkers.)
+      // The tour video, captions and poster: a week in the browser cache, so replays don't re-download.
+      { source: "/video/:file*", headers: [{ key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" }] },
       { source: "/api/((?!tools/).*)", headers: [{ key: "Cache-Control", value: "no-store" }] },
     ];
   },

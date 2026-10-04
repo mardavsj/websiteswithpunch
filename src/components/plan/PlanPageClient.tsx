@@ -62,7 +62,7 @@ export function PlanPageClient({ lockedCount, hasBilling, ...capacity }: Props) 
           <BillingInvoices />
         ) : (
           <p className="mt-2 text-sm text-muted">
-            Billing history appears after you upgrade and have a Stripe customer on file.
+            Billing history appears here after your first payment on a paid plan.
           </p>
         )}
       </div>

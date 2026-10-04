@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getSession } from "@/lib/auth";
 import { InAppBackLink } from "@/components/InAppBackLink";
+import { SUPPORT_EMAIL } from "@/components/legal/LegalPage";
 import { ContactForm } from "./contact-form";
 
 export const metadata: Metadata = {
@@ -32,9 +33,22 @@ export default async function ContactPage() {
             Questions about monitoring, your plan or a custom site limit? Send us a message and a
             real person will read it. We aim to reply within 1–2 business days.
           </p>
-          <p className="mt-3 max-w-md text-sm text-muted">
-            Websites With Punch is a product operated by Makvion Technologies.
-          </p>
+          <div className="mt-8 max-w-md border border-rule bg-surface p-5 text-sm">
+            <dl className="grid gap-4">
+              <div className="min-w-0">
+                <dt className="label-caps">Email</dt>
+                <dd className="mt-1 select-all break-words font-medium text-ink">{SUPPORT_EMAIL}</dd>
+              </div>
+              <div>
+                <dt className="label-caps">Company</dt>
+                <dd className="mt-1 text-ink">Makvion Technologies, India</dd>
+              </div>
+            </dl>
+            <p className="mt-4 text-muted">
+              Websites With Punch is a product operated by Makvion Technologies. Write to us at the
+              address above or send a message with the form.
+            </p>
+          </div>
           <dl className="mt-10 max-w-md border-t border-rule">
             {notes.map((n) => (
               <div key={n.title} className="border-b border-rule py-4">

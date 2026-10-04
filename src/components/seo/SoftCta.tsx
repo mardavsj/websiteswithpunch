@@ -13,7 +13,7 @@ export function SoftCta({ title = "Monitor it daily for free", body }: { title?:
         >
           Start free
         </Link>
-        <Link href="/#pricing" className="text-sm text-muted underline-offset-4 hover:text-ink hover:underline">
+        <Link href="/pricing" className="text-sm text-muted underline-offset-4 hover:text-ink hover:underline">
           See pricing
         </Link>
       </div>

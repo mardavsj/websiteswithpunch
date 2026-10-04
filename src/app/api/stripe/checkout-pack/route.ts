@@ -39,10 +39,7 @@ export async function POST() {
 
   if (!isStripeConfigured()) {
     return NextResponse.json(
-      {
-        error:
-          "Billing is not configured. Set STRIPE_SECRET_KEY and pack price env vars.",
-      },
+      { error: "Checkout is unavailable right now. Please try again later or contact us." },
       { status: 503 },
     );
   }

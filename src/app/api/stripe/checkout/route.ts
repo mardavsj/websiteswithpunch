@@ -31,10 +31,8 @@ export async function POST(req: Request) {
 
   if (!isStripeConfigured()) {
     return NextResponse.json(
-      {
-        error:
-          "Billing is not configured. Set STRIPE_SECRET_KEY, NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, and STRIPE_PRICE_ID_PRO (or STRIPE_PRICE_ID).",
-      },
+      // Setup: STRIPE_SECRET_KEY, NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, STRIPE_PRICE_ID_PRO (see README).
+      { error: "Checkout is unavailable right now. Please try again later or contact us." },
       { status: 503 },
     );
   }

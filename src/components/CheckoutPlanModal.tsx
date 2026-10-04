@@ -68,8 +68,8 @@ export function CheckoutPlanModal({ planId, loading, message, onClose, onConfirm
           the {periodWord(interval)} you&apos;ve paid for.
         </p>
         <p className="text-xs text-muted">
-          Next you&apos;ll enter your card on Stripe&apos;s secure checkout. Nothing is charged until
-          you confirm there.
+          Next you&apos;ll enter your card on our payment partner&apos;s secure checkout. Nothing is
+          charged until you confirm there.
         </p>
         <NoRefundNote />
       </div>

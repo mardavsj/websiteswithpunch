@@ -41,7 +41,7 @@ export function BillingInvoices() {
   }
   if (!configured) {
     return (
-      <p className="mt-2 text-sm text-muted">Billing history is unavailable until Stripe is configured.</p>
+      <p className="mt-2 text-sm text-muted">Billing history isn&apos;t available right now.</p>
     );
   }
   if (!invoices.length) {

@@ -61,10 +61,10 @@ export function Navbar() {
           ) : (
             <>
               <Link
-                href="/tools"
+                href="/pricing"
                 className="hidden rounded-none px-3 py-1.5 text-ink hover:bg-accent-soft md:inline-flex"
               >
-                Free tools
+                Pricing
               </Link>
               <Link
                 href="/login"

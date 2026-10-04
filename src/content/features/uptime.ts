@@ -54,7 +54,7 @@ export const uptimeFeature = {
     },
     {
       q: "Will I get an alert when my site goes down?",
-      a: "No. We don't send email, SMS or chat alerts today. Status, response time and history are on your dashboard whenever you open it.",
+      a: "No. We don't send email, SMS or chat alerts. Status, response time and history are on your dashboard whenever you open it.",
     },
     {
       q: "What counts as down?",

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { PlanId } from "@/lib/plans";
 import { PLANS } from "@/lib/plans";
 import { formatPlanPrice, perMonthPrice, type BillingInterval } from "@/lib/billing-interval";
@@ -54,4 +55,26 @@ export function SignupHeader({
 export function paidButtonLabel(planId: PlanId, interval: BillingInterval) {
   const paidId = planId === "business" ? "business" : "pro";
   return `Continue to payment — ${formatPlanPrice(paidId, interval)}`;
+}
+
+const legal = "underline underline-offset-2 hover:text-ink";
+
+/** Agreement line under the button; links open in a new tab so typed details aren't lost. */
+export function SignupConsent({ paid }: { paid: boolean }) {
+  return (
+    <p className="text-center text-xs text-muted">
+      By creating an account you agree to our{" "}
+      <Link href="/terms" target="_blank" rel="noopener" className={legal}>Terms</Link> and{" "}
+      <Link href="/privacy" target="_blank" rel="noopener" className={legal}>Privacy Policy</Link>.
+      {paid ? (
+        <>
+          {" "}Payments are non-refundable; see our{" "}
+          <Link href="/refund-policy" target="_blank" rel="noopener" className={legal}>
+            Refund &amp; Cancellation Policy
+          </Link>
+          .
+        </>
+      ) : null}
+    </p>
+  );
 }
