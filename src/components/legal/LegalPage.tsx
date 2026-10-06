@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { InAppBackLink } from "@/components/InAppBackLink";
 
-/** Shared layout and text pieces for /terms, /privacy and /refund-policy (same look on all three). */
+/** Shared layout and text pieces for /terms, /privacy, /refund-policy and /cookie-policy. */
 export const LEGAL_LINKS = [
   { label: "Terms of Service", href: "/terms" },
   { label: "Privacy Policy", href: "/privacy" },
   { label: "Refund & Cancellation Policy", href: "/refund-policy" },
+  { label: "Cookie Policy", href: "/cookie-policy" },
 ] as const;
 
 export const SUPPORT_EMAIL = "hello@websiteswithpunch.com";

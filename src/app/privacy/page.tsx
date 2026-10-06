@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { H2, LegalContact, LegalPage, P, UL } from "@/components/legal/LegalPage";
+import { A, H2, LegalContact, LegalPage, P, UL } from "@/components/legal/LegalPage";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -107,7 +107,8 @@ export default function PrivacyPage() {
         We only use cookies needed to keep you signed in (a session cookie and related security
         cookies). We don&apos;t use advertising or tracking cookies. Your light/dark theme choice,
         and a small layout hint (site counts and name lengths) used to draw loading screens, are
-        kept in your browser&apos;s local storage.
+        kept in your browser&apos;s local storage. See our{" "}
+        <A href="/cookie-policy">Cookie Policy</A> for the cookie names and how analytics works.
       </P>
 
       <H2>Sharing of Information</H2>

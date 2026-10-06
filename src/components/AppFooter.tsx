@@ -9,6 +9,7 @@ const links = [
   { label: "Terms", href: "/terms" },
   { label: "Privacy", href: "/privacy" },
   { label: "Refunds", href: "/refund-policy" },
+  { label: "Cookies", href: "/cookie-policy" },
 ];
 
 export function AppFooter() {

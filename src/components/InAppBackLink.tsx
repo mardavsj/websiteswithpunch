@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 
 /**
- * Subtle "← Back to dashboard" on shared public pages (contact, terms, privacy), signed-in only.
+ * Subtle "← Back to dashboard" on shared public pages (contact, terms, privacy, cookies), signed-in only.
  * It sits in the page's top padding (the page container is `relative`), so appearing once the
  * session is known never shifts the content, and signed-out visitors see the page unchanged.
  */

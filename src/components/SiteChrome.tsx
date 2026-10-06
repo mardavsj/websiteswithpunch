@@ -8,7 +8,7 @@ export const AUTH_ROUTES = ["/login", "/signup", "/forgot-password", "/reset-pas
 /** Logged-in app pages get the slim app footer instead of the big marketing footer. */
 export const APP_ROUTES = ["/dashboard", "/plan", "/profile"];
 /** Public pages that also feel in-app (slim footer) when someone is signed in. */
-export const SHARED_ROUTES = ["/terms", "/privacy", "/refund-policy"];
+export const SHARED_ROUTES = ["/terms", "/privacy", "/refund-policy", "/cookie-policy"];
 /**
  * Pages whose content is centred between the navbar and the footer: <main> becomes a flex column
  * that fills that space, and the page's flex-1 box centres itself inside it.

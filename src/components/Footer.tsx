@@ -44,13 +44,14 @@ const legal: FooterLink[] = [
   { label: "Terms of Service", href: "/terms" },
   { label: "Privacy Policy", href: "/privacy" },
   { label: "Refund Policy", href: "/refund-policy" },
+  { label: "Cookie Policy", href: "/cookie-policy" },
 ];
 
 const linkClass =
   "text-sm text-muted transition-colors hover:text-ink focus-visible:text-ink focus-visible:underline focus-visible:outline-none";
 
 /**
- * Public footer: brand column and two link columns, a bottom bar (copyright, legal, theme), and
+ * Public footer: brand column and link columns, theme switch above the bar, then copyright + legal,
  * the name set as an oversized, cropped watermark. No call to action here: the navbar has
  * "Start free" everywhere and the homepage ends with its own CTA right above.
  */
@@ -59,7 +60,7 @@ export function Footer() {
   return (
     <footer className="overflow-hidden border-t border-rule bg-bg">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="grid gap-12 pb-16 pt-16 sm:pt-20 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)] md:gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)] lg:gap-20 lg:pb-20">
+        <div className="grid gap-12 pb-10 pt-16 sm:pt-20 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)] md:gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)] lg:gap-20 lg:pb-12">
           <div>
             <Link href="/" className="inline-flex items-center gap-3 text-ink">
               <Image src="/logo.svg" alt="" width={36} height={36} unoptimized className="h-9 w-9 object-contain" />
@@ -98,18 +99,18 @@ export function Footer() {
             ))}
           </div>
         </div>
-        <div className="flex flex-col gap-5 border-t border-rule py-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
-            <p>© {year} Websites With Punch. All rights reserved. | A product by Makvion Technologies, India.</p>
-          </div>
-          <nav aria-label="Legal" className="flex flex-wrap gap-x-5 gap-y-2 sm:ml-auto">
+        <div className="flex justify-end pb-5">
+          <FooterThemeSwitch />
+        </div>
+        <div className="flex flex-col gap-4 border-t border-rule py-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
+          <p>© {year} Websites With Punch. All rights reserved. | A product by Makvion Technologies, India.</p>
+          <nav aria-label="Legal" className="flex flex-wrap gap-x-5 gap-y-2 sm:justify-end">
             {legal.map((l) => (
               <Link key={l.href} href={l.href} className="transition-colors hover:text-ink">
                 {l.label}
               </Link>
             ))}
           </nav>
-          <FooterThemeSwitch />
         </div>
       </div>
       <div aria-hidden className="pointer-events-none mx-auto max-w-6xl select-none px-4 sm:px-6">
