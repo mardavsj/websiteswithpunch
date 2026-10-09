@@ -8,6 +8,7 @@ import {
 } from "@/lib/plans";
 import { loadAccount } from "@/lib/account-load";
 import { PlanPageClient } from "@/components/plan/PlanPageClient";
+import { SessionPlanSync } from "@/components/SessionPlanSync";
 import { RememberLayout } from "@/components/skeleton/shape";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +49,7 @@ export default async function PlanPage() {
   // space); starts at the top and scrolls when taller (safe alignment, the box grows with it).
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 items-center [align-items:safe_center] px-4 py-10 sm:px-6">
+      <SessionPlanSync plan={plan} />
       <RememberLayout
         plan={plan}
         active={activeSites.length}

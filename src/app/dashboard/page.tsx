@@ -13,6 +13,7 @@ import { DashboardPackCta } from "@/components/DashboardPackCta";
 import { DashboardAddSiteButton } from "@/components/DashboardAddSiteButton";
 import { DashboardBanners } from "@/components/DashboardBanners";
 import { DashboardPendingBanner } from "@/components/DashboardPendingBanner";
+import { SessionPlanSync } from "@/components/SessionPlanSync";
 import { CheckoutReturn } from "@/components/billing/CheckoutReturn";
 import { loadAccount } from "@/lib/account-load";
 import { toDashboardSite } from "@/lib/dashboard-sites";
@@ -118,6 +119,7 @@ export default async function DashboardPage({
       />
 
       <DashboardPendingBanner plan={plan} sitePackCount={packCount} />
+      <SessionPlanSync plan={plan} />
 
       {activeSites.length > 1 && (
         <div className="mt-6 grid gap-3 sm:grid-cols-3">

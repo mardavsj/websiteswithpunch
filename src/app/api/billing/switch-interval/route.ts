@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * Annual → monthly at renewal. GET = preview, POST = book it (Change Plan to the monthly
- * product + monthly pack add-on, next_billing_date, do_not_bill), DELETE = keep annual.
+ * product + monthly pack add-on, next_billing_date, full_immediately), DELETE = keep annual.
  * Nothing is charged, refunded or credited: the paid year runs out, then monthly starts.
  */
 function plan({ st }: BillingCtx) {

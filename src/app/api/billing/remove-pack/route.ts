@@ -12,8 +12,9 @@ export const dynamic = "force-dynamic";
 const schema = z.object({ keepSiteIds: z.array(z.string()).optional() });
 
 /**
- * Book the removal of one site pack for the renewal date (Change Plan, next_billing_date,
- * do_not_bill). The packs stay until then; nothing is refunded or credited.
+ * Book the removal of one site pack for the renewal date (Change Plan, next_billing_date +
+ * full_immediately, the pairing Dodo requires; nothing is charged until renewal). The packs
+ * stay until then; nothing is refunded or credited.
  * If the lower limit is below the active site count, keepSiteIds must pick the survivors.
  */
 export async function POST(req: Request) {

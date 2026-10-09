@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { getEffectivePlan, type PlanId } from "@/lib/plans";
+import { upgradeTargets } from "@/lib/upgrade-targets";
 import { intervalParam, type BillingInterval } from "@/lib/billing-interval";
 import { useToast } from "@/components/Toast";
 import { PENDING_MESSAGE, STILL_PENDING_MESSAGE, awaitBilling } from "@/components/billing/awaitBilling";
@@ -15,7 +16,7 @@ import { PENDING_MESSAGE, STILL_PENDING_MESSAGE, awaitBilling } from "@/componen
  * Render both windows with <UpgradeModals {...upgrade} />.
  */
 export function usePlanUpgrade(planOverride?: PlanId) {
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState<"pro" | "business" | null>(null);
@@ -57,12 +58,14 @@ export function usePlanUpgrade(planOverride?: PlanId) {
         const doneMsg = planId === "business" ? "Upgraded to Business." : "Switched to annual billing.";
         if (!data.pending) {
           toast(doneMsg, "success");
+          void update(); // navbar plan comes from the session
           router.refresh();
           return;
         }
         toast(PENDING_MESSAGE, "info");
         const ok = await awaitBilling((s) => s.plan === planId && s.interval === interval);
         toast(ok ? doneMsg : STILL_PENDING_MESSAGE, ok ? "success" : "info");
+        void update();
         router.refresh();
         return;
       }
@@ -84,7 +87,9 @@ export function usePlanUpgrade(planOverride?: PlanId) {
     setChoosePlan,
     startCheckout: (planId: "pro" | "business") => setChoosePlan(planId),
     checkout,
-    showUpgrades: plan === "free" || plan === "pro",
+    /** "Upgrade to …" buttons this plan may show (none on Business). */
+    targets: upgradeTargets(plan),
+    showUpgrades: upgradeTargets(plan).length > 0,
   };
 }
 

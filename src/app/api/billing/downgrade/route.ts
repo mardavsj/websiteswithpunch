@@ -15,7 +15,7 @@ const schema = z.object({ keepSiteIds: z.array(z.string()).optional() });
 
 /**
  * Book Business → Pro for the renewal date, same interval, Business packs dropped
- * (Change Plan, next_billing_date, do_not_bill). Business limits stay until then.
+ * (Change Plan, next_billing_date, full_immediately). Business limits stay until then.
  */
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));

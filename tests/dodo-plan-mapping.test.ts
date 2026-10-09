@@ -1,7 +1,8 @@
-/** Run with `npm test`. The subscription → plan mapping that sync and self-heal rely on. */
+/** Run with `npm test`. Subscription → plan mapping (sync, self-heal) and upgrade-button rules. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { subscriptionState } from "../src/lib/dodo-subscription";
+import { upgradeTargets } from "../src/lib/upgrade-targets";
 
 process.env.DODO_PRODUCT_PRO_MONTHLY = "pdt_test_pro_m";
 process.env.DODO_PRODUCT_BUSINESS_MONTHLY = "pdt_test_biz_m";
@@ -28,4 +29,12 @@ test("Pro monthly product maps to pro", () => {
 
 test("an unknown product maps to no plan (sync ignores it, never downgrades)", () => {
   assert.equal(subscriptionState({ ...base, product_id: "pdt_other" } as never).plan, null);
+});
+
+
+test("upgrade buttons: Free → Pro + Business, Pro → Business, Business → none", () => {
+  assert.deepEqual(upgradeTargets("free"), ["pro", "business"]);
+  assert.deepEqual(upgradeTargets("pro"), ["business"]);
+  assert.deepEqual(upgradeTargets("business"), []);
+  assert.deepEqual(upgradeTargets(null), []);
 });

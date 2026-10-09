@@ -3,8 +3,9 @@
  * - Upgrades and added packs apply now: `prorated_immediately` credits the unused part of the
  *   current cycle and charges the new cycle (Dodo starts a new cycle on the change date).
  *   `prevent_change` keeps the current plan if that charge fails, so nothing is lost.
- * - Downgrades, pack removals and annual → monthly are booked for the renewal date with
- *   `do_not_bill`: nothing is charged, refunded or credited; the renewal bills the new plan.
+ * - Downgrades, pack removals and annual → monthly are booked for the renewal date
+ *   (`next_billing_date`, which Dodo requires to pair with `full_immediately`): nothing is
+ *   charged, refunded or credited now; the renewal bills the new plan in full.
  * A Dodo subscription holds one booked change, so a new booking replaces the old one.
  */
 import type DodoPayments from "dodopayments";
@@ -40,7 +41,9 @@ export function changeBody(
           effective_at: "immediately",
           on_payment_failure: "prevent_change",
         }
-      : { proration_billing_mode: "do_not_bill", effective_at: "next_billing_date" }),
+      : // Dodo only accepts full_immediately with next_billing_date. A booked change charges
+        // nothing now; at renewal the subscription simply bills the new plan in full.
+        { proration_billing_mode: "full_immediately", effective_at: "next_billing_date" }),
     ...(st.scheduled ? { cancel_scheduled_change_plan: true } : {}),
   };
   return { ok: true, body };

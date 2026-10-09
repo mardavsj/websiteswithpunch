@@ -17,7 +17,7 @@ export function ProfileMenu() {
   const [hasBilling, setHasBilling] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const upgrade = usePlanUpgrade();
-  const { plan, loading, setUpgradeOpen, startCheckout, showUpgrades } = upgrade;
+  const { targets, loading, setUpgradeOpen, startCheckout, showUpgrades } = upgrade;
 
   useEffect(() => {
     if (!session?.user) return;
@@ -87,7 +87,7 @@ export function ProfileMenu() {
         >
           {showUpgrades && (
             <div className="md:hidden">
-              {plan === "free" && (
+              {targets.includes("pro") && (
                 <>
                   <button
                     role="menuitem"
@@ -115,7 +115,7 @@ export function ProfileMenu() {
                   </button>
                 </>
               )}
-              {plan === "pro" && (
+              {!targets.includes("pro") && targets.includes("business") && (
                 <button
                   role="menuitem"
                   type="button"

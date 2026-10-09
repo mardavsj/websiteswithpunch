@@ -5,13 +5,14 @@ import { usePlanUpgrade } from "@/components/usePlanUpgrade";
 
 export function NavUpgradeButtons() {
   const upgrade = usePlanUpgrade();
-  const { plan, loading, setUpgradeOpen, startCheckout, showUpgrades } = upgrade;
+  const { targets, loading, setUpgradeOpen, startCheckout } = upgrade;
 
-  if (!showUpgrades) return null;
+  // Free: Pro + Business. Pro: Business. Business: nothing.
+  if (targets.length === 0) return null;
 
   return (
     <>
-      {plan === "pro" ? (
+      {!targets.includes("pro") ? (
         <div className="hidden items-center gap-2 md:flex">
           <button
             type="button"
