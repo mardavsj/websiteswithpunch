@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { getDodo } from "@/lib/dodo";
 import { verifyWebhook } from "@/lib/dodo-webhook-verify";
 import { syncSubscription } from "@/lib/dodo-sync";
-import type { SubLike } from "@/lib/dodo-subscription";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,14 +14,13 @@ export const dynamic = "force-dynamic";
  * - The signature is checked on the raw body before anything else (401 when it fails).
  * - Idempotent: the webhook-id is claimed in WebhookEvent first, so a retry or duplicate is
  *   acknowledged without running again; a failed run releases the claim so Dodo's retry can.
- * - Subscription events carry the full subscription; we mirror it (plan, packs, booked
- *   changes, cancel at period end, status). Events older than the last applied are skipped.
- * - Payment events re-read their subscription from the API and mirror that.
+ * - Subscription and payment events re-read the subscription from the Dodo API and mirror it
+ *   (plan, packs, booked changes, cancel at period end, status), so order never matters.
  */
 type WebhookEvent = {
   type?: string;
   timestamp?: string;
-  data?: { payload_type?: string; subscription_id?: string | null } & Partial<SubLike>;
+  data?: { payload_type?: string; subscription_id?: string | null };
 };
 
 const SUBSCRIPTION_EVENTS = new Set([
@@ -78,17 +76,17 @@ export async function POST(req: Request) {
   }
 
   try {
-    const eventAt = event.timestamp ? new Date(event.timestamp) : null;
-    const data = event.data;
-    if (SUBSCRIPTION_EVENTS.has(type) && data?.subscription_id && data.product_id && data.status) {
-      const result = await syncSubscription(data as SubLike, { eventAt });
-      if (result === "no_user") console.warn("[dodo webhook] no user for", data.subscription_id, type);
-    } else if (PAYMENT_EVENTS.has(type) && data?.subscription_id) {
+    // Every subscription or payment event re-reads the subscription from the API and mirrors
+    // that. Webhook bodies and timestamps can arrive out of order (e.g. payment.succeeded
+    // before plan_changed), so we never apply a body or compare timestamps.
+    const subId =
+      SUBSCRIPTION_EVENTS.has(type) || PAYMENT_EVENTS.has(type) ? event.data?.subscription_id : null;
+    if (subId) {
       const dodo = getDodo();
-      if (dodo) {
-        const sub = await dodo.subscriptions.retrieve(data.subscription_id);
-        await syncSubscription(sub, { eventAt });
-      }
+      if (!dodo) throw new Error("DODO_PAYMENTS_API_KEY missing: cannot read the subscription");
+      const sub = await dodo.subscriptions.retrieve(subId);
+      const result = await syncSubscription(sub);
+      if (result !== "synced") console.warn("[dodo webhook]", type, subId, result);
     }
   } catch (err) {
     console.error("[dodo webhook] handler error", type, err);

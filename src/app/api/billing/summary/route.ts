@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { getEffectivePlan, getUserEffectiveSiteLimit, PLANS, resolvePackCountForLimit, SITE_PACKS } from "@/lib/plans";
 import { intervalLabel, type BillingInterval } from "@/lib/billing-interval";
 import { getDodo, isDodoConfigured } from "@/lib/dodo";
-import { isPaidStatus, scheduledKind, subscriptionState } from "@/lib/dodo-subscription";
+import { ENDED_STATUSES, isPaidStatus, scheduledKind, subscriptionState } from "@/lib/dodo-subscription";
+import { syncSubscription } from "@/lib/dodo-sync";
 import { recurringBreakdown, recurringTotalCents } from "@/lib/billing-totals";
 import { formatRecurringFromCents, formatShortDate } from "@/lib/billing-format";
 import { applyDuePendingAndEnforce, pendingTargetLimit } from "@/lib/site-limits";
@@ -18,8 +19,32 @@ export async function GET() {
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   await applyDuePendingAndEnforce(session.user.id);
-  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  let user = await prisma.user.findUnique({ where: { id: session.user.id } });
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Read the live subscription once. If our copy drifted (a missed or failed webhook), mirror
+  // it now, so opening Your plan always heals the plan, packs and status.
+  const dodo = isDodoConfigured() ? getDodo() : null;
+  let live: ReturnType<typeof subscriptionState> | null = null;
+  let healed = false;
+  if (dodo && user.dodoSubscriptionId && !ENDED_STATUSES.has(user.dodoStatus ?? "")) {
+    try {
+      const sub = await dodo.subscriptions.retrieve(user.dodoSubscriptionId);
+      live = subscriptionState(sub);
+      const drifted =
+        (live.plan && live.plan !== user.plan) ||
+        live.packs !== user.sitePackCount ||
+        live.status !== user.dodoStatus ||
+        live.cancelAtPeriodEnd !== user.cancelAtPeriodEnd;
+      if (drifted) {
+        console.warn("[billing summary] healed drift for", user.id, user.plan, "→", live.plan, live.status);
+        healed = (await syncSubscription(sub, { userId: user.id })) === "synced";
+        user = (await prisma.user.findUnique({ where: { id: user.id } })) ?? user;
+      }
+    } catch (err) {
+      console.error("billing summary dodo error", err);
+    }
+  }
 
   const plan = getEffectivePlan(user.plan, user.dodoStatus);
   const { packCount } = resolvePackCountForLimit(user);
@@ -31,10 +56,9 @@ export async function GET() {
   let billedPacks = user.pendingSitePackCount ?? packCount;
   let pendingMonthly: { atFormatted: string | null; priceFormatted: string } | null = null;
 
-  const dodo = isDodoConfigured() ? getDodo() : null;
-  if (dodo && user.dodoSubscriptionId && isPaidStatus(user.dodoStatus) && plan !== "free") {
-    try {
-      const st = subscriptionState(await dodo.subscriptions.retrieve(user.dodoSubscriptionId));
+  if (live && isPaidStatus(user.dodoStatus) && plan !== "free") {
+    {
+      const st = live;
       interval = st.interval;
       nextPaymentDate = st.periodEnd?.toISOString() ?? null;
       if (st.scheduled && scheduledKind(st) !== "downgrade") billedPacks = st.scheduled.packs;
@@ -45,8 +69,6 @@ export async function GET() {
           priceFormatted: formatRecurringFromCents(cents, "usd", "month"),
         };
       }
-    } catch (err) {
-      console.error("billing summary dodo error", err);
     }
   }
 
@@ -61,6 +83,7 @@ export async function GET() {
       : 0;
 
   return NextResponse.json({
+    healed,
     plan,
     planName: PLANS[plan].name,
     interval: plan === "free" ? null : interval,

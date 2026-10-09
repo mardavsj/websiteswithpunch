@@ -13,7 +13,7 @@ import {
 } from "./dodo-subscription";
 import { enforceSiteLimit } from "./site-limits";
 
-export type SyncResult = "synced" | "ignored" | "stale" | "no_user";
+export type SyncResult = "synced" | "ignored" | "no_user";
 
 /** Our user for a subscription: stored IDs, our metadata, then the checkout email. */
 export async function findUserForSubscription(sub: SubLike) {
@@ -34,23 +34,21 @@ export async function findUserForSubscription(sub: SubLike) {
 }
 
 /**
- * @param eventAt webhook `timestamp`; events older than the last applied one are skipped.
- * Only webhooks pass it, so ordering compares Dodo timestamps with Dodo timestamps.
+ * Mirror `sub` onto its user. Always pass a subscription freshly read from the Dodo API
+ * (never a webhook body): the latest read is always the newest state, so there's no event
+ * ordering to get wrong. dodoSyncedAt records when we last mirrored it.
  */
 export async function syncSubscription(
   sub: SubLike,
-  opts: { userId?: string; eventAt?: Date | null } = {},
+  opts: { userId?: string } = {},
 ): Promise<SyncResult> {
   const user = opts.userId
     ? await prisma.user.findUnique({ where: { id: opts.userId } })
     : await findUserForSubscription(sub);
   if (!user) return "no_user";
-  const eventAt = opts.eventAt && !Number.isNaN(opts.eventAt.getTime()) ? opts.eventAt : null;
-  if (eventAt && user.dodoSyncedAt && eventAt < user.dodoSyncedAt) return "stale";
-
   const st = subscriptionState(sub);
   const isCurrent = !user.dodoSubscriptionId || user.dodoSubscriptionId === sub.subscription_id;
-  const stamp = eventAt ? { dodoSyncedAt: eventAt } : {};
+  const stamp = { dodoSyncedAt: new Date() };
   const customerId = sub.customer?.customer_id;
   const ids = customerId && !user.dodoCustomerId ? { dodoCustomerId: customerId } : {};
 

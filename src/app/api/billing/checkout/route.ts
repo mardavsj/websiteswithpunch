@@ -8,6 +8,7 @@ import { appUrl, dodoUserMessage } from "@/lib/dodo";
 import { missingCatalogMessage, productIdFor } from "@/lib/dodo-products";
 import { isPaidStatus, subscriptionState } from "@/lib/dodo-subscription";
 import { applyChange, changeBody } from "@/lib/dodo-change";
+import { syncSubscription } from "@/lib/dodo-sync";
 import { blockIfScheduled, fail, loadUser, ON_HOLD_ERROR } from "@/lib/billing-route";
 import { isVerified } from "@/lib/email-verify";
 
@@ -63,6 +64,10 @@ async function newCheckout(dodo: DodoPayments, user: User, planId: PaidPlanId, i
     return_url: `${appUrl()}/dashboard?checkout=done`,
     cancel_url: `${appUrl()}/dashboard?checkout=canceled`,
     metadata: { userId: user.id, planId, interval },
+    // Prices are USD. If Adaptive Currency is on in Dodo, charge USD anyway and hide the
+    // currency picker (Indian cards often decline foreign-currency INR conversions).
+    billing_currency: "USD",
+    feature_flags: { allow_currency_selection: false },
   });
   if (!session.checkout_url) return fail(502, "Could not start checkout. Please try again.");
   return NextResponse.json({ url: session.checkout_url });
@@ -75,6 +80,11 @@ async function changeInPlace(dodo: DodoPayments, user: User, planId: PaidPlanId,
     return fail(409, "Your subscription isn't active. Refresh the page and try again.");
   }
   if (st.plan === planId && st.interval === interval) {
+    // Dodo already has this plan but our copy lagged (missed webhook): mirror it and succeed.
+    if (user.plan !== planId) {
+      await syncSubscription(sub, { userId: user.id });
+      return NextResponse.json({ ok: true, pending: false, plan: planId, interval, sitePackCount: st.packs });
+    }
     return fail(400, `You're already on ${PLANS[planId].name} with ${intervalLabel(interval).toLowerCase()} billing.`);
   }
   if (st.plan === "business" && planId === "pro") {

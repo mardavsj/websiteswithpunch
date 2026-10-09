@@ -69,7 +69,7 @@ See `.env.example`. Required for local demo:
 | `npm run db:push` | Create/update tables in the Postgres database (`prisma db push`) |
 | `npm run db:seed` | Seed demo user + sample site |
 | `npm run db:setup` | Push + seed |
-| `npm test` | Unit tests (webhook signature verification) |
+| `npm test` | Unit tests (webhook signature, plan mapping, site details) |
 | `npm run indexnow` | Optional, after a deploy: ping IndexNow (Bing etc.) with every sitemap URL, or `npm run indexnow -- /path` for specific pages. Needs `public/<key>.txt` live first |
 
 ## Cron / scheduled checks
@@ -114,7 +114,8 @@ Each customer has **one** Dodo subscription (product = plan + interval, add-on q
 - **Cancel / Resume** are in-app (`cancel_at_next_billing_date`). Portal cancels are mirrored via webhook.
 - **Status**: `active` and `past_due` (Dodo retry grace) keep the paid plan; `on_hold`, `cancelled`, `expired` and `failed` drop to Free. `on_hold` shows an "update your payment method" banner linking to the portal.
 - **Site locking**: active (unlocked) sites count toward the limit. Locked sites keep history but skip cron checks; APIs hide metrics (`SITE_LOCKED`). Before a scheduled reduction takes effect, users can change which sites stay active; if no keep-selection was made, the oldest stay active.
-- Webhooks are signature-verified (Standard Webhooks), deduplicated by `webhook-id`, ordered by event timestamp, then `enforceSiteLimit` runs.
+- Webhooks are signature-verified (Standard Webhooks) and deduplicated by `webhook-id`; each subscription/payment event re-reads the subscription from the Dodo API (so event order doesn't matter), then `enforceSiteLimit` runs. `/api/billing/summary` also re-syncs if the stored plan drifts from Dodo.
+- Checkout forces USD (`billing_currency: "USD"`, no currency picker). Keep **Adaptive Currency off** in Dodo.
 
 Without Dodo keys the product still demos fully for Free-plan monitoring.
 

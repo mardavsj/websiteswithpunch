@@ -1,23 +1,28 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { BillingSummary } from "./types";
 
 export const BILLING_CHANGED = "billing:changed";
 
 export function useBillingSummary(enabled: boolean, refreshKey?: number) {
   const [summary, setSummary] = useState<BillingSummary | null>(null);
+  const router = useRouter();
 
   const loadSummary = useCallback(async () => {
     if (!enabled) return;
     try {
       const res = await fetch("/api/billing/summary");
       if (!res.ok) return;
-      setSummary((await res.json()) as BillingSummary);
+      const data = (await res.json()) as BillingSummary;
+      setSummary(data);
+      // The server fixed a stale plan: re-render server parts (plan badge, site limit).
+      if (data.healed) router.refresh();
     } catch {
       // omit
     }
-  }, [enabled]);
+  }, [enabled, router]);
 
   useEffect(() => {
     void loadSummary();

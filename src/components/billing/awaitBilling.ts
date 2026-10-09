@@ -13,7 +13,7 @@ export type SyncState = {
 };
 
 export const PENDING_MESSAGE =
-  "Payment sent. Your change applies as soon as Dodo Payments confirms it, usually within a couple of minutes.";
+  "Payment sent. Your change applies as soon as Dodo Payments confirms it, usually within a few minutes. You can leave this page.";
 export const STILL_PENDING_MESSAGE =
   "Still waiting for the payment to be confirmed. Refresh in a minute; if it failed, nothing changed and nothing was charged.";
 
@@ -34,11 +34,13 @@ export async function awaitBilling(
   done: (s: SyncState) => boolean,
   opts: { subscriptionId?: string; tries?: number; everyMs?: number } = {},
 ): Promise<boolean> {
-  const tries = opts.tries ?? 24;
+  // Every 4s for the first minute, then every 10s: about 6 minutes in all, since Dodo
+  // sometimes takes 3+ minutes to confirm an off-session charge.
+  const tries = opts.tries ?? 51;
   for (let i = 0; i < tries; i++) {
     const s = await syncBilling(opts.subscriptionId);
     if (s && done(s)) return true;
-    await new Promise((r) => setTimeout(r, opts.everyMs ?? 4000));
+    if (i < tries - 1) await new Promise((r) => setTimeout(r, opts.everyMs ?? (i < 15 ? 4000 : 10000)));
   }
   return false;
 }

@@ -3,6 +3,8 @@ import type { KeepSiteOption } from "@/components/KeepSitesPicker";
 import type { BillingInterval } from "@/lib/billing-interval";
 
 export type BillingSummary = {
+  /** True when this request found our copy out of date and re-synced it from Dodo. */
+  healed?: boolean;
   plan: PlanId;
   planName: string;
   /** null on Free. */
