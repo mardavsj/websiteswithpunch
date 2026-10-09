@@ -32,7 +32,7 @@ export function RemovePackModal({ open, plan, loading, message, onClose, onConfi
     setPreviewError(null);
     setPreview(null);
     try {
-      const res = await fetch("/api/stripe/preview-pack?action=remove");
+      const res = await fetch("/api/billing/preview-pack?action=remove");
       const data = await res.json();
       if (!res.ok) {
         setPreviewError(data.error || "Could not load preview.");

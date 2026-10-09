@@ -30,9 +30,9 @@ export default function PrivacyPage() {
           and certificate/domain metadata associated with those sites.
         </li>
         <li>
-          <strong>Billing information:</strong> payments and card details are handled by our
-          payment partner. We store the customer, subscription and payment identifiers and status
-          it gives us, as needed to operate your account. We never store full card numbers.
+          <strong>Billing information:</strong> payments and card details are handled by Dodo
+          Payments. We store the customer, subscription and payment identifiers and status it gives
+          us, as needed to operate your account. We never store full card numbers.
         </li>
         <li>
           <strong>Technical data:</strong> basic server logs, IP addresses, device/browser
@@ -69,9 +69,10 @@ export default function PrivacyPage() {
 
       <H2>Payment Processing</H2>
       <P>
-        Payments for paid plans are processed by our payment partner, a third-party payment provider
-        that may act as the merchant of record for your purchase. It collects and processes your
-        payment details under its own privacy policy and terms.
+        Payments for paid plans are processed by Dodo Payments, the merchant of record for your
+        purchase. It collects and processes your payment and billing details under its own{" "}
+        <A href="https://dodopayments.com/legal/privacy-policy">privacy policy</A> and{" "}
+        <A href="https://dodopayments.com/legal/buyer-terms">buyer terms</A>.
       </P>
       <P>
         We receive limited information from it, such as customer and subscription identifiers,
@@ -90,7 +91,8 @@ export default function PrivacyPage() {
           <strong>Neon</strong> hosts our database (in Singapore).
         </li>
         <li>
-          <strong>Our payment partner</strong> processes payments for paid plans.
+          <strong>Dodo Payments</strong> is the merchant of record for paid plans and processes
+          their payments.
         </li>
         <li>
           <strong>Resend</strong> delivers our transactional email: sign-up verification codes,

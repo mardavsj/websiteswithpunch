@@ -157,3 +157,30 @@ h6 {
     animation: none;
   }
 }
+
+/* Analytics Details sheet: a quick slide up (phones) or in from the right (wider screens). */
+.details-sheet {
+  animation: details-up 140ms ease-out;
+}
+@media (min-width: 640px) {
+  .details-sheet {
+    animation-name: details-in;
+  }
+}
+@keyframes details-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0.6;
+  }
+}
+@keyframes details-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0.6;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .details-sheet {
+    animation: none;
+  }
+}

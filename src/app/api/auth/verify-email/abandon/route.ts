@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * POST — "Wrong email?": delete the signed-in account if it was never verified and has nothing
- * attached (no sites, no Stripe customer), so the person can sign up again with the right address.
+ * attached (no sites, no Dodo customer), so the person can sign up again with the right address.
  */
 export async function POST() {
   const session = await getSession();
@@ -18,7 +18,7 @@ export async function POST() {
       id: session.user.id,
       emailVerified: null,
       createdAt: { gte: VERIFICATION_STARTED_AT },
-      stripeCustomerId: null,
+      dodoCustomerId: null,
       sites: { none: {} },
     },
   });

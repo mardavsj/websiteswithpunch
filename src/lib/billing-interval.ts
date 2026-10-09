@@ -1,4 +1,4 @@
-/** Client-safe billing interval helpers (no env or Stripe imports). */
+/** Client-safe billing interval helpers (no env or SDK imports). */
 import { PLANS, SITE_PACKS } from "./plans";
 
 export type BillingInterval = "month" | "year";

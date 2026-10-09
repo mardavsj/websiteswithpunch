@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { SiteAnalytics } from "@/components/SiteAnalytics";
 import { SiteCard } from "@/components/SiteCard";
 import { SiteRecheckProvider } from "@/components/SiteRecheckProvider";
+import { toClientSite } from "@/lib/client-site";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,7 @@ export default async function SiteAnalyticsPage({ params }: { params: { id: stri
           <SiteCard
             showAnalyticsLink={false}
             site={{
-              ...site,
+              ...toClientSite(site),
               lastCheckedAt: site.lastCheckedAt?.toISOString() ?? null,
               lastSeenAt: latest?.checkedAt.toISOString() ?? null,
             }}

@@ -36,7 +36,7 @@ export function SwitchMonthlyModal({ open, loading, message, onClose, onConfirm 
     setPreviewError(null);
     setPreview(null);
     try {
-      const res = await fetch("/api/stripe/switch-interval");
+      const res = await fetch("/api/billing/switch-interval");
       const data = await res.json();
       if (!res.ok) setPreviewError(data.error || "Could not load preview.");
       else setPreview(data as Preview);

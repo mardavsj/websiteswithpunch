@@ -20,7 +20,7 @@ export function PlanOverview({
   const paid = plan === "pro" || plan === "business" ? plan : null;
   const { summary } = useBillingSummary(paid !== null, sitePackCount);
   const pack = paid ? SITE_PACKS[paid] : null;
-  // Interval comes from the Stripe subscription (billing-summary); monthly until it loads.
+  // Interval comes from the Dodo subscription (/api/billing/summary); monthly until it loads.
   const interval: BillingInterval = summary?.interval ?? "month";
   const per = interval === "year" ? "year" : "month";
   const short = interval === "year" ? "yr" : "mo";

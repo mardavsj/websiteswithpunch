@@ -220,56 +220,7 @@ export function buildTimeline(checks: CheckPoint[], range: RangeKey): TimelineBu
   return buckets;
 }
 
-export function healthScore(input: {
-  uptimePercent: number | null;
-  avgLatencyMs: number | null;
-  sslDaysLeft: number | null;
-  domainDaysLeft: number | null;
-}): { score: number; label: string } {
-  const uptime = input.uptimePercent ?? 100;
-  let latencyScore = 100;
-  if (input.avgLatencyMs != null) {
-    if (input.avgLatencyMs <= 200) latencyScore = 100;
-    else if (input.avgLatencyMs <= 500) latencyScore = 85;
-    else if (input.avgLatencyMs <= 1000) latencyScore = 70;
-    else if (input.avgLatencyMs <= 2000) latencyScore = 50;
-    else latencyScore = 30;
-  }
-  const sslScore =
-    input.sslDaysLeft == null
-      ? 70
-      : input.sslDaysLeft > 60
-        ? 100
-        : input.sslDaysLeft > 30
-          ? 80
-          : input.sslDaysLeft > 14
-            ? 55
-            : input.sslDaysLeft > 7
-              ? 35
-              : 15;
-  const domainScore =
-    input.domainDaysLeft == null
-      ? 70
-      : input.domainDaysLeft > 90
-        ? 100
-        : input.domainDaysLeft > 60
-          ? 85
-          : input.domainDaysLeft > 30
-            ? 65
-            : input.domainDaysLeft > 14
-              ? 40
-              : 20;
-
-  const score = Math.round(
-    uptime * 0.5 + latencyScore * 0.25 + sslScore * 0.15 + domainScore * 0.1
-  );
-  const clamped = Math.max(0, Math.min(100, score));
-  let label = "Excellent";
-  if (clamped < 50) label = "Critical";
-  else if (clamped < 70) label = "Watch";
-  else if (clamped < 85) label = "Good";
-  return { score: clamped, label };
-}
+export { healthScore, HEALTH_WEIGHTS, type HealthParts } from "./health-score";
 
 export function formatDuration(ms: number | null): string {
   if (ms == null) return "—";

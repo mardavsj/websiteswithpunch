@@ -12,7 +12,7 @@
 - **One site = one host** — www and paths count as the same site; other subdomains are separate
 - **Auth** — email/password signup + login (NextAuth credentials), password reset by email (Resend)
 - **Plans** — Free = 1 site; Pro = 10 sites at **$12/mo**; Business = 50 sites at **$42/mo**
-- **Stripe-ready** — Checkout, Customer Portal, webhook route
+- **Billing via [Dodo Payments](https://dodopayments.com)** (merchant of record) — hosted checkout, customer portal, signed webhook
 - **Cron** — protected `/api/cron/check` to run all checks
 
 ## Stack
@@ -20,7 +20,7 @@
 - Next.js 14 (App Router) + TypeScript + Tailwind CSS
 - Prisma + PostgreSQL (e.g. [Neon](https://neon.tech))
 - NextAuth.js (credentials)
-- Stripe (optional locally)
+- Dodo Payments (optional locally)
 
 ## Quick start
 
@@ -57,7 +57,7 @@ See `.env.example`. Required for local demo:
 - `NEXTAUTH_URL`
 - `CRON_SECRET`
 
-Stripe vars are optional. Without them, the Upgrade CTA still appears; checkout/portal return a clear configuration error. Webhooks require `STRIPE_WEBHOOK_SECRET`.
+`DODO_*` vars are optional. Without them, the Upgrade CTA still appears; checkout/portal return a clear configuration error. Webhooks require `DODO_PAYMENTS_WEBHOOK_KEY`.
 
 ## Scripts
 
@@ -69,6 +69,7 @@ Stripe vars are optional. Without them, the Upgrade CTA still appears; checkout/
 | `npm run db:push` | Create/update tables in the Postgres database (`prisma db push`) |
 | `npm run db:seed` | Seed demo user + sample site |
 | `npm run db:setup` | Push + seed |
+| `npm test` | Unit tests (webhook signature verification) |
 | `npm run indexnow` | Optional, after a deploy: ping IndexNow (Bing etc.) with every sitemap URL, or `npm run indexnow -- /path` for specific pages. Needs `public/<key>.txt` live first |
 
 ## Cron / scheduled checks
@@ -89,47 +90,42 @@ curl -H "x-cron-secret: $CRON_SECRET" \
 
 On Vercel, add a Cron Job hitting `/api/cron/check` with the secret header. Elsewhere use systemd timer, GitHub Actions, or EasyCron.
 
-## Stripe setup
+## Dodo Payments setup
 
-1. Create Products + recurring Prices in Stripe Dashboard:
-   - Pro **$12/mo** → `STRIPE_PRICE_ID_PRO` (or legacy `STRIPE_PRICE_ID`)
-   - Business **$42/mo** → `STRIPE_PRICE_ID_BUSINESS` (create a new $42/mo Price; existing $39/mo subscribers can stay on their old Stripe price)
-   - Pro pack **+$5 sites @ $6/mo** → `STRIPE_PRICE_ID_PACK_PRO`
-   - Business pack **+$10 sites @ $9/mo** → `STRIPE_PRICE_ID_PACK_BUSINESS` (create a new $9/mo Price; existing $8/mo pack subscribers can stay on their old Stripe price)
-2. Set `STRIPE_SECRET_KEY` and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
-3. Forward webhooks locally:
+Full dashboard walkthrough (test mode first, then live): see `DODO_SETUP.md` in the launch notes. In short:
 
-   ```bash
-   stripe listen --forward-to localhost:3000/api/stripe/webhook
-   ```
-
-   Put the webhook signing secret in `STRIPE_WEBHOOK_SECRET`.
-
-4. Events handled: `checkout.session.completed`, `customer.subscription.created/updated/deleted`, `invoice.paid`, `invoice.payment_failed`.
-5. Enable Customer Portal in Stripe settings for “Manage billing”. Prefer **not** allowing customers to edit subscription item quantities in the portal (packs are managed in-app with site-limit checks).
+1. **Developer → API Keys**: create a key → `DODO_PAYMENTS_API_KEY`; set `DODO_PAYMENTS_ENVIRONMENT` to `test_mode` or `live_mode`.
+2. **Products** (subscription, tax category SaaS), one per plan × interval:
+   - Pro **$12/mo** / **$120/yr** → `DODO_PRODUCT_PRO_MONTHLY` / `DODO_PRODUCT_PRO_ANNUAL`
+   - Business **$42/mo** / **$420/yr** → `DODO_PRODUCT_BUSINESS_MONTHLY` / `DODO_PRODUCT_BUSINESS_ANNUAL`
+3. **Add-ons** (site packs), attached to the matching product:
+   - Pro pack **+5 sites @ $6/mo** / **$60/yr** → `DODO_ADDON_PACK_PRO_MONTHLY` / `_ANNUAL`
+   - Business pack **+10 sites @ $9/mo** / **$90/yr** → `DODO_ADDON_PACK_BUSINESS_MONTHLY` / `_ANNUAL`
+4. **Developer → Webhooks**: endpoint `https://www.websiteswithpunch.com/api/webhooks/dodo`, events `subscription.*`, `payment.succeeded`, `payment.failed`. Signing secret → `DODO_PAYMENTS_WEBHOOK_KEY`.
+5. Customer portal: allow cancel at next billing date only; plan changes stay in-app.
 
 ### Billing model (single subscription)
 
-Each customer has **one** Stripe subscription with **one** renewal date:
+Each customer has **one** Dodo subscription (product = plan + interval, add-on quantity = packs) with **one** renewal date:
 
-- **Upgrades** (Free→Pro/Business, Pro→Business, pack add) take effect **immediately** (Stripe charges the rest of the current month when applicable).
-- **Downgrades & cancel** take effect at **period end**: Business→Pro and cancel use `proration_behavior: none` / `cancel_at_period_end` so the bill drops next renewal with no refund. The user keeps their current site limit until then.
-- **Site packs** are line items on the same subscription. Removing a pack lowers Stripe quantity now (`proration_behavior: none`) but the paid-through pack count stays until renewal; over-limit sites are then **locked** (not deleted, not monitored).
-- **Site locking**: active (unlocked) sites count toward the limit. Locked sites keep history but skip cron checks; APIs hide metrics (`SITE_LOCKED`). Before a scheduled reduction takes effect, users can change which sites stay active as often as they like; after it applies, active sites are fixed — free a slot by deleting an active site, then add a new site or unlock a locked one. If no keep-selection was made, the oldest stay active.
-- **Cancel / Resume** are in-app (`cancel_at_period_end`). Portal cancels are mirrored via webhook. **past_due** keeps sites active (grace) with a dashboard banner.
-- Webhooks are idempotent: derive plan/packs from Stripe, apply due pending changes, then `enforceSiteLimit`.
-- Prefer **Customer Portal** settings: allow cancel at period end; **disable** plan switching and quantity edits in the portal (handled in-app with keep-site pickers).
+- **Free → paid** goes through Dodo hosted checkout; the webhook sets the plan (the dashboard also polls `/api/billing/sync` on return).
+- **Upgrades** (Pro→Business, monthly→annual, pack add) charge now with `prorated_immediately`: the unused part of the current period is credited and the billing date moves to today. `on_payment_failure: prevent_change` means nothing changes if the charge fails.
+- **Downgrades** (Business→Pro, pack removal, annual→monthly) are booked for the next billing date with `do_not_bill`: no refund, current limits stay until then. Only one scheduled change exists at a time.
+- **Cancel / Resume** are in-app (`cancel_at_next_billing_date`). Portal cancels are mirrored via webhook.
+- **Status**: `active` and `past_due` (Dodo retry grace) keep the paid plan; `on_hold`, `cancelled`, `expired` and `failed` drop to Free. `on_hold` shows an "update your payment method" banner linking to the portal.
+- **Site locking**: active (unlocked) sites count toward the limit. Locked sites keep history but skip cron checks; APIs hide metrics (`SITE_LOCKED`). Before a scheduled reduction takes effect, users can change which sites stay active; if no keep-selection was made, the oldest stay active.
+- Webhooks are signature-verified (Standard Webhooks), deduplicated by `webhook-id`, ordered by event timestamp, then `enforceSiteLimit` runs.
 
-Without Stripe keys the product still demos fully for Free-plan monitoring.
+Without Dodo keys the product still demos fully for Free-plan monitoring.
 
 ## Deploy notes (websiteswithpunch.com)
 
 1. Host on Vercel (or similar) with Node runtime.
 2. Set all env vars, including `DATABASE_URL` for your production Postgres (Neon), then run `npx prisma db push` once against it (and again after schema changes).
 3. Set `NEXTAUTH_URL=https://websiteswithpunch.com` (password reset links are built from it). Set `RESEND_API_KEY` so reset emails are sent; `AUTH_FROM_EMAIL` is optional and defaults to `CONTACT_FROM_EMAIL`.
-4. Point Stripe webhook to `https://websiteswithpunch.com/api/stripe/webhook`.
+4. Point the Dodo webhook to `https://www.websiteswithpunch.com/api/webhooks/dodo`.
 5. Schedule cron against `/api/cron/check` with `CRON_SECRET`.
-6. Ensure `/privacy` and `/terms` remain publicly reachable (Stripe review).
+6. Ensure `/privacy` and `/terms` remain publicly reachable (payment provider review).
 
 ## Plan limits
 

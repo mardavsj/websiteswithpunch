@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SITE_PACKS } from "@/lib/plans";
 import { useToast } from "@/components/Toast";
+import { PENDING_MESSAGE, STILL_PENDING_MESSAGE, awaitBilling } from "@/components/billing/awaitBilling";
 import {
   AddPackModal,
   RemovePackModal,
@@ -23,7 +24,7 @@ type Props = {
   atLimit: boolean;
   remaining: number;
   keepOptions: KeepSiteOption[];
-  /** Subscription interval from billing-summary; packs and prices follow it. */
+  /** Subscription interval from /api/billing/summary; packs and prices follow it. */
   interval?: BillingInterval;
   onRefresh: () => Promise<void>;
 };
@@ -54,24 +55,22 @@ export function PackActions({
     setLoading("pack");
     setMessage(null);
     try {
-      const res = await fetch("/api/stripe/checkout-pack", { method: "POST" });
+      const res = await fetch("/api/billing/checkout-pack", { method: "POST" });
       const data = await res.json();
-      if (data.hostedInvoiceUrl || data.requiresAction) {
-        window.location.href = data.hostedInvoiceUrl;
-        return;
-      }
       if (!res.ok) {
         setMessage(data.error || "Could not add pack.");
         toast(data.error || "Could not add pack.", "error");
         return;
       }
       setModal(null);
-      toast(
-        data.undone
-          ? "Pack removal canceled. Your sites stay on your plan."
-          : `Added ${data.sitesPerPack ?? pack.sitesPerPack} sites.`,
-        "success",
-      );
+      const added = `Added ${data.sitesPerPack ?? pack.sitesPerPack} sites.`;
+      if (data.pending) {
+        toast(PENDING_MESSAGE, "info");
+        const ok = await awaitBilling((s) => s.sitePackCount > (data.sitePackCount ?? 0));
+        toast(ok ? added : STILL_PENDING_MESSAGE, ok ? "success" : "info");
+      } else {
+        toast(data.undone ? "Pack removal canceled. Your sites stay on your plan." : added, "success");
+      }
       await onRefresh();
       router.refresh();
     } catch {
@@ -84,7 +83,7 @@ export function PackActions({
 
   async function startRemovePack() {
     try {
-      const res = await fetch("/api/stripe/preview-pack?action=remove");
+      const res = await fetch("/api/billing/preview-pack?action=remove");
       const data = await res.json();
       if (!res.ok) {
         toast(data.error || "Could not load preview.", "error");
@@ -109,7 +108,7 @@ export function PackActions({
     setLoading("remove");
     setMessage(null);
     try {
-      const res = await fetch("/api/stripe/remove-pack", {
+      const res = await fetch("/api/billing/remove-pack", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(keepSiteIds ? { keepSiteIds } : {}),
@@ -138,23 +137,25 @@ export function PackActions({
     setLoading("business");
     setMessage(null);
     try {
-      const res = await fetch("/api/stripe/checkout", {
+      const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planId: "business", interval: intervalParam(nextInterval) }),
       });
       const data = await res.json();
-      if (data.hostedInvoiceUrl || data.requiresAction) {
-        window.location.href = data.hostedInvoiceUrl;
-        return;
-      }
       if (data.url) {
         window.location.href = data.url;
         return;
       }
       if (data.ok) {
         setModal(null);
-        toast("Upgraded to Business.", "success");
+        if (data.pending) {
+          toast(PENDING_MESSAGE, "info");
+          const ok = await awaitBilling((s) => s.plan === "business");
+          toast(ok ? "Upgraded to Business." : STILL_PENDING_MESSAGE, ok ? "success" : "info");
+        } else {
+          toast("Upgraded to Business.", "success");
+        }
         await onRefresh();
         router.refresh();
         return;

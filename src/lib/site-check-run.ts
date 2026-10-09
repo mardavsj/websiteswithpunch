@@ -1,6 +1,7 @@
 import type { Site } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { checkSsl, checkUptime, runFullSiteCheck } from "@/lib/checks";
+import { infoFields } from "@/lib/site-info";
 
 /** Recheck (manual or auto refresh): once per minute per site. */
 export const RECHECK_COOLDOWN_MS = 60_000;
@@ -90,6 +91,7 @@ async function fullCheck(site: Site) {
       sslDaysLeft: result.ssl.daysLeft,
       domainExpiresAt: result.domain.expiresAt,
       domainDaysLeft: result.domain.daysLeft,
+      ...infoFields(site, result),
     },
   };
 }
@@ -107,6 +109,7 @@ async function autoCheck(site: Site) {
       // Keep the stored certificate if this handshake failed transiently.
       ...(ssl.expiresAt ? { sslExpiresAt: ssl.expiresAt, sslDaysLeft: ssl.daysLeft } : {}),
       domainDaysLeft,
+      ...infoFields(site, { ssl }),
     },
   };
 }

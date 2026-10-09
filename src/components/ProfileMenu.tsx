@@ -58,7 +58,7 @@ export function ProfileMenu() {
 
   async function openPortal() {
     setOpen(false);
-    const res = await fetch("/api/stripe/portal", { method: "POST" });
+    const res = await fetch("/api/billing/portal", { method: "POST" });
     const data = await res.json();
     if (data.url) window.location.href = data.url;
   }

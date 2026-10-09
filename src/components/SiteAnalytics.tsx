@@ -9,6 +9,7 @@ import { AnalyticsHeader } from "./AnalyticsHeader";
 import { AutoUpdateControl } from "./AutoUpdateControl";
 import { SiteRecheckProvider, useSiteRecheckContext } from "./SiteRecheckProvider";
 import { onSiteChecked } from "@/lib/site-check-client";
+import { DetailsProvider } from "./details/DetailsContext";
 
 type LoadOpts = { quiet?: boolean; signal?: AbortSignal };
 
@@ -166,31 +167,33 @@ function SiteAnalyticsPanel({ siteId, compact = false }: Props) {
         </p>
       )}
 
-      <div
-        key={data?.range ?? "loading"}
-        className={`mt-5 transition-opacity duration-300 ${!data || (fade && !loading) ? "opacity-100" : "opacity-40"}`}
-      >
-        {error && (
-          <p className="mb-5 rounded-none border border-rose-200 bg-rose-50 dark:border-rose-400/30 dark:bg-rose-400/10 px-3 py-2 text-sm text-danger">
-            {error}
-          </p>
-        )}
+      <DetailsProvider siteId={siteId} data={data && !siteLocked && !data.empty ? data : null}>
+        <div
+          key={data?.range ?? "loading"}
+          className={`mt-5 transition-opacity duration-300 ${!data || (fade && !loading) ? "opacity-100" : "opacity-40"}`}
+        >
+          {error && (
+            <p className="mb-5 rounded-none border border-rose-200 bg-rose-50 dark:border-rose-400/30 dark:bg-rose-400/10 px-3 py-2 text-sm text-danger">
+              {error}
+            </p>
+          )}
 
-        {loading && !data && <AnalyticsBodySkeleton />}
+          {loading && !data && <AnalyticsBodySkeleton />}
 
-        {data && !siteLocked && data.empty && (
-          <EmptyHistory data={data} {...recheckProps} />
-        )}
+          {data && !siteLocked && data.empty && (
+            <EmptyHistory data={data} {...recheckProps} />
+          )}
 
-        {data && !siteLocked && !data.empty && (
-          <>
-            {data.stale && (
-              <StaleBanner data={data} {...recheckProps} />
-            )}
-            <SiteAnalyticsBody data={data} />
-          </>
-        )}
-      </div>
+          {data && !siteLocked && !data.empty && (
+            <>
+              {data.stale && (
+                <StaleBanner data={data} {...recheckProps} />
+              )}
+              <SiteAnalyticsBody data={data} />
+            </>
+          )}
+        </div>
+      </DetailsProvider>
     </section>
   );
 }

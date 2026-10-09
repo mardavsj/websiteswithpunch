@@ -1,56 +1,46 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getStripe, isStripeConfigured } from "@/lib/stripe";
+import { getDodo, isDodoConfigured } from "@/lib/dodo";
+import { formatChargeToday } from "@/lib/billing-format";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const STATUS_LABEL: Record<string, string> = {
+  succeeded: "paid",
+  failed: "failed",
+  cancelled: "cancelled",
+  processing: "processing",
+  requires_customer_action: "action needed",
+  requires_payment_method: "action needed",
+};
+
+/** Last 12 Dodo payments for the user, each with Dodo's invoice PDF link when there is one. */
 export async function GET() {
   const session = await getSession();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  if (!isStripeConfigured()) {
-    return NextResponse.json({ invoices: [], configured: false });
-  }
+  const dodo = isDodoConfigured() ? getDodo() : null;
+  if (!dodo) return NextResponse.json({ invoices: [], configured: false });
 
   const user = await prisma.user.findUnique({ where: { id: session.user.id } });
-  if (!user?.stripeCustomerId) {
-    return NextResponse.json({ invoices: [], configured: true });
-  }
-
-  const stripe = getStripe();
-  if (!stripe) return NextResponse.json({ invoices: [], configured: false });
+  if (!user?.dodoCustomerId) return NextResponse.json({ invoices: [], configured: true });
 
   try {
-    const list = await stripe.invoices.list({
-      customer: user.stripeCustomerId,
-      limit: 12,
-    });
-    const invoices = list.data.map((inv) => ({
-      id: inv.id,
-      number: inv.number,
-      status: inv.status,
-      amountPaid: inv.amount_paid,
-      amountDue: inv.amount_due,
-      currency: inv.currency,
-      created: inv.created,
-      createdFormatted: new Date(inv.created * 1000).toLocaleDateString("en-US", {
+    const page = await dodo.payments.list({ customer_id: user.dodoCustomerId, page_size: 12 });
+    const invoices = page.items.map((p) => ({
+      id: p.payment_id,
+      createdFormatted: new Date(p.created_at).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
       }),
-      amountFormatted: `$${((inv.status === "paid" ? inv.amount_paid : inv.amount_due) / 100).toFixed(2)}`,
-      description:
-        inv.lines?.data
-          ?.map((l) => l.description)
-          .filter(Boolean)
-          .slice(0, 3)
-          .join(" · ") || inv.description || "Invoice",
-      hostedInvoiceUrl: inv.hosted_invoice_url,
-      pdf: inv.invoice_pdf,
+      description: p.subscription_id ? "Websites With Punch subscription" : "Websites With Punch",
+      amountFormatted: formatChargeToday(p.total_amount, p.currency),
+      status: (p.status && STATUS_LABEL[p.status]) || p.status || null,
+      invoiceUrl: p.invoice_url || null,
     }));
     return NextResponse.json({ invoices, configured: true });
   } catch (err) {

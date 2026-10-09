@@ -62,8 +62,9 @@ export default function RefundPolicyPage() {
           refund or credit. You keep your current capacity until then.
         </li>
         <li>
-          <strong>Upgrades and adding site packs:</strong> take effect immediately and may be
-          charged on a prorated basis for the rest of the current billing period.
+          <strong>Upgrades and adding site packs:</strong> take effect immediately and are
+          charged right away on a prorated basis: unused time on your current subscription is
+          credited, the new total is charged, and your billing date moves to that day.
         </li>
       </UL>
 
@@ -89,9 +90,10 @@ export default function RefundPolicyPage() {
         payment method and usually arrive within a few business days, depending on your bank.
       </P>
       <P>
-        Payments are processed by our payment partner, which may act as the merchant of record for
-        your purchase and may also issue refunds under its own buyer terms. Nothing in this policy
-        limits any right to a refund you have under applicable law.
+        Payments are processed by Dodo Payments, the merchant of record for your purchase, which
+        may also issue refunds under its{" "}
+        <A href="https://dodopayments.com/legal/buyer-terms">buyer terms</A>. Nothing in this
+        policy limits any right to a refund you have under applicable law.
       </P>
 
       <H2>Billing Help</H2>

@@ -19,7 +19,7 @@ import {
 } from "@/lib/billing-interval";
 
 type Props = {
-  /** Plan being bought (new subscription → Stripe Checkout); null = closed. */
+  /** Plan being bought (new subscription → Dodo Payments checkout); null = closed. */
   planId: "pro" | "business" | null;
   loading: boolean;
   message: string | null;
@@ -27,7 +27,7 @@ type Props = {
   onConfirm: (interval: BillingInterval) => void;
 };
 
-/** Free → Pro / Business: pick Monthly or Annual, then continue to Stripe Checkout. */
+/** Free → Pro / Business: pick Monthly or Annual, then continue to Dodo Payments checkout. */
 export function CheckoutPlanModal({ planId, loading, message, onClose, onConfirm }: Props) {
   const [interval, setBilling] = useState<BillingInterval>("month");
   const open = planId !== null;
@@ -68,8 +68,8 @@ export function CheckoutPlanModal({ planId, loading, message, onClose, onConfirm
           the {periodWord(interval)} you&apos;ve paid for.
         </p>
         <p className="text-xs text-muted">
-          Next you&apos;ll enter your card on our payment partner&apos;s secure checkout. Nothing is
-          charged until you confirm there.
+          Next you&apos;ll pay on the secure Dodo Payments checkout (our merchant of record). Nothing
+          is charged until you confirm there.
         </p>
         <NoRefundNote />
       </div>

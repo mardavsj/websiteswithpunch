@@ -8,7 +8,7 @@ type Invoice = {
   description: string;
   amountFormatted: string;
   status: string | null;
-  hostedInvoiceUrl: string | null;
+  invoiceUrl: string | null;
 };
 
 export function BillingInvoices() {
@@ -45,7 +45,7 @@ export function BillingInvoices() {
     );
   }
   if (!invoices.length) {
-    return <p className="mt-2 text-sm text-muted">No invoices yet.</p>;
+    return <p className="mt-2 text-sm text-muted">No payments yet.</p>;
   }
 
   return (
@@ -59,9 +59,9 @@ export function BillingInvoices() {
           </div>
           <div className="flex items-center gap-3">
             <span className="font-medium text-ink">{inv.amountFormatted}</span>
-            {inv.hostedInvoiceUrl && (
+            {inv.invoiceUrl && (
               <a
-                href={inv.hostedInvoiceUrl}
+                href={inv.invoiceUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="text-accent hover:underline"

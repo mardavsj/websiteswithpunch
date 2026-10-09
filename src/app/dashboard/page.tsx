@@ -13,6 +13,7 @@ import { DashboardPackCta } from "@/components/DashboardPackCta";
 import { DashboardAddSiteButton } from "@/components/DashboardAddSiteButton";
 import { DashboardBanners } from "@/components/DashboardBanners";
 import { DashboardPendingBanner } from "@/components/DashboardPendingBanner";
+import { CheckoutReturn } from "@/components/billing/CheckoutReturn";
 import { loadAccount } from "@/lib/account-load";
 import { toDashboardSite } from "@/lib/dashboard-sites";
 import { RememberLayout } from "@/components/skeleton/shape";
@@ -22,7 +23,7 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: { upgraded?: string; canceled?: string; pack?: string };
+  searchParams: { checkout?: string; subscription_id?: string; status?: string };
 }) {
   const session = await getSession();
   if (!session?.user?.id) redirect("/login");
@@ -30,7 +31,7 @@ export default async function DashboardPage({
   const { user, sites: sitesRaw } = await loadAccount(session.user.id);
   if (!user) redirect("/login");
 
-  const plan = getEffectivePlan(user.plan, user.stripeStatus);
+  const plan = getEffectivePlan(user.plan, user.dodoStatus);
   const resolved = resolvePackCountForLimit({
     sitePackCount: user.sitePackCount,
     pendingSitePackCount: user.pendingSitePackCount,
@@ -71,7 +72,7 @@ export default async function DashboardPage({
         active={activeSites.length}
         locked={lockedSites.length}
         limit={limit}
-        billing={Boolean(user.stripeCustomerId)}
+        billing={Boolean(user.dodoCustomerId)}
         cards={sitesRaw
           .slice(0, 12)
           .map((s): [number, number, number] => [s.name.length, s.url.length, s.locked ? 1 : 0])}
@@ -99,26 +100,19 @@ export default async function DashboardPage({
         </div>
       </div>
 
-      {searchParams.upgraded && (
-        <div className="mt-6 rounded-none border border-emerald-200 bg-emerald-50 dark:border-emerald-400/30 dark:bg-emerald-400/10 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200">
-          Upgrade successful (or checkout returned). Refresh if your plan has not updated yet —
-          billing webhooks set plan status.
-        </div>
-      )}
-      {searchParams.pack && (
-        <div className="mt-6 rounded-none border border-emerald-200 bg-emerald-50 dark:border-emerald-400/30 dark:bg-emerald-400/10 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200">
-          If you completed a pack payment, your site limit updates automatically — refresh if needed.
-        </div>
-      )}
-      {searchParams.canceled && (
-        <div className="mt-6 rounded-none border border-amber-200 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
-          Checkout canceled. You can upgrade anytime.
-        </div>
+      {searchParams.checkout && (
+        <CheckoutReturn
+          outcome={searchParams.checkout}
+          subscriptionId={searchParams.subscription_id}
+          status={searchParams.status}
+          plan={plan}
+        />
       )}
 
       <DashboardBanners
         showDefaultLockNotice={user.showDefaultLockNotice}
-        paymentFailed={user.stripeStatus === "past_due"}
+        paymentFailed={user.dodoStatus === "past_due" || user.dodoStatus === "on_hold"}
+        onHold={user.dodoStatus === "on_hold"}
         siteLimit={limit}
         activeCount={activeSites.length}
       />

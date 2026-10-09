@@ -1,4 +1,4 @@
-/** Client-safe money / date formatting for billing UI (no Stripe import). */
+/** Client-safe money / date formatting for billing UI (no SDK import). */
 
 export function formatChargeToday(amountCents: number, currency = "usd"): string {
   return new Intl.NumberFormat("en-US", {

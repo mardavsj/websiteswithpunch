@@ -15,8 +15,8 @@ export async function GET() {
       name: true,
       email: true,
       plan: true,
-      stripeCustomerId: true,
-      stripeStatus: true,
+      dodoCustomerId: true,
+      dodoStatus: true,
     },
   });
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -24,7 +24,7 @@ export async function GET() {
     name: user.name,
     email: user.email,
     plan: user.plan,
-    stripeStatus: user.stripeStatus,
-    hasBilling: Boolean(user.stripeCustomerId),
+    dodoStatus: user.dodoStatus,
+    hasBilling: Boolean(user.dodoCustomerId),
   });
 }

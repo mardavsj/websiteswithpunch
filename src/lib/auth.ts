@@ -19,7 +19,7 @@ if (process.env.NODE_ENV === "production" && !process.env.NEXTAUTH_SECRET) {
 function withUser(token: JWT, user: User): JWT {
   token.id = user.id;
   token.plan = user.plan || "free";
-  token.stripeStatus = user.stripeStatus;
+  token.dodoStatus = user.dodoStatus;
   token.ev = user.verified !== false;
   return token;
 }
@@ -28,7 +28,7 @@ function session({ session, token }: { session: Session; token: JWT }): Session 
   if (session.user) {
     session.user.id = token.id as string;
     session.user.plan = (token.plan as string) || "free";
-    session.user.stripeStatus = (token.stripeStatus as string | null) || null;
+    session.user.dodoStatus = (token.dodoStatus as string | null) || null;
     // Sessions from before verification existed carry no flag; those users all predate it.
     session.user.verified = token.ev !== false;
   }
@@ -80,7 +80,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           plan: user.plan,
-          stripeStatus: user.stripeStatus,
+          dodoStatus: user.dodoStatus,
         };
       },
     }),
@@ -95,12 +95,12 @@ export const authOptions: NextAuthOptions = {
       if (token.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { plan: true, stripeStatus: true, name: true, email: true, emailVerified: true, createdAt: true },
+          select: { plan: true, dodoStatus: true, name: true, email: true, emailVerified: true, createdAt: true },
         });
         if (dbUser) {
           token.ev = isVerified(dbUser);
           token.plan = dbUser.plan;
-          token.stripeStatus = dbUser.stripeStatus;
+          token.dodoStatus = dbUser.dodoStatus;
           token.name = dbUser.name;
           token.email = dbUser.email;
         }

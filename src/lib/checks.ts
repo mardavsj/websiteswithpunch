@@ -1,10 +1,8 @@
-import tls from "tls";
 import { URL } from "url";
 import { normalizeSiteUrl } from "./url";
 import { checkDomainExpiry, type DomainResult } from "./checks-domain";
-import { guardedLookup, isBlockedIp } from "./net-guard";
 import { describeRequestError, probeOnce } from "./safe-request";
-import net from "node:net";
+import { readCertificate, type SslDetails } from "./tools/ssl-lookup";
 
 export type { DomainResult };
 export { checkDomainExpiry };
@@ -21,6 +19,8 @@ export type SslResult = {
   expiresAt: Date | null;
   daysLeft: number | null;
   error: string | null;
+  /** Full certificate facts (issuer, SANs, validity, TLS version…) when the handshake worked. */
+  details?: (SslDetails & { host: string }) | null;
 };
 
 function checkTargetUrl(rawUrl: string): string {
@@ -125,51 +125,11 @@ export async function checkUptime(rawUrl: string): Promise<UptimeResult> {
   return first;
 }
 
-function sslConnect(host: string, port: number): Promise<SslResult> {
-  return new Promise((resolve) => {
-    if ((port !== 443 && port !== 8443) || (net.isIP(host) && isBlockedIp(host))) {
-      resolve({ expiresAt: null, daysLeft: null, error: "Blocked: private or reserved address" });
-      return;
-    }
-    const socket = tls.connect(
-      {
-        host,
-        port,
-        servername: net.isIP(host) ? undefined : host,
-        rejectUnauthorized: false,
-        timeout: 8000,
-        lookup: guardedLookup as never,
-      },
-      () => {
-        try {
-          const cert = socket.getPeerCertificate();
-          socket.end();
-          if (!cert || !cert.valid_to) {
-            resolve({ expiresAt: null, daysLeft: null, error: "No certificate" });
-            return;
-          }
-          const expiresAt = new Date(cert.valid_to);
-          const daysLeft = Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-          resolve({ expiresAt, daysLeft, error: null });
-        } catch {
-          socket.destroy();
-          resolve({
-            expiresAt: null,
-            daysLeft: null,
-            error: "SSL read failed",
-          });
-        }
-      },
-    );
-    socket.on("error", (err) => {
-      socket.destroy();
-      resolve({ expiresAt: null, daysLeft: null, error: describeRequestError(err) });
-    });
-    socket.on("timeout", () => {
-      socket.destroy();
-      resolve({ expiresAt: null, daysLeft: null, error: "SSL timeout" });
-    });
-  });
+/** One handshake via the free SSL checker's reader, so both always show the same certificate. */
+async function sslConnect(host: string, port: number): Promise<SslResult> {
+  const d = await readCertificate(host, port, false);
+  if (!d.ok || !d.expiresAt) return { expiresAt: null, daysLeft: null, error: d.error || "No certificate", details: null };
+  return { expiresAt: new Date(d.expiresAt), daysLeft: d.daysLeft, error: null, details: { ...d, host } };
 }
 
 export async function checkSsl(rawUrl: string, preferUrl?: string | null): Promise<SslResult> {

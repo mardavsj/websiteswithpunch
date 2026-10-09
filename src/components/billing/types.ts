@@ -39,7 +39,7 @@ export type SiteCapacityProps = {
   pendingPlanAt?: string | null;
 };
 
-/** /api/stripe/preview-pack response. Amounts follow the subscription's interval. */
+/** /api/billing/preview-pack response. Amounts follow the subscription's interval. */
 export type PackPreview = {
   interval?: BillingInterval;
   action?: "add" | "remove";

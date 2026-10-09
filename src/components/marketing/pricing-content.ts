@@ -44,7 +44,7 @@ const shared: PlanFeature[] = [
   { text: "Dashboard, analytics and check history" },
 ];
 
-/** Paid-only, from the code: Stripe billing portal (needs a Stripe customer) and pack add/remove. */
+/** Paid-only, from the code: Dodo customer portal (needs a Dodo customer) and pack add/remove. */
 const paid: PlanFeature[] = [
   { text: "Self-serve billing portal" },
   { text: "Manage packs from the dashboard" },

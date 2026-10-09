@@ -60,7 +60,7 @@ export async function fetchWhoisFallback(domain: string): Promise<DomainResult> 
         errors.push(`${endpoint}: invalid date`);
         continue;
       }
-      return { expiresAt, daysLeft: daysLeftFrom(expiresAt), error: null };
+      return { expiresAt, daysLeft: daysLeftFrom(expiresAt), error: null, source: "WHOIS", server: new URL(endpoint).hostname };
     } catch {
       errors.push(`${endpoint}: request failed`);
     }

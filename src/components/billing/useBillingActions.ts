@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { PLANS, type PlanId } from "@/lib/plans";
 import { useToast } from "@/components/Toast";
 import { BILLING_CHANGED } from "@/components/billing/useBillingSummary";
+import { PENDING_MESSAGE, STILL_PENDING_MESSAGE, awaitBilling } from "@/components/billing/awaitBilling";
 
 type ToastFn = ReturnType<typeof useToast>["toast"];
 
@@ -22,7 +23,7 @@ export function useBillingActions(opts: {
   }
 
   async function confirmCancel(keepSiteIds: string[]) {
-    const res = await fetch("/api/stripe/cancel", {
+    const res = await fetch("/api/billing/cancel", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ keepSiteIds }),
@@ -41,7 +42,7 @@ export function useBillingActions(opts: {
   }
 
   async function resumePlan() {
-    const res = await fetch("/api/stripe/resume", { method: "POST" });
+    const res = await fetch("/api/billing/resume", { method: "POST" });
     const data = await res.json();
     if (!res.ok) {
       toast(data.error || "Could not resume.", "error");
@@ -53,7 +54,7 @@ export function useBillingActions(opts: {
   }
 
   async function confirmDowngrade(keepSiteIds: string[]) {
-    const res = await fetch("/api/stripe/downgrade", {
+    const res = await fetch("/api/billing/downgrade", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ keepSiteIds }),
@@ -73,7 +74,7 @@ export function useBillingActions(opts: {
 
   async function previewNeedsKeepPicker(): Promise<boolean | null> {
     try {
-      const res = await fetch("/api/stripe/preview-downgrade");
+      const res = await fetch("/api/billing/preview-downgrade");
       const data = await res.json();
       if (!res.ok) {
         toast(data.error || "Could not load preview.", "error");
@@ -102,20 +103,24 @@ export function useBillingActions(opts: {
     return true;
   }
 
-  /** Same plan, monthly → annual (in place; Stripe charges the year minus unused month). */
+  /** Same plan, monthly → annual (in place; Dodo charges the year minus the unused month). */
   async function switchToAnnual(): Promise<string | null> {
     try {
-      const res = await fetch("/api/stripe/checkout", {
+      const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planId: plan, interval: "annual" }),
       });
       const data = await res.json();
-      if (data.hostedInvoiceUrl || data.requiresAction) {
-        window.location.href = data.hostedInvoiceUrl;
+      if (!res.ok || !data.ok) return data.error || "Could not switch to annual billing.";
+      if (data.pending) {
+        toast(PENDING_MESSAGE, "info");
+        void awaitBilling((s) => s.interval === "year").then(async (ok) => {
+          toast(ok ? "You're now on annual billing." : STILL_PENDING_MESSAGE, ok ? "success" : "info");
+          await afterOk();
+        });
         return null;
       }
-      if (!res.ok || !data.ok) return data.error || "Could not switch to annual billing.";
       toast("You're now on annual billing.", "success");
       await afterOk();
       return null;
@@ -127,7 +132,7 @@ export function useBillingActions(opts: {
   /** Annual → monthly at renewal (subscription schedule). Returns an error message or null. */
   async function scheduleMonthly(): Promise<string | null> {
     try {
-      const res = await fetch("/api/stripe/switch-interval", { method: "POST" });
+      const res = await fetch("/api/billing/switch-interval", { method: "POST" });
       const data = await res.json();
       if (!res.ok) return data.error || "Could not schedule the switch to monthly.";
       toast(
@@ -142,7 +147,7 @@ export function useBillingActions(opts: {
   }
 
   async function cancelMonthlySwitch() {
-    const res = await fetch("/api/stripe/switch-interval", { method: "DELETE" });
+    const res = await fetch("/api/billing/switch-interval", { method: "DELETE" });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       toast(data.error || "Could not cancel the switch.", "error");
@@ -154,7 +159,7 @@ export function useBillingActions(opts: {
   }
 
   async function undoPendingRemoval() {
-    const res = await fetch("/api/stripe/checkout-pack", { method: "POST" });
+    const res = await fetch("/api/billing/checkout-pack", { method: "POST" });
     const data = await res.json();
     if (!res.ok) {
       toast(data.error || "Could not undo.", "error");

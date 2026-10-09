@@ -112,14 +112,14 @@ export async function checkCode(userId: string, raw: string, now = new Date()): 
   });
 }
 
-/** Cron: unverified accounts older than 48h with no sites and no Stripe customer, plus old codes. */
+/** Cron: unverified accounts older than 48h with no sites and no Dodo customer, plus old codes. */
 export async function pruneUnverified(now = Date.now()) {
   const cutoff = new Date(now - 48 * HOUR);
   const users = await prisma.user.deleteMany({
     where: {
       emailVerified: null,
       createdAt: { lt: cutoff, gte: VERIFICATION_STARTED_AT },
-      stripeCustomerId: null,
+      dodoCustomerId: null,
       sites: { none: {} },
     },
   });

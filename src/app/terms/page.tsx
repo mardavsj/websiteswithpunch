@@ -58,15 +58,17 @@ export default function TermsPage() {
 
       <H2>Payments &amp; Billing</H2>
       <P>
-        Payments are processed by our payment partner, a third-party payment provider that may act
-        as the merchant of record for your purchase. When it does, its own buyer terms also apply to
-        the payment and its name may appear on your card statement. We never see or store your full
+        Payments are processed by Dodo Payments, which acts as the merchant of record for your
+        purchase: it sells the subscription to you on our behalf, collects payment and handles
+        sales tax, VAT or GST where it applies. Its{" "}
+        <A href="https://dodopayments.com/legal/buyer-terms">buyer terms</A> also apply to the
+        payment, and its name may appear on your card statement. We never see or store your full
         card number.
       </P>
       <P>
         Paid subscriptions renew automatically at the end of each billing period (monthly or yearly)
-        until canceled. You can cancel anytime from Your plan page or from the billing portal
-        (Manage billing).
+        until canceled. You can cancel anytime from Your plan page or from the Dodo Payments
+        customer portal (Manage billing).
       </P>
       <P>
         Prices are stated in USD unless otherwise specified. Applicable taxes may be added at
@@ -81,8 +83,9 @@ export default function TermsPage() {
         effect at renewal.
       </P>
       <P>
-        Upgrades take effect immediately and may be charged on a prorated basis for the remainder
-        of the current billing period.
+        Upgrades and added site packs take effect immediately and are charged right away on a
+        prorated basis: unused time on your current subscription is credited, the new total is
+        charged, and your billing date moves to that day.
       </P>
 
       <H2>Disclaimer</H2>

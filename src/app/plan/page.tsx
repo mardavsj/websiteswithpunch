@@ -19,7 +19,7 @@ export default async function PlanPage() {
   const { user, sites } = await loadAccount(session.user.id);
   if (!user) redirect("/login");
 
-  const plan = getEffectivePlan(user.plan, user.stripeStatus);
+  const plan = getEffectivePlan(user.plan, user.dodoStatus);
   const resolved = resolvePackCountForLimit({
     sitePackCount: user.sitePackCount,
     pendingSitePackCount: user.pendingSitePackCount,
@@ -53,7 +53,7 @@ export default async function PlanPage() {
         active={activeSites.length}
         locked={lockedSites.length}
         limit={limit}
-        billing={Boolean(user.stripeCustomerId)}
+        billing={Boolean(user.dodoCustomerId)}
       />
       <div className="w-full">
         <h1 className="font-display text-2xl font-medium text-ink">My Plan</h1>
@@ -74,7 +74,7 @@ export default async function PlanPage() {
             pendingPlan={user.pendingPlan}
             pendingPlanAt={user.pendingPlanAt?.toISOString() ?? null}
             lockedCount={lockedSites.length}
-            hasBilling={Boolean(user.stripeCustomerId)}
+            hasBilling={Boolean(user.dodoCustomerId)}
           />
         </div>
       </div>

@@ -11,7 +11,7 @@ export function useBillingSummary(enabled: boolean, refreshKey?: number) {
   const loadSummary = useCallback(async () => {
     if (!enabled) return;
     try {
-      const res = await fetch("/api/stripe/billing-summary");
+      const res = await fetch("/api/billing/summary");
       if (!res.ok) return;
       setSummary((await res.json()) as BillingSummary);
     } catch {

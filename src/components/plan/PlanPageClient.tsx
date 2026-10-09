@@ -16,7 +16,7 @@ export function PlanPageClient({ lockedCount, hasBilling, ...capacity }: Props) 
   const plan = capacity.plan as PlanId;
 
   async function openPortal() {
-    const res = await fetch("/api/stripe/portal", { method: "POST" });
+    const res = await fetch("/api/billing/portal", { method: "POST" });
     const data = await res.json();
     if (data.url) window.location.href = data.url;
   }

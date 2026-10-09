@@ -9,7 +9,7 @@ declare module "next-auth" {
       name?: string | null;
       image?: string | null;
       plan: string;
-      stripeStatus: string | null;
+      dodoStatus: string | null;
       /** false until the email code is confirmed (see lib/email-verify.ts). */
       verified: boolean;
     };
@@ -17,7 +17,7 @@ declare module "next-auth" {
 
   interface User {
     plan?: string;
-    stripeStatus?: string | null;
+    dodoStatus?: string | null;
     verified?: boolean;
   }
 }
@@ -28,6 +28,6 @@ declare module "next-auth/jwt" {
     /** Email verified. Missing on tokens issued before verification existed. */
     ev?: boolean;
     plan?: string;
-    stripeStatus?: string | null;
+    dodoStatus?: string | null;
   }
 }

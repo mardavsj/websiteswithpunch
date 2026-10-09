@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { SITE_PACKS, canBuySitePack, type PlanId } from "@/lib/plans";
 import { useToast } from "@/components/Toast";
 import { AddPackModal } from "@/components/PackBillingModals";
+import { PENDING_MESSAGE, STILL_PENDING_MESSAGE, awaitBilling } from "@/components/billing/awaitBilling";
 
 export function DashboardPackCta({
   plan,
@@ -30,24 +31,22 @@ export function DashboardPackCta({
     setLoading(true);
     setMessage(null);
     try {
-      const res = await fetch("/api/stripe/checkout-pack", { method: "POST" });
+      const res = await fetch("/api/billing/checkout-pack", { method: "POST" });
       const data = await res.json();
-      if (data.hostedInvoiceUrl || data.requiresAction) {
-        window.location.href = data.hostedInvoiceUrl;
-        return;
-      }
       if (!res.ok) {
         setMessage(data.error || "Could not add pack.");
         toast(data.error || "Could not add pack.", "error");
         return;
       }
       setOpen(false);
-      toast(
-        data.undone
-          ? "Pack removal canceled. Your sites stay on your plan."
-          : `Added ${data.sitesPerPack ?? pack.sitesPerPack} sites.`,
-        "success",
-      );
+      const added = `Added ${data.sitesPerPack ?? pack.sitesPerPack} sites.`;
+      if (data.pending) {
+        toast(PENDING_MESSAGE, "info");
+        const ok = await awaitBilling((s) => s.sitePackCount > (data.sitePackCount ?? 0));
+        toast(ok ? added : STILL_PENDING_MESSAGE, ok ? "success" : "info");
+      } else {
+        toast(data.undone ? "Pack removal canceled. Your sites stay on your plan." : added, "success");
+      }
       router.refresh();
     } catch {
       setMessage("Could not add site pack.");

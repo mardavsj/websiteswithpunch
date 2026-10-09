@@ -1,8 +1,10 @@
 import net from "node:net";
 import tls from "node:tls";
-import { guardedLookup } from "@/lib/net-guard";
+import { guardedLookup, isBlockedIp } from "@/lib/net-guard";
+import { describeRequestError } from "@/lib/safe-request";
 import { friendlyNetError } from "./messages";
 
+/** Certificate facts read from one TLS handshake. Shared by the free SSL checker and site checks. */
 export type SslDetails = {
   ok: boolean;
   issuer: string | null;
@@ -14,12 +16,15 @@ export type SslDetails = {
   trustError: string | null;
   protocol: string | null;
   altNames: string[];
+  serialNumber: string | null;
+  fingerprint256: string | null;
   error: string | null;
 };
 
 const empty = (error: string): SslDetails => ({
   ok: false, issuer: null, subject: null, validFrom: null, expiresAt: null, daysLeft: null,
-  trusted: false, trustError: null, protocol: null, altNames: [], error,
+  trusted: false, trustError: null, protocol: null, altNames: [], serialNumber: null,
+  fingerprint256: null, error,
 });
 
 const TRUST_MESSAGES: Record<string, string> = {
@@ -39,25 +44,28 @@ const name = (o: unknown): string | null => {
 };
 
 /**
- * Read the certificate a host presents on port 443. The connection resolves through the SSRF
- * guard (public addresses only) and never sends an HTTP request.
+ * Read the certificate a host presents. The connection resolves through the SSRF guard (public
+ * addresses only) and never sends an HTTP request. `friendly` turns errors into plain English.
  */
-export function lookupSsl(host: string): Promise<SslDetails> {
-  if (net.isIP(host)) return Promise.resolve(empty("Enter a domain name, not an IP address."));
+export function readCertificate(host: string, port = 443, friendly = true): Promise<SslDetails> {
+  const fail = (err: unknown) => empty(friendly ? friendlyNetError(err) : describeRequestError(err));
+  if ((port !== 443 && port !== 8443) || (net.isIP(host) && isBlockedIp(host))) {
+    return Promise.resolve(empty("Blocked: private or reserved address"));
+  }
   return new Promise((resolve) => {
     const socket = tls.connect({
-      host, port: 443, servername: host, rejectUnauthorized: false, timeout: 8000,
-      lookup: guardedLookup as never,
+      host, port, servername: net.isIP(host) ? undefined : host, rejectUnauthorized: false,
+      timeout: 8000, lookup: guardedLookup as never,
     });
     socket.once("secureConnect", () => {
       const cert = socket.getPeerCertificate();
       const protocol = socket.getProtocol();
       const authError = socket.authorizationError ? String(socket.authorizationError) : null;
       socket.end();
-      if (!cert?.valid_to) return resolve(empty("The server didn't present a certificate."));
+      if (!cert?.valid_to) return resolve(empty(friendly ? "The server didn't present a certificate." : "No certificate"));
       const expires = new Date(cert.valid_to);
       const altNames = (cert.subjectaltname ?? "")
-        .split(", ").filter((s) => s.startsWith("DNS:")).map((s) => s.slice(4)).slice(0, 20);
+        .split(", ").filter((s) => s.startsWith("DNS:")).map((s) => s.slice(4)).slice(0, 50);
       resolve({
         ok: true,
         issuer: name(cert.issuer),
@@ -69,16 +77,24 @@ export function lookupSsl(host: string): Promise<SslDetails> {
         trustError: authError ? TRUST_MESSAGES[authError] ?? "Browsers won't trust this certificate." : null,
         protocol,
         altNames,
+        serialNumber: cert.serialNumber || null,
+        fingerprint256: cert.fingerprint256 || null,
         error: null,
       });
     });
     socket.once("timeout", () => {
       socket.destroy();
-      resolve(empty("The server didn't answer on port 443 within 8 seconds."));
+      resolve(empty(friendly ? `The server didn't answer on port ${port} within 8 seconds.` : "SSL timeout"));
     });
     socket.once("error", (err) => {
       socket.destroy();
-      resolve(empty(friendlyNetError(err)));
+      resolve(fail(err));
     });
   });
+}
+
+/** Free SSL checker: domain names only, port 443. */
+export function lookupSsl(host: string): Promise<SslDetails> {
+  if (net.isIP(host)) return Promise.resolve(empty("Enter a domain name, not an IP address."));
+  return readCertificate(host);
 }

@@ -39,16 +39,11 @@ export type PlanPreview = {
   newRecurringMonthlyFormatted: string;
 };
 
+/** Dodo's prorated change: a full new period at the new price, minus unused time credited. */
 function costLine(p: PlanPreview, interval: BillingInterval): string {
-  if (p.samePlan) {
-    const what = p.keptPacks ? `${p.targetPlanName} and your site packs` : p.targetPlanName;
-    return `That's a full year of ${what}, minus the unused part of the month you already paid for.`;
-  }
-  if (p.intervalChanges) {
-    return `That's a full year of ${p.targetPlanName}, minus the unused part of what you already paid for ${p.currentPlanName} this month.`;
-  }
-  const period = interval === "year" ? "billing year" : "month";
-  return `That's the ${p.targetPlanName} price for the rest of this ${period}, minus what you already paid for ${p.currentPlanName} for the same time.`;
+  const period = interval === "year" ? "year" : "month";
+  const what = p.samePlan && p.keptPacks ? `${p.targetPlanName} and your site packs` : p.targetPlanName;
+  return `That's a full ${period} of ${what}, minus a credit for the unused part of what you already paid for ${p.currentPlanName}.`;
 }
 
 export function UpgradePlanModal({
@@ -81,7 +76,7 @@ export function UpgradePlanModal({
     setPreview(null);
     try {
       const res = await fetch(
-        `/api/stripe/preview-plan?planId=${targetPlan}&interval=${intervalParam(interval)}`,
+        `/api/billing/preview-plan?planId=${targetPlan}&interval=${intervalParam(interval)}`,
       );
       const data = await res.json();
       if (!res.ok) {
@@ -151,12 +146,12 @@ export function UpgradePlanModal({
               </p>
             )}
             <p className="text-sm leading-relaxed text-muted">
-              From {renew} you&apos;ll pay {preview.newRecurringMonthlyFormatted}.
-              {preview.intervalChanges ? " Your billing date moves to today." : ""}
+              After that you&apos;ll pay {preview.newRecurringMonthlyFormatted}, next on {renew}.
+              Your billing date moves to today.
             </p>
             {!todayZero && (
               <p className="text-xs text-muted">
-                Your bank may ask you to approve this payment. That&apos;s normal.
+                Charged to the payment method on your subscription. Your new plan starts once the payment is confirmed, usually within a couple of minutes.
               </p>
             )}
             <NoRefundNote />

@@ -43,7 +43,7 @@ export function VerifyForm({
     setDone(true);
     await update().catch(() => null); // re-issues the session cookie with the verified flag
     if (plan) {
-      const res = await fetch("/api/stripe/checkout", {
+      const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planId: plan, interval: intervalParam(interval) }),

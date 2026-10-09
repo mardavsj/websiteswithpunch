@@ -2,14 +2,23 @@ import { extractHostname } from "./utils";
 import { hostKeyFromStoredUrl, registrableDomain } from "./url";
 import { readCapped } from "./safe-request";
 import { fetchWhoisFallback } from "./checks-whois";
+import { parseRdapDomain, type RdapDoc } from "./rdap-parse";
 
 export type DomainResult = {
   expiresAt: Date | null;
   daysLeft: number | null;
   error: string | null;
-  /** RDAP only (used by the public checker): registrar name and registration date. */
+  /** RDAP only: registrar, dates, nameservers and EPP status codes. */
   registrar?: string | null;
   registeredAt?: Date | null;
+  updatedAt?: Date | null;
+  nameservers?: string[];
+  statuses?: string[];
+  /** Which lookup answered ("RDAP" or "WHOIS") and the server that answered it. */
+  source?: "RDAP" | "WHOIS";
+  server?: string | null;
+  /** Registrable domain that was looked up (e.g. example.co.uk). */
+  domain?: string;
 };
 
 const UA = "WebsitesWithPunch-Monitor/1.0";
@@ -68,36 +77,12 @@ function joinRdapDomainUrl(base: string, domain: string): string {
   return `${base.replace(/\/+$/, "")}/domain/${encodeURIComponent(domain)}`;
 }
 
-function isExpirationAction(action: string | undefined): boolean {
-  if (!action) return false;
-  const a = action.toLowerCase().trim();
-  if (a === "expiration" || a === "expiry" || a === "expiration date" || a === "registry expiration") {
-    return true;
+function hostOf(url: string): string | null {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return null;
   }
-  return a.includes("expir");
-}
-
-function daysLeftFrom(expiresAt: Date): number {
-  return Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-}
-
-type RdapEntity = { roles?: string[]; vcardArray?: [string, Array<[string, unknown, string, unknown]>] };
-type RdapDoc = { events?: Array<{ eventAction?: string; eventDate?: string }>; entities?: RdapEntity[] };
-
-function rdapRegistrar(data: RdapDoc): string | null {
-  const ent = data.entities?.find((e) => e.roles?.includes("registrar"));
-  const fn = ent?.vcardArray?.[1]?.find((f) => f[0] === "fn")?.[3];
-  return typeof fn === "string" && fn.trim() ? fn.trim().slice(0, 120) : null;
-}
-
-function parseRdapExpiry(data: RdapDoc): DomainResult | null {
-  const expiryEvent = data.events?.find((e) => isExpirationAction(e.eventAction));
-  if (!expiryEvent?.eventDate) return null;
-  const expiresAt = new Date(expiryEvent.eventDate);
-  if (Number.isNaN(expiresAt.getTime())) return null;
-  const reg = data.events?.find((e) => e.eventAction === "registration")?.eventDate;
-  const registeredAt = reg && !Number.isNaN(Date.parse(reg)) ? new Date(reg) : null;
-  return { expiresAt, daysLeft: daysLeftFrom(expiresAt), error: null, registrar: rdapRegistrar(data), registeredAt };
 }
 
 async function fetchRdapFromUrl(url: string): Promise<DomainResult> {
@@ -123,7 +108,9 @@ async function fetchRdapFromUrl(url: string): Promise<DomainResult> {
     } catch {
       return { expiresAt: null, daysLeft: null, error: "RDAP JSON parse failed" };
     }
-    return parseRdapExpiry(data) ?? { expiresAt: null, daysLeft: null, error: "No expiry in RDAP" };
+    const parsed = parseRdapDomain(data);
+    if (!parsed) return { expiresAt: null, daysLeft: null, error: "No expiry in RDAP" };
+    return { ...parsed, source: "RDAP", server: hostOf(url) };
   } catch {
     return {
       expiresAt: null,
@@ -184,12 +171,13 @@ async function lookupDomainExpiry(rawUrl: string): Promise<DomainResult> {
     return { expiresAt: null, daysLeft: null, error: "Could not resolve domain" };
   }
   const rdap = await fetchRdap(root);
-  if (rdap.expiresAt) return rdap;
+  if (rdap.expiresAt) return { ...rdap, domain: root };
   const whois = await fetchWhoisFallback(root);
-  if (whois.expiresAt) return whois;
+  if (whois.expiresAt) return { ...whois, domain: root };
   return {
     expiresAt: null,
     daysLeft: null,
     error: rdap.error || whois.error || "Could not resolve domain expiry",
+    domain: root,
   };
 }

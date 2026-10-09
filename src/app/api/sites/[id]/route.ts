@@ -190,10 +190,13 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         error: `You can recheck again in ${retryAfter}s.`,
         code: "RECHECK_COOLDOWN",
         retryAfter,
-        site: outcome.site,
+        site: toClientSite(outcome.site as unknown as Record<string, unknown>),
       },
       { status: 429, headers: { "Retry-After": String(retryAfter) } },
     );
   }
-  return NextResponse.json({ site: outcome.site, result: outcome.result });
+  return NextResponse.json({
+    site: toClientSite(outcome.site as unknown as Record<string, unknown>),
+    result: outcome.result,
+  });
 }

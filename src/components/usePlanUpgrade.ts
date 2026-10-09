@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { getEffectivePlan, type PlanId } from "@/lib/plans";
 import { intervalParam, type BillingInterval } from "@/lib/billing-interval";
 import { useToast } from "@/components/Toast";
+import { PENDING_MESSAGE, STILL_PENDING_MESSAGE, awaitBilling } from "@/components/billing/awaitBilling";
 
 /**
  * Upgrade state shared by the navbar, profile menu and /plan:
@@ -24,7 +25,7 @@ export function usePlanUpgrade(planOverride?: PlanId) {
 
   const plan: PlanId | null =
     planOverride ??
-    (session?.user ? getEffectivePlan(session.user.plan, session.user.stripeStatus ?? null) : null);
+    (session?.user ? getEffectivePlan(session.user.plan, session.user.dodoStatus ?? null) : null);
 
   function setUpgradeOpen(open: boolean) {
     setMessage(null);
@@ -40,16 +41,12 @@ export function usePlanUpgrade(planOverride?: PlanId) {
     setLoading(planId);
     setMessage(null);
     try {
-      const res = await fetch("/api/stripe/checkout", {
+      const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planId, interval: intervalParam(interval) }),
       });
       const data = await res.json();
-      if (data.hostedInvoiceUrl || data.requiresAction) {
-        window.location.href = data.hostedInvoiceUrl;
-        return;
-      }
       if (data.url) {
         window.location.href = data.url;
         return;
@@ -57,7 +54,15 @@ export function usePlanUpgrade(planOverride?: PlanId) {
       if (data.ok) {
         setUpgradeOpenState(false);
         setChoosePlanState(null);
-        toast(planId === "business" ? "Upgraded to Business." : "Upgraded to Pro.", "success");
+        const doneMsg = planId === "business" ? "Upgraded to Business." : "Switched to annual billing.";
+        if (!data.pending) {
+          toast(doneMsg, "success");
+          router.refresh();
+          return;
+        }
+        toast(PENDING_MESSAGE, "info");
+        const ok = await awaitBilling((s) => s.plan === planId && s.interval === interval);
+        toast(ok ? doneMsg : STILL_PENDING_MESSAGE, ok ? "success" : "info");
         router.refresh();
         return;
       }

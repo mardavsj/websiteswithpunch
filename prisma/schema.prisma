@@ -26,15 +26,19 @@ model User {
   pendingPlan             String?
   /// When pendingPlan becomes live (usually next renewal / cancel date).
   pendingPlanAt           DateTime?
-  /// Mirrors Stripe cancel_at_period_end for dashboard UI.
+  /// Mirrors Dodo cancel_at_next_billing_date for dashboard UI.
   cancelAtPeriodEnd       Boolean   @default(false)
   /// Unused (was 24h active-site swap cooldown). Kept to avoid schema churn.
   lastSiteSwapAt          DateTime?
   /// Show the "we kept your oldest" banner until dismissed.
   showDefaultLockNotice   Boolean   @default(false)
-  stripeCustomerId        String?   @unique
-  stripeSubscriptionId    String?   @unique
-  stripeStatus            String?   // active | canceled | past_due | etc
+  /// Dodo Payments customer (cus_…), created before the first checkout.
+  dodoCustomerId          String?   @unique
+  /// Current Dodo subscription (sub_…): one per customer, packs are add-ons on it.
+  dodoSubscriptionId      String?   @unique
+  dodoStatus              String?   // active | past_due | on_hold | cancelled | expired | failed
+  /// Timestamp of the newest webhook applied (older, out-of-order events are skipped).
+  dodoSyncedAt            DateTime?
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
   accounts                Account[]
@@ -94,6 +98,10 @@ model Site {
   sslDaysLeft     Int?
   domainExpiresAt DateTime?
   domainDaysLeft  Int?
+  /// Full certificate facts from the last check (issuer, SANs, validity, TLS…); see lib/site-info.ts.
+  sslInfo         Json?
+  /// Registrar, dates, nameservers, status codes and source from the last domain lookup.
+  domainInfo      Json?
   /// Not monitored; metrics hidden from client until unlocked.
   locked          Boolean       @default(false)
   lockedAt        DateTime?
@@ -164,8 +172,9 @@ model RateLimit {
   @@index([expiresAt])
 }
 
-/// Stripe webhook events already handled (idempotency: Stripe retries and may deliver twice).
-model StripeEvent {
+/// Dodo webhook deliveries already handled, keyed by the webhook-id header (idempotency:
+/// Dodo retries failed deliveries and may deliver twice). Pruned after 30 days by the cron.
+model WebhookEvent {
   id        String   @id
   type      String
   createdAt DateTime @default(now())

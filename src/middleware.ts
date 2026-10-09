@@ -5,7 +5,7 @@ import { getToken } from "next-auth/jwt";
 const APP = /^\/(dashboard|plan|profile)(\/|$)/;
 const VERIFY = "/verify-email";
 /** APIs an unverified account may still call (auth, its own verification, public endpoints). */
-const OPEN_API = /^\/api\/(auth|contact|tools|cron|stripe\/webhook|stripe\/complete-signup|me)(\/|$)/;
+const OPEN_API = /^\/api\/(auth|contact|tools|cron|webhooks\/dodo|me)(\/|$)/;
 
 /**
  * - Signed-out visitors to app pages go to our login page (with a callbackUrl back).

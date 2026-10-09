@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import {
   expiryHue,
   expiryWindow,
@@ -26,11 +26,14 @@ const meterStyle = (h: number) => ({ "--meter-h": String(h) }) as CSSProperties;
 
 export function ExpiryRingCard({
   title,
+  action,
   days,
   expiresAt,
   addedAt,
 }: {
   title: string;
+  /** Top-right control (the Details button). */
+  action?: ReactNode;
   days: number | null;
   expiresAt: string | null;
   addedAt?: string | null;
@@ -49,7 +52,10 @@ export function ExpiryRingCard({
       className={`rounded-none border border-rule bg-surface p-4 ${METER_VARS}`}
       style={meterStyle(hue)}
     >
-      <p className="label-caps text-muted">{title}</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="label-caps text-muted">{title}</p>
+        {action}
+      </div>
       <div className="mt-3 flex items-center gap-4">
         <svg width="64" height="64" viewBox="0 0 64 64" className="shrink-0" aria-hidden>
           <circle cx="32" cy="32" r={r} fill="none" stroke={RULE} strokeWidth="6" />
@@ -105,10 +111,12 @@ export function ExpiryRingCard({
 }
 
 export function DomainExpiryMeter({
+  action,
   days,
   expiresAt,
   addedAt,
 }: {
+  action?: ReactNode;
   days: number | null;
   expiresAt: string | null;
   addedAt?: string | null;
@@ -134,7 +142,10 @@ export function DomainExpiryMeter({
       className={`rounded-none border border-rule bg-surface p-4 ${METER_VARS}`}
       style={meterStyle(hue)}
     >
-      <p className="label-caps text-muted">Domain registration</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="label-caps text-muted">Domain registration</p>
+        {action}
+      </div>
 
       <p
         className={`mt-3 font-display text-3xl font-medium tabular-nums ${

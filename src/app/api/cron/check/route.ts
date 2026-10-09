@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { runFullSiteCheck } from "@/lib/checks";
+import { infoFields } from "@/lib/site-info";
 import { pruneRateLimits } from "@/lib/rate-limit";
 import { pruneUnverified } from "@/lib/email-verify";
 
@@ -42,7 +43,14 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   ]).finally(() => clearTimeout(t));
 }
 
-type CronSite = { id: string; url: string; sslExpiresAt: Date | null; domainExpiresAt: Date | null };
+type CronSite = {
+  id: string;
+  url: string;
+  sslExpiresAt: Date | null;
+  domainExpiresAt: Date | null;
+  sslInfo: unknown;
+  domainInfo: unknown;
+};
 const daysLeft = (d: Date) => Math.ceil((d.getTime() - Date.now()) / DAY_MS);
 
 async function checkOne(site: CronSite) {
@@ -66,6 +74,7 @@ async function checkOne(site: CronSite) {
           : site.domainExpiresAt
             ? { domainDaysLeft: daysLeft(site.domainExpiresAt) }
             : {}),
+        ...infoFields(site, result),
       },
     }),
     prisma.checkResult.create({
@@ -91,7 +100,7 @@ export async function GET(req: Request) {
   const sites = await prisma.site.findMany({
     where: { locked: false },
     orderBy: { lastCheckedAt: { sort: "asc", nulls: "first" } },
-    select: { id: true, url: true, sslExpiresAt: true, domainExpiresAt: true },
+    select: { id: true, url: true, sslExpiresAt: true, domainExpiresAt: true, sslInfo: true, domainInfo: true },
   });
 
   const counts = { up: 0, down: 0, error: 0, failed: 0 };
@@ -111,14 +120,14 @@ export async function GET(req: Request) {
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, sites.length) }, worker));
 
   // Housekeeping: old check history, expired rate-limit rows, old webhook ids, and accounts that
-  // never verified their email within 48h (only if they have no sites and no Stripe customer).
-  const cleanup = { checks: 0, rateLimits: 0, stripeEvents: 0, unverifiedUsers: 0, codes: 0 };
+  // never verified their email within 48h (only if they have no sites and no Dodo customer).
+  const cleanup = { checks: 0, rateLimits: 0, webhookEvents: 0, unverifiedUsers: 0, codes: 0 };
   try {
     const cutoff = new Date(Date.now() - RETENTION_DAYS * DAY_MS);
     cleanup.checks = (await prisma.checkResult.deleteMany({ where: { checkedAt: { lt: cutoff } } })).count;
     cleanup.rateLimits = await pruneRateLimits();
-    cleanup.stripeEvents = (
-      await prisma.stripeEvent.deleteMany({ where: { createdAt: { lt: new Date(Date.now() - 30 * DAY_MS) } } })
+    cleanup.webhookEvents = (
+      await prisma.webhookEvent.deleteMany({ where: { createdAt: { lt: new Date(Date.now() - 30 * DAY_MS) } } })
     ).count;
     const pruned = await pruneUnverified();
     cleanup.unverifiedUsers = pruned.users;

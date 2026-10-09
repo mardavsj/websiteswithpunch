@@ -1,57 +1,12 @@
-import { formatDuration, type RangeKey } from "@/lib/analytics";
+import { formatDuration } from "@/lib/analytics";
 import { AvailabilityStrip, DonutChart, RingGauge } from "./analytics-charts";
 import { LatencyAreaChart, seriesRange } from "./LatencyChart";
 import { DomainExpiryMeter, ExpiryRingCard } from "./expiry-meters";
+import { DetailsButton } from "./details/DetailsContext";
+import type { DetailsSection } from "./details/types";
 
-export type AnalyticsPayload = {
-  range: RangeKey;
-  requestedRange?: RangeKey;
-  rangeClamped?: boolean;
-  siteCreatedAt?: string;
-  ageMs?: number;
-  ageDays?: number;
-  unlockedRanges?: RangeKey[];
-  healthScore: number;
-  healthLabel: string;
-  uptimePercent: number | null;
-  totals: { checks: number; up: number; down: number; error: number };
-  latency: {
-    avg: number | null;
-    p95: number | null;
-    min: number | null;
-    max: number | null;
-    series: Array<{ t: string; ms: number }>;
-  };
-  timeline: Array<{
-    t: string;
-    status: "up" | "down" | "error" | "mixed" | "empty";
-    up: number;
-    down: number;
-    error: number;
-  }>;
-  incidents: Array<{
-    status: string;
-    startedAt: string;
-    endedAt: string | null;
-    durationMs: number | null;
-    statusCode: number | null;
-    error: string | null;
-  }>;
-  ssl: { daysLeft: number | null; expiresAt: string | null };
-  domain: { daysLeft: number | null; expiresAt: string | null };
-  statusCodes: Record<string, number>;
-  lastDowntimeAt: string | null;
-  empty: boolean;
-  stale?: boolean;
-  dataEndsAt?: string | null;
-  site?: {
-    status: string;
-    lastCheckedAt: string | null;
-    lastSeenAt?: string | null;
-    lastStatusCode: number | null;
-    lastLatencyMs: number | null;
-  };
-};
+import type { AnalyticsPayload } from "./analytics-types";
+export type { AnalyticsPayload };
 
 export function timeAgo(iso: string | null | undefined, never = "Never in this range"): string {
   if (!iso) return never;
@@ -62,17 +17,29 @@ export function timeAgo(iso: string | null | undefined, never = "Never in this r
   return `${Math.floor(ms / 86_400_000)}d ago`;
 }
 
+/** Card title row with the section's Details button at the top right. */
+function Head({ section, title, className = "" }: { section: DetailsSection; title: string; className?: string }) {
+  return (
+    <div className={`flex w-full items-start justify-between gap-2 ${className}`}>
+      <p className="label-caps text-muted">{title}</p>
+      <DetailsButton section={section} label={title} />
+    </div>
+  );
+}
+
 /** SSL + domain cards, driven by the site record (not by check history). */
 export function ExpiryCards({ data }: { data: AnalyticsPayload }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <ExpiryRingCard
         title="SSL certificate"
+        action={<DetailsButton section="ssl" label="SSL certificate" />}
         days={data.ssl.daysLeft}
         expiresAt={data.ssl.expiresAt}
         addedAt={data.siteCreatedAt}
       />
       <DomainExpiryMeter
+        action={<DetailsButton section="domain" label="Domain registration" />}
         days={data.domain.daysLeft}
         expiresAt={data.domain.expiresAt}
         addedAt={data.siteCreatedAt}
@@ -89,7 +56,7 @@ export function SiteAnalyticsBody({ data }: { data: AnalyticsPayload }) {
     <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex flex-col items-center justify-center border border-rule bg-surface p-4">
-          <p className="label-caps mb-2 self-start text-muted">Health score</p>
+          <Head section="health" title="Health score" className="mb-2" />
           <RingGauge
             value={data.healthScore}
             label="Score"
@@ -97,7 +64,7 @@ export function SiteAnalyticsBody({ data }: { data: AnalyticsPayload }) {
           />
         </div>
         <div className="flex flex-col items-center justify-center border border-rule bg-surface p-4">
-          <p className="label-caps mb-2 self-start text-muted">Uptime</p>
+          <Head section="uptime" title="Uptime" className="mb-2" />
           <RingGauge
             value={data.uptimePercent}
             label="Uptime"
@@ -108,7 +75,7 @@ export function SiteAnalyticsBody({ data }: { data: AnalyticsPayload }) {
           </p>
         </div>
         <div className="border border-rule bg-surface p-4">
-          <p className="label-caps text-muted">Avg latency</p>
+          <Head section="latency" title="Avg latency" />
           <p className="mt-2 font-display text-3xl font-medium text-ink">
             {data.latency.avg == null ? "—" : `${data.latency.avg}ms`}
           </p>
@@ -117,7 +84,7 @@ export function SiteAnalyticsBody({ data }: { data: AnalyticsPayload }) {
           </p>
         </div>
         <div className="border border-rule bg-surface p-4">
-          <p className="label-caps text-muted">Last downtime</p>
+          <Head section="downtime" title="Last downtime" />
           <p className="mt-2 font-display text-xl font-medium text-ink">
             {timeAgo(data.lastDowntimeAt)}
           </p>
@@ -129,6 +96,7 @@ export function SiteAnalyticsBody({ data }: { data: AnalyticsPayload }) {
         <div className="border border-rule bg-surface p-4">
           <div className="flex items-center justify-between">
             <p className="font-display text-sm font-medium text-ink">Latency trend</p>
+            <div className="flex items-center gap-2">
             <p
               className="text-xs tabular-nums text-muted"
               title={
@@ -139,13 +107,18 @@ export function SiteAnalyticsBody({ data }: { data: AnalyticsPayload }) {
             >
               {plotted ? `${plotted.min}–${plotted.max} ms` : "— ms"}
             </p>
+            <DetailsButton section="trend" label="Latency trend" />
+            </div>
           </div>
           <div className="mt-2">
             <LatencyAreaChart series={data.latency.series} />
           </div>
         </div>
         <div className="border border-rule bg-surface p-4">
-          <p className="font-display text-sm font-medium text-ink">Availability timeline</p>
+          <div className="flex items-start justify-between gap-2">
+            <p className="font-display text-sm font-medium text-ink">Availability timeline</p>
+            <DetailsButton section="timeline" label="Availability timeline" />
+          </div>
           <p className="mt-1 text-xs text-muted">
             Segment density follows the selected range
           </p>
@@ -159,7 +132,10 @@ export function SiteAnalyticsBody({ data }: { data: AnalyticsPayload }) {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="border border-rule bg-surface p-4">
-          <p className="font-display text-sm font-medium text-ink">Incidents</p>
+          <div className="flex items-start justify-between gap-2">
+            <p className="font-display text-sm font-medium text-ink">Incidents</p>
+            <DetailsButton section="incidents" label="Incidents" />
+          </div>
           {data.incidents.length === 0 ? (
             <p className="mt-3 text-sm text-muted">{stale ? "No incidents in the last saved window." : "No incidents in this range. Nice."}</p>
           ) : (
@@ -186,7 +162,10 @@ export function SiteAnalyticsBody({ data }: { data: AnalyticsPayload }) {
           )}
         </div>
         <div className="border border-rule bg-surface p-4">
-          <p className="font-display text-sm font-medium text-ink">Status codes</p>
+          <div className="flex items-start justify-between gap-2">
+            <p className="font-display text-sm font-medium text-ink">Status codes</p>
+            <DetailsButton section="codes" label="Status codes" />
+          </div>
           <DonutChart
             codes={data.statusCodes}
             totalChecks={data.totals.checks}

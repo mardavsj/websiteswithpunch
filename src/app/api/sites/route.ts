@@ -10,6 +10,7 @@ import {
   resolvePackCountForLimit,
 } from "@/lib/plans";
 import { runFullSiteCheck } from "@/lib/checks";
+import { infoFields } from "@/lib/site-info";
 import {
   applyDuePendingAndEnforce,
   currentEffectiveLimit,
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
   const activeCount = await prisma.site.count({
     where: { userId: user.id, locked: false },
   });
-  const plan = getEffectivePlan(user.plan, user.stripeStatus);
+  const plan = getEffectivePlan(user.plan, user.dodoStatus);
   const resolved = resolvePackCountForLimit({
     sitePackCount: user.sitePackCount,
     pendingSitePackCount: user.pendingSitePackCount,
@@ -199,6 +200,7 @@ export async function POST(req: Request) {
         sslDaysLeft: result.ssl.daysLeft,
         domainExpiresAt: result.domain.expiresAt,
         domainDaysLeft: result.domain.daysLeft,
+        ...infoFields(null, result),
       },
     });
     await prisma.checkResult.create({

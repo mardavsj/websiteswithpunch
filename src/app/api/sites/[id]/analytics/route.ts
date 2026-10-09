@@ -15,6 +15,7 @@ import {
   type RangeKey,
 } from "@/lib/analytics";
 import { alignDown, latencyBucketMs, latencySeries } from "@/lib/analytics-series";
+import { analyticsExtras } from "@/lib/analytics-extras";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -130,7 +131,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     [...checks].reverse().find((c) => c.status === "down" || c.status === "error")?.checkedAt ??
     null;
 
-  const { score, label } = healthScore({
+  const { score, label, parts } = healthScore({
     uptimePercent,
     avgLatencyMs: avgLatency,
     sslDaysLeft: site.sslDaysLeft,
@@ -150,6 +151,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     siteUrl: site.url,
     healthScore: score,
     healthLabel: label,
+    healthParts: parts,
     uptimePercent,
     totals: { checks: total, up, down, error },
     latency: {
@@ -161,6 +163,12 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     },
     timeline: buildTimeline(checks, range),
     incidents: incidents.slice(0, 20),
+    // Details panels: percentiles, recent/slowest checks, errors, bucket sizes (same rows).
+    extras: {
+      ...analyticsExtras(checks, incidents),
+      latencyBucketMs: bucketMs,
+      timelineBucketMs: range === "24h" ? 3_600_000 : 86_400_000,
+    },
     ssl: {
       daysLeft: site.sslDaysLeft,
       expiresAt: site.sslExpiresAt?.toISOString() ?? null,

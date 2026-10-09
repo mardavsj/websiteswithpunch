@@ -6,11 +6,14 @@ import { useState } from "react";
 export function DashboardBanners({
   showDefaultLockNotice,
   paymentFailed,
+  onHold = false,
   siteLimit,
   activeCount,
 }: {
   showDefaultLockNotice: boolean;
   paymentFailed: boolean;
+  /** Dodo on_hold: the renewal failed and the paid plan is paused until the card is updated. */
+  onHold?: boolean;
   siteLimit: number;
   activeCount: number;
 }) {
@@ -24,7 +27,7 @@ export function DashboardBanners({
   }
 
   async function openPortal() {
-    const res = await fetch("/api/stripe/portal", { method: "POST" });
+    const res = await fetch("/api/billing/portal", { method: "POST" });
     const data = await res.json();
     if (data.url) window.location.href = data.url;
   }
@@ -33,15 +36,17 @@ export function DashboardBanners({
     <div className="mt-6 space-y-3">
       {paymentFailed && (
         <div className="rounded-none border border-amber-300 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 px-4 py-3 text-sm text-amber-950 dark:text-amber-100">
-          We couldn&apos;t take your last payment.{" "}
+          {onHold
+            ? "Your last renewal payment didn't go through, so your paid plan is on hold."
+            : "We couldn't take your last payment."}{" "}
           <button
             type="button"
             onClick={openPortal}
             className="font-semibold underline underline-offset-2"
           >
-            Update your card
+            Update your payment method
           </button>{" "}
-          to keep your plan.
+          {onHold ? "to restore it." : "to keep your plan."}
         </div>
       )}
       {showDefaultLockNotice && (

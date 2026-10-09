@@ -14,7 +14,7 @@ type Props = {
   siteCount: number;
   siteLimit: number;
   effectivePacks: number;
-  /** "Monthly" / "Annual" from billing-summary (null until loaded). */
+  /** "Monthly" / "Annual" from /api/billing/summary (null until loaded). */
   intervalLabel?: string | null;
   renewsOn?: string | null;
   monthlyTotalFormatted: string | null;
@@ -126,6 +126,9 @@ export function PlanSummaryCard({
                 className={amberBtn}
               >
                 Change which sites stay active
+              </button>
+              <button type="button" onClick={onResume} disabled={loading} className={amberBtn}>
+                {loading ? "Working…" : "Keep Business"}
               </button>
             </p>
           )}

@@ -54,7 +54,7 @@ export const faqs = [
   },
   {
     q: "What if I need more than 10 or 50 sites?",
-    a: `On Pro, add optional +${SITE_PACKS.pro.sitesPerPack} site packs (up to ${PLANS.pro.siteLimit + SITE_PACKS.pro.maxPacks * SITE_PACKS.pro.sitesPerPack} sites), then upgrade to Business. On Business, add +${SITE_PACKS.business.sitesPerPack} packs (up to ${PLANS.business.siteLimit + SITE_PACKS.business.maxPacks * SITE_PACKS.business.sitesPerPack} sites). Packs join your existing subscription and bill the same way, monthly or yearly. When you add a pack, you're charged for the remaining portion of the current billing period, then it follows your normal renewal date. You can remove packs anytime, and the removal takes effect at your next renewal. You keep the additional capacity until the end of the period you've paid for. Need more than that? Send us a message from the Contact page for a custom limit.`,
+    a: `On Pro, add optional +${SITE_PACKS.pro.sitesPerPack} site packs (up to ${PLANS.pro.siteLimit + SITE_PACKS.pro.maxPacks * SITE_PACKS.pro.sitesPerPack} sites), then upgrade to Business. On Business, add +${SITE_PACKS.business.sitesPerPack} packs (up to ${PLANS.business.siteLimit + SITE_PACKS.business.maxPacks * SITE_PACKS.business.sitesPerPack} sites). Packs join your existing subscription and bill the same way, monthly or yearly. When you add a pack, the unused part of your current period is credited, the new total is charged right away, and your billing date moves to that day. You can remove packs anytime, and the removal takes effect at your next renewal. You keep the additional capacity until the end of the period you've paid for. Need more than that? Send us a message from the Contact page for a custom limit.`,
   },
   {
     q: "What exactly am I paying for?",
@@ -86,7 +86,7 @@ export const faqs = [
   },
   {
     q: "Do you offer refunds?",
-    a: "Payments are non-refundable, including after you cancel. When you cancel, downgrade, remove a site pack, or switch from annual to monthly billing, no refund or credit is provided for the remaining time in the current billing period. You keep your current plan and capacity until the end of the period you've paid for, and the change takes effect at renewal. Upgrades take effect immediately and may be charged on a prorated basis. The only exceptions (duplicate charges, billing errors, or a paid plan we couldn't provide) are set out in our Refund & Cancellation Policy, linked in the footer.",
+    a: "Payments are non-refundable, including after you cancel. When you cancel, downgrade, remove a site pack, or switch from annual to monthly billing, no refund or credit is provided for the remaining time in the current billing period. You keep your current plan and capacity until the end of the period you've paid for, and the change takes effect at renewal. Upgrades take effect immediately and are charged on a prorated basis, with unused time credited. The only exceptions (duplicate charges, billing errors, or a paid plan we couldn't provide) are set out in our Refund & Cancellation Policy, linked in the footer.",
   },
 ];
 

@@ -52,7 +52,7 @@ export async function POST(req: Request) {
           name: u.name,
           password,
           plan: u.plan,
-          stripeStatus: "active",
+          dodoStatus: "active",
           sitePackCount: 0,
           pendingSitePackCount: null,
           pendingPackChangeAt: null,
@@ -66,9 +66,9 @@ export async function POST(req: Request) {
           name: u.name,
           password,
           plan: u.plan,
-          stripeStatus: "active",
+          dodoStatus: "active",
         },
-        select: { id: true, email: true, plan: true, stripeStatus: true },
+        select: { id: true, email: true, plan: true, dodoStatus: true },
       });
       results.push(user);
     }
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       ok: true,
       users: results,
-      note: "Passwords set to 123456789; plans Pro/Business with stripeStatus=active (payment bypassed).",
+      note: "Passwords set to 123456789; plans Pro/Business with dodoStatus=active (payment bypassed).",
     });
   } catch (err) {
     console.error("seed-test-users error", err);

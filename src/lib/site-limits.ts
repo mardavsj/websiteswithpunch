@@ -16,26 +16,12 @@ export type EnforceResult = {
   usedDefaultOldest: boolean;
 };
 
-/** Strip monitoring metrics for locked sites before sending to the client. */
-export function toClientSite<T extends Record<string, unknown>>(site: T): T {
-  if (!(site as { locked?: boolean }).locked) return site;
-  return {
-    ...site,
-    status: "locked",
-    lastCheckedAt: null,
-    lastStatusCode: null,
-    lastLatencyMs: null,
-    sslExpiresAt: null,
-    sslDaysLeft: null,
-    domainExpiresAt: null,
-    domainDaysLeft: null,
-  };
-}
+export { toClientSite } from "./client-site";
 
 /** Limit that will apply once all pending changes take effect (for picker copy). */
 export function pendingTargetLimit(user: {
   plan: string;
-  stripeStatus: string | null;
+  dodoStatus: string | null;
   sitePackCount: number;
   pendingSitePackCount: number | null;
   pendingPackChangeAt: Date | null;
@@ -49,7 +35,7 @@ export function pendingTargetLimit(user: {
   const hasPlanPending = Boolean(user.pendingPlan && user.pendingPlanAt);
   if (!hasPackPending && !hasPlanPending) return null;
 
-  let plan: PlanId = getEffectivePlan(user.plan, user.stripeStatus);
+  let plan: PlanId = getEffectivePlan(user.plan, user.dodoStatus);
   let packs = user.sitePackCount ?? 0;
 
   if (hasPlanPending && user.pendingPlan) {
@@ -67,12 +53,12 @@ export function pendingTargetLimit(user: {
 
 export function currentEffectiveLimit(user: {
   plan: string;
-  stripeStatus: string | null;
+  dodoStatus: string | null;
   sitePackCount: number;
   pendingSitePackCount: number | null;
   pendingPackChangeAt: Date | null;
 }): number {
-  const plan = getEffectivePlan(user.plan, user.stripeStatus);
+  const plan = getEffectivePlan(user.plan, user.dodoStatus);
   return getUserEffectiveSiteLimit(
     plan,
     user.sitePackCount,

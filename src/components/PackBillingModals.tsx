@@ -34,7 +34,7 @@ export function AddPackModal({ open, plan, loading, message, onClose, onConfirm 
     setPreviewError(null);
     setPreview(null);
     try {
-      const res = await fetch("/api/stripe/preview-pack?action=add");
+      const res = await fetch("/api/billing/preview-pack?action=add");
       const data = await res.json();
       if (!res.ok) {
         setPreviewError(data.error || "Could not load preview.");
@@ -58,10 +58,10 @@ export function AddPackModal({ open, plan, loading, message, onClose, onConfirm 
   // Packs bill on the subscription's interval, so the wording follows it (month or year).
   const period = periodWord(preview?.interval ?? "month");
   const days = preview?.daysLeftInPeriod;
-  const daysLine =
+  const creditLine =
     days != null && days > 0
-      ? `This covers only the ${days} day${days === 1 ? "" : "s"} left in your current billing ${period}. You're not paying for a full ${period}.`
-      : `This covers only the rest of your current billing ${period}. You're not paying for a full ${period}.`;
+      ? `minus a credit for the ${days} unused day${days === 1 ? "" : "s"} of your current ${period}`
+      : `minus a credit for the unused part of your current ${period}`;
 
   const todayZero = preview != null && preview.amountDueToday === 0;
   const renew = preview?.nextRenewalFormatted || "your next billing date";
@@ -87,30 +87,27 @@ export function AddPackModal({ open, plan, loading, message, onClose, onConfirm 
 
             {preview.isUndo ? (
               <p className="text-sm leading-relaxed text-muted">
-                You&apos;d already paid for these sites until {renew}.
-              </p>
-            ) : todayZero ? (
-              <p className="text-sm leading-relaxed text-muted">
-                Nothing to pay today. You&apos;d already paid for these sites until {renew}.
+                You&apos;d already paid for these sites until {renew}. Nothing changes on your bill.
               </p>
             ) : (
-              <p className="text-sm leading-relaxed text-muted">{daysLine}</p>
+              <>
+                <p className="text-sm leading-relaxed text-muted">
+                  Today&apos;s payment starts a new billing {period} for your plan and packs,{" "}
+                  {creditLine}.
+                </p>
+                <p className="text-sm leading-relaxed text-muted">
+                  After that you&apos;ll pay {preview.newRecurringMonthlyFormatted} (
+                  {preview.recurringBreakdown}) every {period}, next on {renew}.
+                </p>
+              </>
             )}
-
             <p className="text-sm leading-relaxed text-muted">
-              From {renew} you&apos;ll pay {preview.newRecurringMonthlyFormatted} (
-              {preview.recurringBreakdown}).
-            </p>
-            <p className="text-sm leading-relaxed text-muted">
-              Still one payment a {period}, on the same date as now.
-            </p>
-            <p className="text-sm leading-relaxed text-muted">
-              Your {pack.sitesPerPack} extra sites are ready right away. You can remove them
-              anytime from your dashboard.
+              Your {pack.sitesPerPack} extra sites are ready as soon as the payment is confirmed,
+              usually within a couple of minutes. You can remove them anytime from your dashboard.
             </p>
             {!todayZero && !preview.isUndo && (
               <p className="text-xs text-muted">
-                Your bank may ask you to approve this payment. That&apos;s normal.
+                Charged to the payment method on your subscription.
               </p>
             )}
             <NoRefundNote />

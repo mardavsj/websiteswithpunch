@@ -4,17 +4,19 @@ const onVercel = Boolean(process.env.VERCEL);
 /**
  * Content-Security-Policy. Pages are static/ISR, so per-request nonces aren't possible:
  * scripts allow 'self' + 'unsafe-inline' (Next's inline bootstrap and the theme script) and
- * nothing else from third parties except Stripe and Vercel Analytics. 'unsafe-eval' is dev only.
+ * nothing else from third parties except Vercel Analytics. 'unsafe-eval' is dev only.
+ * Dodo Payments checkout and the customer portal open as full-page redirects, so they need
+ * no CSP entries (no Dodo script, frame or form runs on our pages).
  */
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://js.stripe.com https://va.vercel-scripts.com`,
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://va.vercel-scripts.com`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://*.stripe.com",
+  "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  `connect-src 'self' https://api.stripe.com https://vitals.vercel-insights.com${isDev ? " ws: wss:" : ""}`,
-  "frame-src https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com",
-  "form-action 'self' https://checkout.stripe.com https://billing.stripe.com",
+  `connect-src 'self' https://vitals.vercel-insights.com${isDev ? " ws: wss:" : ""}`,
+  "frame-src 'none'",
+  "form-action 'self'",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "object-src 'none'",

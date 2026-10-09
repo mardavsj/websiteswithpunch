@@ -82,30 +82,33 @@ export function canBuySitePack(
   return (sitePackCount ?? 0) < config.maxPacks;
 }
 
-/** Active paid plan, or free if canceled / missing. */
+/**
+ * Paid plan while the Dodo subscription is active or past_due (Dodo's grace period: access
+ * stays until past_due_ends_at); free when it is on_hold, cancelled, expired or missing.
+ * A null status means no subscription status recorded (Free accounts, seeded test users).
+ */
 export function getEffectivePlan(
   plan: string | null | undefined,
-  stripeStatus?: string | null,
+  dodoStatus?: string | null,
 ): PlanId {
-  const active =
-    !stripeStatus || stripeStatus === "active" || stripeStatus === "trialing";
+  const active = !dodoStatus || dodoStatus === "active" || dodoStatus === "past_due";
   if (active && (plan === "pro" || plan === "business")) return plan;
   return "free";
 }
 
 export function isPaidPlan(
   plan: string | null | undefined,
-  stripeStatus?: string | null,
+  dodoStatus?: string | null,
 ): boolean {
-  return getEffectivePlan(plan, stripeStatus) !== "free";
+  return getEffectivePlan(plan, dodoStatus) !== "free";
 }
 
 /** @deprecated Prefer isPaidPlan / getEffectivePlan */
 export function isPro(
   plan: string | null | undefined,
-  stripeStatus?: string | null,
+  dodoStatus?: string | null,
 ): boolean {
-  return isPaidPlan(plan, stripeStatus);
+  return isPaidPlan(plan, dodoStatus);
 }
 
 
@@ -161,11 +164,3 @@ export function getUserEffectiveSiteLimit(
   });
   return getEffectiveSiteLimit(plan, packCount);
 }
-
-// Price ID helpers live in stripe-prices.ts (monthly + annual); re-exported for existing imports.
-export {
-  isPackPriceId,
-  planIdFromStripePriceId,
-  stripePriceIdForPack,
-  stripePriceIdForPlan,
-} from "./stripe-prices";
