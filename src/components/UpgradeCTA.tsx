@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { PlanId } from "@/lib/plans";
+import { readJson } from "@/lib/read-json";
 import { UpgradeModals } from "@/components/UpgradeModals";
 import { usePlanUpgrade } from "@/components/usePlanUpgrade";
 
@@ -23,7 +24,7 @@ export function UpgradeCTA({ plan }: { plan: PlanId | string }) {
     setPortalMessage(null);
     try {
       const res = await fetch("/api/billing/portal", { method: "POST" });
-      const data = await res.json();
+      const data = await readJson(res);
       if (data.url) window.location.href = data.url;
       else setPortalMessage(data.error || "Billing portal unavailable.");
     } catch {

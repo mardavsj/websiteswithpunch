@@ -1,5 +1,6 @@
 "use client";
 
+import { readJson } from "@/lib/read-json";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -47,7 +48,7 @@ export function usePlanUpgrade(planOverride?: PlanId) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planId, interval: intervalParam(interval) }),
       });
-      const data = await res.json();
+      const data = await readJson(res);
       if (data.url) {
         window.location.href = data.url;
         return;

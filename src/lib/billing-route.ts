@@ -8,7 +8,9 @@ import type { User } from "@prisma/client";
 import { getSession } from "./auth";
 import { prisma } from "./prisma";
 import { MINUTE, rateLimit, tooMany } from "./rate-limit";
-import { dodoErrorStatus, dodoUserMessage, getDodo, isDodoConfigured } from "./dodo";
+import { dodoErrorStatus, dodoUserMessage, getDodo, isDodoConfigured, isDodoNotFound } from "./dodo";
+import { logCatalogProblems } from "./dodo-catalog-check";
+import { retrieveOrRelink } from "./dodo-relink";
 import { isPaidStatus, scheduledKind, subscriptionState, type SubscriptionState } from "./dodo-subscription";
 import type { PaidPlanId } from "./billing-interval";
 
@@ -59,22 +61,38 @@ export async function withSubscription(
     }
     return fail(403, "An active subscription is required.", "NO_SUBSCRIPTION");
   }
+  let sub: DodoPayments.Subscription | null;
   try {
-    const sub = await dodo.subscriptions.retrieve(user.dodoSubscriptionId);
+    // A stored ID from the other Dodo mode (test → live) is re-linked when possible.
+    sub = await retrieveOrRelink(dodo, user);
+  } catch (err) {
+    return dodoFail(opts.label, err);
+  }
+  if (!sub) return fail(409, SUBSCRIPTION_MISSING_ERROR, "SUBSCRIPTION_NOT_FOUND");
+  try {
     const st = subscriptionState(sub);
     if (!st.plan || !isPaidStatus(st.status)) {
       return fail(403, "An active subscription is required.", "NO_SUBSCRIPTION");
     }
     return await fn({ user, dodo, sub, st: st as BillingCtx["st"] });
   } catch (err) {
-    console.error(`billing ${opts.label} error`, err);
-    const status = dodoErrorStatus(err);
-    return fail(
-      status && status >= 400 && status < 500 ? 400 : 502,
-      dodoUserMessage(err, "Billing is unavailable right now. Please try again in a moment."),
-    );
+    // The subscription exists, so a 404 here is a product / add-on ID: log which env var.
+    if (isDodoNotFound(err)) await logCatalogProblems(dodo, opts.label);
+    return dodoFail(opts.label, err);
   }
 }
+
+function dodoFail(label: string, err: unknown) {
+  console.error(`billing ${label} error`, err);
+  const status = dodoErrorStatus(err);
+  return fail(
+    status && status >= 400 && status < 500 ? 400 : 502,
+    dodoUserMessage(err, "Billing is unavailable right now. Please try again in a moment."),
+  );
+}
+
+export const SUBSCRIPTION_MISSING_ERROR =
+  "We couldn't find your subscription with our payment provider, so nothing was changed or charged. Please contact us from the Contact page and we'll sort it out.";
 
 export const ON_HOLD_ERROR =
   "Your last renewal payment didn't go through, so your plan is on hold. Update your payment method in Manage billing to restore it.";

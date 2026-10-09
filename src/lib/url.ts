@@ -153,3 +153,16 @@ export function registrableDomain(hostnameOrUrl: string): string | null {
   const domain = parseTld(host).domain;
   return domain || null;
 }
+
+/** Hostname of a stored or typed URL (www stripped when valid), falling back to URL parsing. */
+export function extractHostname(url: string): string {
+  try {
+    return normalizeSiteUrl(url).hostname;
+  } catch {
+    try {
+      return new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`).hostname.toLowerCase();
+    } catch {
+      return url;
+    }
+  }
+}

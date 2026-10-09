@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
+import { useOpenPortal } from "@/components/billing/useOpenPortal";
 import { UpgradeModals } from "@/components/UpgradeModals";
 import { usePlanUpgrade } from "@/components/usePlanUpgrade";
 
@@ -13,6 +14,7 @@ const accentItemClass =
 
 export function ProfileMenu() {
   const { data: session } = useSession();
+  const portal = useOpenPortal();
   const [open, setOpen] = useState(false);
   const [hasBilling, setHasBilling] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -56,11 +58,9 @@ export function ProfileMenu() {
   if (!session?.user) return null;
   const initial = (session.user.name || session.user.email || "?").charAt(0).toUpperCase();
 
-  async function openPortal() {
+  function openPortal() {
     setOpen(false);
-    const res = await fetch("/api/billing/portal", { method: "POST" });
-    const data = await res.json();
-    if (data.url) window.location.href = data.url;
+    void portal.openPortal();
   }
 
   function startBusinessUpgrade() {

@@ -1,5 +1,6 @@
 "use client";
 
+import { readJson } from "@/lib/read-json";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SITE_PACKS } from "@/lib/plans";
@@ -56,7 +57,7 @@ export function PackActions({
     setMessage(null);
     try {
       const res = await fetch("/api/billing/checkout-pack", { method: "POST" });
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) {
         setMessage(data.error || "Could not add pack.");
         toast(data.error || "Could not add pack.", "error");
@@ -84,7 +85,7 @@ export function PackActions({
   async function startRemovePack() {
     try {
       const res = await fetch("/api/billing/preview-pack?action=remove");
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) {
         toast(data.error || "Could not load preview.", "error");
         return;
@@ -113,7 +114,7 @@ export function PackActions({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(keepSiteIds ? { keepSiteIds } : {}),
       });
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) {
         setMessage(data.error || "Could not remove pack.");
         toast(data.error || "Could not remove pack.", "error");
@@ -142,7 +143,7 @@ export function PackActions({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planId: "business", interval: intervalParam(nextInterval) }),
       });
-      const data = await res.json();
+      const data = await readJson(res);
       if (data.url) {
         window.location.href = data.url;
         return;
@@ -176,7 +177,7 @@ export function PackActions({
             type="button"
             onClick={() => setModal("add")}
             disabled={loading !== null}
-            className="rounded-none border border-rule bg-bg px-3 py-1.5 text-sm font-medium text-ink hover:bg-accent-soft disabled:opacity-60"
+            className="rounded-none bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-60"
           >
             Add +{pack.sitesPerPack} sites
           </button>
@@ -186,7 +187,7 @@ export function PackActions({
             type="button"
             onClick={startRemovePack}
             disabled={loading !== null}
-            className="rounded-none border border-rule bg-bg px-3 py-1.5 text-sm font-medium text-ink hover:bg-accent-soft disabled:opacity-60"
+            className="rounded-none border border-rule bg-surface px-3 py-1.5 text-sm font-medium text-ink hover:bg-accent-soft disabled:opacity-60"
           >
             Remove {pack.sitesPerPack} sites
           </button>

@@ -3,7 +3,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toast";
-import { SiteUrlError, normalizeSiteUrl } from "@/lib/url";
+import { loadUrlLib, useUrlLib } from "@/lib/url-lazy";
 
 type Props = {
   mode: "create" | "edit";
@@ -33,15 +33,17 @@ export function SiteForm({
   const [loading, setLoading] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
 
+  const urlLib = useUrlLib();
   const pathHint = useMemo(() => {
+    if (!urlLib) return null;
     try {
-      const n = normalizeSiteUrl(url);
+      const n = urlLib.normalizeSiteUrl(url);
       if (n.pathWasStripped) return `We monitor the whole site: ${n.hostKey}`;
     } catch {
       /* ignore while typing */
     }
     return null;
-  }, [url]);
+  }, [url, urlLib]);
 
   function finishSuccess(hint?: string) {
     if (hint) toast(hint, "success");
@@ -58,6 +60,7 @@ export function SiteForm({
     setLockedDup(null);
     try {
       let normalizedUrl = url;
+      const { normalizeSiteUrl, SiteUrlError } = await loadUrlLib();
       try {
         normalizedUrl = normalizeSiteUrl(url).url;
       } catch (err) {

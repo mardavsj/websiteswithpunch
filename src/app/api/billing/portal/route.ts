@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { appUrl, dodoUserMessage } from "@/lib/dodo";
 import { fail, loadUser } from "@/lib/billing-route";
+import { customerIdFor } from "@/lib/dodo-relink";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,7 +18,10 @@ export async function POST() {
     return fail(400, "No billing account yet. Upgrade to a paid plan first.");
   }
   try {
-    const session = await dodo.customers.customerPortal.create(user.dodoCustomerId, {
+    // A customer ID from the other Dodo mode (test → live) is looked up again by email.
+    const customerId = await customerIdFor(dodo, user, false);
+    if (!customerId) return fail(400, "No billing account yet. Upgrade to a paid plan first.");
+    const session = await dodo.customers.customerPortal.create(customerId, {
       return_url: `${appUrl()}/plan`,
       send_email: false,
     });

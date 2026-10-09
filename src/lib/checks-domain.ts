@@ -1,5 +1,4 @@
-import { extractHostname } from "./utils";
-import { hostKeyFromStoredUrl, registrableDomain } from "./url";
+import { extractHostname, hostKeyFromStoredUrl, registrableDomain } from "./url";
 import { readCapped } from "./safe-request";
 import { fetchWhoisFallback } from "./checks-whois";
 import { parseRdapDomain, type RdapDoc } from "./rdap-parse";

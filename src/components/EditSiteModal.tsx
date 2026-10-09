@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { ModalPortal, DIALOG_SCROLL } from "@/components/ModalPortal";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toast";
-import { SiteUrlError, normalizeSiteUrl } from "@/lib/url";
+import { loadUrlLib, useUrlLib } from "@/lib/url-lazy";
 
 type Site = {
   id: string;
@@ -51,15 +51,17 @@ export function EditSiteModal({ open, onClose, site }: Props) {
     };
   }, [open, onClose]);
 
+  const urlLib = useUrlLib();
   const pathHint = useMemo(() => {
+    if (!urlLib) return null;
     try {
-      const n = normalizeSiteUrl(url);
+      const n = urlLib.normalizeSiteUrl(url);
       if (n.pathWasStripped) return `We monitor the whole site: ${n.hostKey}`;
     } catch {
       /* ignore */
     }
     return null;
-  }, [url]);
+  }, [url, urlLib]);
 
   if (!open) return null;
 
@@ -69,6 +71,7 @@ export function EditSiteModal({ open, onClose, site }: Props) {
     setError(null);
     try {
       let normalizedUrl = url;
+      const { normalizeSiteUrl, SiteUrlError } = await loadUrlLib();
       try {
         normalizedUrl = normalizeSiteUrl(url).url;
       } catch (err) {

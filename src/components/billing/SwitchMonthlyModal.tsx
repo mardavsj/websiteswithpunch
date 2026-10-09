@@ -1,5 +1,6 @@
 "use client";
 
+import { readJson } from "@/lib/read-json";
 import { useCallback, useEffect, useState } from "react";
 import {
   ModalShell,
@@ -37,7 +38,7 @@ export function SwitchMonthlyModal({ open, loading, message, onClose, onConfirm 
     setPreview(null);
     try {
       const res = await fetch("/api/billing/switch-interval");
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) setPreviewError(data.error || "Could not load preview.");
       else setPreview(data as Preview);
     } catch {

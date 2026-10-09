@@ -42,7 +42,20 @@ export function appUrl(): string {
  * Text safe to show for a failed Dodo call. API errors carry a readable message (e.g.
  * "Changing plans is not supported for inactive subscriptions"); others get the fallback.
  */
+/** Shown instead of Dodo's "resource could not be found" (a catalog ID in env is wrong). */
+export const BILLING_SETUP_ERROR =
+  "This change can't be made right now because of a billing setup issue on our side. Nothing was charged. Please try again later, or contact us from the Contact page.";
+
+const NOT_FOUND = /could not be found|doesn'?t exist|does not exist|has been deleted|not found/i;
+
+/** True when Dodo says an ID we sent doesn't exist (404 or its wording). */
+export function isDodoNotFound(err: unknown): boolean {
+  const e = err as { status?: number; error?: { message?: string }; message?: string };
+  return e?.status === 404 || NOT_FOUND.test(e?.error?.message ?? "");
+}
+
 export function dodoUserMessage(err: unknown, fallback: string): string {
+  if (isDodoNotFound(err)) return BILLING_SETUP_ERROR;
   const e = err as { status?: number; error?: { message?: string } };
   const msg = e?.error?.message;
   return typeof e?.status === "number" && e.status >= 400 && e.status < 500 && msg ? msg : fallback;

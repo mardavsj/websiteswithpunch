@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getDodo, isDodoConfigured } from "@/lib/dodo";
 import { formatChargeToday } from "@/lib/billing-format";
+import { customerIdFor } from "@/lib/dodo-relink";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,7 +30,10 @@ export async function GET() {
   if (!user?.dodoCustomerId) return NextResponse.json({ invoices: [], configured: true });
 
   try {
-    const page = await dodo.payments.list({ customer_id: user.dodoCustomerId, page_size: 12 });
+    // A customer ID from the other Dodo mode (test → live) is looked up again by email.
+    const customerId = await customerIdFor(dodo, user, false);
+    if (!customerId) return NextResponse.json({ invoices: [], configured: true });
+    const page = await dodo.payments.list({ customer_id: customerId, page_size: 12 });
     const invoices = page.items.map((p) => ({
       id: p.payment_id,
       createdFormatted: new Date(p.created_at).toLocaleDateString("en-US", {

@@ -1,5 +1,6 @@
 "use client";
 
+import { readJson } from "@/lib/read-json";
 import { useCallback, useEffect, useState } from "react";
 import { SITE_PACKS } from "@/lib/plans";
 import { periodWord } from "@/lib/billing-interval";
@@ -35,7 +36,7 @@ export function AddPackModal({ open, plan, loading, message, onClose, onConfirm 
     setPreview(null);
     try {
       const res = await fetch("/api/billing/preview-pack?action=add");
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) {
         setPreviewError(data.error || "Could not load preview.");
         return;

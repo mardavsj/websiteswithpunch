@@ -4,6 +4,7 @@ import { getEffectivePlan } from "@/lib/plans";
 import { syncSubscription } from "@/lib/dodo-sync";
 import { subscriptionState } from "@/lib/dodo-subscription";
 import { fail, loadUser } from "@/lib/billing-route";
+import { retrieveOrRelink } from "@/lib/dodo-relink";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,8 +27,11 @@ export async function POST(req: Request) {
 
   let interval: string | null = null;
   try {
-    const sub = await dodo.subscriptions.retrieve(id);
+    const sub = given ? await dodo.subscriptions.retrieve(given) : await retrieveOrRelink(dodo, user);
+    if (!sub) return NextResponse.json({ ok: true, plan: getEffectivePlan(user.plan, user.dodoStatus) });
+    // The stored (or re-linked by our email) subscription is ours; a given ID must match.
     const owner =
+      !given ||
       (user.dodoCustomerId && sub.customer?.customer_id === user.dodoCustomerId) ||
       sub.metadata?.userId === user.id;
     if (!owner) return fail(403, "This subscription belongs to another account.");

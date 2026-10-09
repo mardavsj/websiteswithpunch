@@ -3,6 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { changeBody } from "../src/lib/dodo-change";
 import { nextPaymentText } from "../src/lib/next-payment";
+import { BILLING_SETUP_ERROR, dodoUserMessage } from "../src/lib/dodo";
 import type { SubscriptionState } from "../src/lib/dodo-subscription";
 
 process.env.DODO_PRODUCT_PRO_MONTHLY = "pdt_pro_m";
@@ -45,4 +46,12 @@ test("next payment: same total vs booked change vs cancel", () => {
   );
   assert.equal(nextPaymentText({ ...base, cancelAtPeriodEnd: true }), null);
   assert.equal(nextPaymentText(null), null);
+});
+
+test("Dodo 'not found' errors never reach the user raw", () => {
+  const raw = { status: 404, error: { message: "The requested resource could not be found. ID doesn't exist or has been deleted." } };
+  assert.equal(dodoUserMessage(raw, "fallback"), BILLING_SETUP_ERROR);
+  assert.equal(dodoUserMessage({ status: 400, error: { message: "ID doesn't exist or has been deleted" } }, "f"), BILLING_SETUP_ERROR);
+  assert.equal(dodoUserMessage({ status: 409, error: { message: "A plan change is already pending" } }, "f"), "A plan change is already pending");
+  assert.equal(dodoUserMessage(new Error("boom"), "fallback"), "fallback");
 });

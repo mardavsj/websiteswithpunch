@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { SITE_PACKS, canBuySitePack } from "@/lib/plans";
-import { nextPaymentText } from "@/lib/next-payment";
 import { useToast } from "@/components/Toast";
 import { PlanSummaryCard } from "@/components/billing/PlanSummaryCard";
 import { PackActions } from "@/components/billing/PackActions";
@@ -27,11 +26,14 @@ export function SiteCapacityActions({
   keepOptions,
   cancelAtPeriodEnd: cancelProp,
   pendingPlan: pendingPlanProp,
-}: SiteCapacityProps) {
+  billing,
+}: SiteCapacityProps & { billing?: ReturnType<typeof useBillingSummary> }) {
   const { toast } = useToast();
   const showBilling = plan === "pro" || plan === "business";
   const pack = showBilling ? SITE_PACKS[plan] : null;
-  const { summary, loadSummary } = useBillingSummary(showBilling, sitePackCount);
+  // The page can share its summary (one /api/billing/summary request for the whole page).
+  const own = useBillingSummary(showBilling && !billing, sitePackCount);
+  const { summary, loadSummary } = billing ?? own;
   const actions = useBillingActions({ plan, loadSummary, toast });
   const [busy, setBusy] = useState(false);
   const [flow, setFlow] = useState<
@@ -54,8 +56,6 @@ export function SiteCapacityActions({
     hasPending && pendingSites >= effectivePacks * (pack?.sitesPerPack || 5);
   const canBuy = showBilling && (hasPending || canBuySitePack(plan, effectivePacks));
   const canRemove = showBilling && effectivePacks > 0 && !allPacksAway;
-  // Same wording as the Current plan card: today's total + "From {date}: {new total}".
-  const nextPaymentLine = nextPaymentText(summary);
 
   async function run(fn: () => Promise<boolean | null | void>) {
     setBusy(true);
@@ -78,13 +78,8 @@ export function SiteCapacityActions({
     <div className="space-y-3">
       <PlanSummaryCard
         plan={plan}
-        siteCount={siteCount}
-        siteLimit={effectiveLimit}
         effectivePacks={effectivePacks}
-        intervalLabel={summary?.intervalLabel ?? null}
-        renewsOn={summary?.nextPaymentDateFormatted ?? null}
-        monthlyTotalFormatted={summary?.monthlyTotalFormatted ?? null}
-        nextPaymentLine={nextPaymentLine}
+        interval={interval}
         cancelAtPeriodEnd={cancelAtPeriodEnd}
         pendingPlan={pendingPlan}
         pendingPlanDate={pendingPlanDate}

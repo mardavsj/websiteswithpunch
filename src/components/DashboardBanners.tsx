@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useOpenPortal } from "@/components/billing/useOpenPortal";
 
 export function DashboardBanners({
   showDefaultLockNotice,
@@ -26,11 +27,7 @@ export function DashboardBanners({
     router.refresh();
   }
 
-  async function openPortal() {
-    const res = await fetch("/api/billing/portal", { method: "POST" });
-    const data = await res.json();
-    if (data.url) window.location.href = data.url;
-  }
+  const { openPortal, opening } = useOpenPortal();
 
   return (
     <div className="mt-6 space-y-3">
@@ -42,7 +39,8 @@ export function DashboardBanners({
           <button
             type="button"
             onClick={openPortal}
-            className="font-semibold underline underline-offset-2"
+            disabled={opening}
+            className="font-semibold underline underline-offset-2 disabled:opacity-60"
           >
             Update your payment method
           </button>{" "}

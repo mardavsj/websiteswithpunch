@@ -1,11 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import {
-  getEffectivePlan,
-  getUserEffectiveSiteLimit,
-  PLANS,
-  resolvePackCountForLimit,
-} from "@/lib/plans";
+import { getEffectivePlan, getUserEffectiveSiteLimit, resolvePackCountForLimit } from "@/lib/plans";
 import { loadAccount } from "@/lib/account-load";
 import { PlanPageClient } from "@/components/plan/PlanPageClient";
 import { SessionPlanSync } from "@/components/SessionPlanSync";
@@ -58,11 +53,8 @@ export default async function PlanPage() {
         billing={Boolean(user.dodoCustomerId)}
       />
       <div className="w-full">
-        <h1 className="font-display text-2xl font-medium text-ink">My Plan</h1>
-        <p className="mt-1 text-sm text-muted">
-          {PLANS[plan].name} · {activeSites.length}/{limit} active
-          {lockedSites.length > 0 ? ` · ${lockedSites.length} locked` : ""}
-        </p>
+        <h1 className="font-display text-2xl font-medium text-ink sm:text-3xl">My plan</h1>
+        <p className="mt-1 text-sm text-muted">What you pay, what you get and every receipt, in one place.</p>
         <div className="mt-6">
           <PlanPageClient
             plan={plan}

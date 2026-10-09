@@ -1,5 +1,6 @@
 "use client";
 
+import { readJson } from "@/lib/read-json";
 import { useCallback, useEffect, useState } from "react";
 import { SITE_PACKS } from "@/lib/plans";
 import type { PackPreview } from "@/components/billing/types";
@@ -33,7 +34,7 @@ export function RemovePackModal({ open, plan, loading, message, onClose, onConfi
     setPreview(null);
     try {
       const res = await fetch("/api/billing/preview-pack?action=remove");
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) {
         setPreviewError(data.error || "Could not load preview.");
         return;

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import type DodoPayments from "dodopayments";
 import type { User } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
 import { PLANS } from "@/lib/plans";
 import { intervalLabel, parseInterval, type BillingInterval, type PaidPlanId } from "@/lib/billing-interval";
-import { appUrl, dodoUserMessage } from "@/lib/dodo";
+import { appUrl, dodoUserMessage, isDodoNotFound } from "@/lib/dodo";
+import { logCatalogProblems } from "@/lib/dodo-catalog-check";
+import { customerIdFor, retrieveOrRelink } from "@/lib/dodo-relink";
 import { missingCatalogMessage, productIdFor } from "@/lib/dodo-products";
 import { isPaidStatus, subscriptionState } from "@/lib/dodo-subscription";
 import { applyChange, changeBody } from "@/lib/dodo-change";
@@ -33,11 +34,15 @@ export async function POST(req: Request) {
   if (user.dodoStatus === "on_hold") return fail(402, ON_HOLD_ERROR, "PAYMENT_FAILED");
   try {
     if (user.dodoSubscriptionId && isPaidStatus(user.dodoStatus)) {
-      return await changeInPlace(dodo, user, planId, interval);
+      // No paid subscription in this Dodo mode (a test-mode leftover after going live):
+      // start a real checkout; its webhook replaces the stale subscription on the user.
+      const sub = await retrieveOrRelink(dodo, user);
+      if (sub) return await changeInPlace(dodo, user, sub, planId, interval);
     }
     return await newCheckout(dodo, user, planId, interval);
   } catch (err) {
     console.error("billing checkout error", err);
+    if (isDodoNotFound(err)) await logCatalogProblems(dodo, "checkout");
     return fail(502, dodoUserMessage(err, "Could not start checkout. Please try again."), "PAYMENT_FAILED");
   }
 }
@@ -46,16 +51,8 @@ async function newCheckout(dodo: DodoPayments, user: User, planId: PaidPlanId, i
   const productId = productIdFor(planId, interval);
   if (!productId) return fail(503, missingCatalogMessage("plan", planId, interval), "PRICE_MISSING");
 
-  let customerId = user.dodoCustomerId;
-  if (!customerId) {
-    const customer = await dodo.customers.create({
-      email: user.email,
-      name: user.name?.trim() || user.email,
-      metadata: { userId: user.id },
-    });
-    customerId = customer.customer_id;
-    await prisma.user.update({ where: { id: user.id }, data: { dodoCustomerId: customerId } });
-  }
+  // Stored customer if Dodo knows it in this mode (a test-mode ID 404s in live), else by email / new.
+  const customerId = (await customerIdFor(dodo, user, true))!;
 
   const session = await dodo.checkoutSessions.create({
     product_cart: [{ product_id: productId, quantity: 1 }],
@@ -73,8 +70,13 @@ async function newCheckout(dodo: DodoPayments, user: User, planId: PaidPlanId, i
   return NextResponse.json({ url: session.checkout_url });
 }
 
-async function changeInPlace(dodo: DodoPayments, user: User, planId: PaidPlanId, interval: BillingInterval) {
-  const sub = await dodo.subscriptions.retrieve(user.dodoSubscriptionId!);
+async function changeInPlace(
+  dodo: DodoPayments,
+  user: User,
+  sub: DodoPayments.Subscription,
+  planId: PaidPlanId,
+  interval: BillingInterval,
+) {
   const st = subscriptionState(sub);
   if (!st.plan || !isPaidStatus(st.status)) {
     return fail(409, "Your subscription isn't active. Refresh the page and try again.");

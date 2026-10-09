@@ -3,9 +3,10 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getEffectivePlan, getUserEffectiveSiteLimit, PLANS, resolvePackCountForLimit, SITE_PACKS, type PlanId } from "@/lib/plans";
 import { intervalLabel, type BillingInterval } from "@/lib/billing-interval";
-import { getDodo, isDodoConfigured } from "@/lib/dodo";
+import { getDodo, isDodoConfigured, isDodoNotFound } from "@/lib/dodo";
 import { ENDED_STATUSES, isPaidStatus, scheduledKind, subscriptionState } from "@/lib/dodo-subscription";
 import { syncSubscription } from "@/lib/dodo-sync";
+import { relinkMissingSubscription } from "@/lib/dodo-relink";
 import { recurringBreakdown, recurringTotalCents } from "@/lib/billing-totals";
 import { formatRecurringFromCents, formatShortDate } from "@/lib/billing-format";
 import { applyDuePendingAndEnforce, pendingTargetLimit } from "@/lib/site-limits";
@@ -29,7 +30,16 @@ export async function GET() {
   let healed = false;
   if (dodo && user.dodoSubscriptionId && !ENDED_STATUSES.has(user.dodoStatus ?? "")) {
     try {
-      const sub = await dodo.subscriptions.retrieve(user.dodoSubscriptionId);
+      const stored = user.dodoSubscriptionId;
+      const sub = await dodo.subscriptions.retrieve(stored).catch(async (err) => {
+        // Not in this Dodo mode (e.g. test-mode ID after going live): re-link if we can.
+        if (!isDodoNotFound(err)) throw err;
+        const relinked = await relinkMissingSubscription(dodo, user!);
+        if (!relinked) throw err;
+        healed = true;
+        return relinked;
+      });
+      if (healed) user = (await prisma.user.findUnique({ where: { id: user.id } })) ?? user;
       live = subscriptionState(sub);
       const drifted =
         (live.plan && live.plan !== user.plan) ||

@@ -1,5 +1,6 @@
 "use client";
 
+import { readJson } from "@/lib/read-json";
 import { useRouter } from "next/navigation";
 import { PLANS, type PlanId } from "@/lib/plans";
 import { useToast } from "@/components/Toast";
@@ -28,7 +29,7 @@ export function useBillingActions(opts: {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ keepSiteIds }),
     });
-    const data = await res.json();
+    const data = await readJson(res);
     if (!res.ok) {
       toast(data.error || "Could not cancel.", "error");
       return false;
@@ -43,7 +44,7 @@ export function useBillingActions(opts: {
 
   async function resumePlan() {
     const res = await fetch("/api/billing/resume", { method: "POST" });
-    const data = await res.json();
+    const data = await readJson(res);
     if (!res.ok) {
       toast(data.error || "Could not resume.", "error");
       return false;
@@ -59,7 +60,7 @@ export function useBillingActions(opts: {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ keepSiteIds }),
     });
-    const data = await res.json();
+    const data = await readJson(res);
     if (!res.ok) {
       toast(data.error || "Could not downgrade.", "error");
       return false;
@@ -75,7 +76,7 @@ export function useBillingActions(opts: {
   async function previewNeedsKeepPicker(): Promise<boolean | null> {
     try {
       const res = await fetch("/api/billing/preview-downgrade");
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) {
         toast(data.error || "Could not load preview.", "error");
         return null;
@@ -93,7 +94,7 @@ export function useBillingActions(opts: {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ siteIds }),
     });
-    const data = await res.json();
+    const data = await readJson(res);
     if (!res.ok) {
       toast(data.error || "Could not update.", "error");
       return false;
@@ -111,7 +112,7 @@ export function useBillingActions(opts: {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planId: plan, interval: "annual" }),
       });
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok || !data.ok) return data.error || "Could not switch to annual billing.";
       if (data.pending) {
         toast(PENDING_MESSAGE, "info");
@@ -133,7 +134,7 @@ export function useBillingActions(opts: {
   async function scheduleMonthly(): Promise<string | null> {
     try {
       const res = await fetch("/api/billing/switch-interval", { method: "POST" });
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) return data.error || "Could not schedule the switch to monthly.";
       toast(
         `Switch scheduled. You keep annual billing until ${data.switchAtFormatted || "your renewal date"}, then pay monthly.`,
@@ -148,7 +149,7 @@ export function useBillingActions(opts: {
 
   async function cancelMonthlySwitch() {
     const res = await fetch("/api/billing/switch-interval", { method: "DELETE" });
-    const data = await res.json().catch(() => ({}));
+    const data = await readJson(res).catch(() => ({}));
     if (!res.ok) {
       toast(data.error || "Could not cancel the switch.", "error");
       return false;
@@ -160,7 +161,7 @@ export function useBillingActions(opts: {
 
   async function undoPendingRemoval() {
     const res = await fetch("/api/billing/checkout-pack", { method: "POST" });
-    const data = await res.json();
+    const data = await readJson(res);
     if (!res.ok) {
       toast(data.error || "Could not undo.", "error");
       return false;
@@ -170,15 +171,27 @@ export function useBillingActions(opts: {
     return true;
   }
 
+  /** A dropped connection shows a toast instead of failing silently (resolves to null). */
+  function safe<A extends unknown[], R>(fn: (...args: A) => Promise<R>) {
+    return async (...args: A): Promise<R | null> => {
+      try {
+        return await fn(...args);
+      } catch {
+        toast("Couldn't reach billing. Check your connection and try again.", "error");
+        return null;
+      }
+    };
+  }
+
   return {
-    confirmCancel,
-    resumePlan,
-    confirmDowngrade,
-    previewNeedsKeepPicker,
-    confirmPendingKeep,
-    switchToAnnual,
-    scheduleMonthly,
-    cancelMonthlySwitch,
-    undoPendingRemoval,
+    confirmCancel: safe(confirmCancel),
+    resumePlan: safe(resumePlan),
+    confirmDowngrade: safe(confirmDowngrade),
+    previewNeedsKeepPicker: safe(previewNeedsKeepPicker),
+    confirmPendingKeep: safe(confirmPendingKeep),
+    switchToAnnual: safe(switchToAnnual),
+    scheduleMonthly: safe(scheduleMonthly),
+    cancelMonthlySwitch: safe(cancelMonthlySwitch),
+    undoPendingRemoval: safe(undoPendingRemoval),
   };
 }

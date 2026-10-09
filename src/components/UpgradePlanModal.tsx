@@ -1,5 +1,6 @@
 "use client";
 
+import { readJson } from "@/lib/read-json";
 import { useCallback, useEffect, useState } from "react";
 import { BillingIntervalToggle } from "@/components/BillingIntervalToggle";
 import {
@@ -80,7 +81,7 @@ export function UpgradePlanModal({
       const res = await fetch(
         `/api/billing/preview-plan?planId=${targetPlan}&interval=${intervalParam(interval)}`,
       );
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) {
         if (data.code === "ANNUAL_ONLY") {
           setServerYearly(true);
