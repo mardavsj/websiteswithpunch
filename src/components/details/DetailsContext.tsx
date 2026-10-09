@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { AnalyticsPayload } from "@/components/SiteAnalyticsBody";
 import { DetailsDrawer } from "./DetailsDrawer";
-import { DetailsPanel, SECTION_TITLES } from "./DetailsPanel";
+import { DetailsPanel, SECTION_ICONS, SECTION_TITLES } from "./DetailsPanel";
 import type { DetailsSection, SiteDetails } from "./types";
 
 type Ctx = { open: (s: DetailsSection) => void };
@@ -66,6 +66,7 @@ export function DetailsProvider({
       <DetailsDrawer
         open={section != null && data != null}
         title={section ? SECTION_TITLES[section] : ""}
+        icon={section ? SECTION_ICONS[section] : null}
         subtitle={section && data ? subtitleFor(section, data) : undefined}
         onClose={close}
       >

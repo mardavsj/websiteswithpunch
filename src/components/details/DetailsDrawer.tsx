@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import { ModalPortal } from "@/components/ModalPortal";
 
-type Props = { open: boolean; title: string; subtitle?: string; onClose: () => void; children: ReactNode };
+type Props = { open: boolean; title: string; subtitle?: string; icon?: ReactNode; onClose: () => void; children: ReactNode };
 
 const FOCUSABLE = 'a[href],button:not([disabled]),input,select,textarea,[tabindex]:not([tabindex="-1"])';
 
@@ -12,7 +12,7 @@ const FOCUSABLE = 'a[href],button:not([disabled]),input,select,textarea,[tabinde
  * is a bottom sheet on phones. Esc or the overlay closes it; focus stays inside while open and
  * returns to the Details button on close.
  */
-export function DetailsDrawer({ open, title, subtitle, onClose, children }: Props) {
+export function DetailsDrawer({ open, title, subtitle, icon, onClose, children }: Props) {
   const panel = useRef<HTMLDivElement | null>(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
@@ -71,25 +71,33 @@ export function DetailsDrawer({ open, title, subtitle, onClose, children }: Prop
           aria-labelledby="details-drawer-title"
           tabIndex={-1}
           onClick={(e) => e.stopPropagation()}
-          className="details-sheet absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col border-t border-rule bg-surface shadow-lg outline-none sm:inset-y-0 sm:left-auto sm:right-0 sm:max-h-none sm:w-[440px] sm:border-l sm:border-t-0"
+          className="details-sheet absolute inset-x-0 bottom-0 flex max-h-[88dvh] flex-col border-t border-rule bg-bg shadow-2xl outline-none sm:inset-y-0 sm:left-auto sm:right-0 sm:max-h-none sm:w-[480px] sm:border-l sm:border-t-0"
         >
-          <div className="flex items-start justify-between gap-3 border-b border-rule px-5 py-4">
-            <div className="min-w-0">
-              <h2 id="details-drawer-title" className="font-display text-lg font-medium text-ink">
+          <div className="mx-auto mt-2 h-1 w-10 bg-ink/15 sm:hidden" aria-hidden />
+          <div className="flex items-center gap-3 border-b border-rule bg-surface px-5 py-3.5">
+            {icon && (
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center bg-accent-soft text-accent ring-1 ring-inset ring-accent/20">
+                {icon}
+              </span>
+            )}
+            <div className="min-w-0 flex-1">
+              <h2 id="details-drawer-title" className="truncate font-display text-lg font-medium leading-6 text-ink">
                 {title}
               </h2>
-              {subtitle && <p className="mt-0.5 text-xs text-muted">{subtitle}</p>}
+              {subtitle && <p className="truncate text-xs text-muted">{subtitle}</p>}
             </div>
             <button
               type="button"
               onClick={onClose}
               aria-label="Close details"
-              className="-mr-1 shrink-0 px-2 py-1 text-lg leading-none text-muted hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+              className="-mr-1.5 flex h-8 w-8 shrink-0 items-center justify-center text-muted transition-colors hover:bg-ink/[0.05] hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
             >
-              ×
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
             </button>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">{children}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">{children}</div>
         </div>
       </div>
     </ModalPortal>

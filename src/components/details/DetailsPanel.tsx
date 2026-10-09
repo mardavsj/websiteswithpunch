@@ -1,9 +1,14 @@
 import type { AnalyticsPayload } from "@/components/analytics-types";
 import { NEEDS_DETAILS, type DetailsSection, type SiteDetails } from "./types";
+import type { ReactNode } from "react";
 import { DetailsSkeleton } from "./parts";
-import { DowntimePanel, HealthPanel, LatencyPanel, UptimePanel } from "./panels-checks";
-import { CodesPanel, IncidentsPanel, TimelinePanel, TrendPanel } from "./panels-charts";
-import { DomainPanel, SslPanel } from "./panels-expiry";
+import { DowntimePanel, UptimePanel } from "./panels-checks";
+import { HealthPanel, LatencyPanel } from "./panels-perf";
+import { TimelinePanel, TrendPanel } from "./panels-charts";
+import { CodesPanel, IncidentsPanel } from "./panels-events";
+import { SslPanel } from "./panel-ssl";
+import { DomainPanel } from "./panel-domain";
+import { IconAlert, IconCalendar, IconClock, IconGauge, IconGlobe, IconHash, IconList, IconPulse, IconShield } from "./icons";
 
 export const SECTION_TITLES: Record<DetailsSection, string> = {
   health: "Health score",
@@ -16,6 +21,19 @@ export const SECTION_TITLES: Record<DetailsSection, string> = {
   domain: "Domain registration",
   incidents: "Incidents",
   codes: "Status codes",
+};
+
+export const SECTION_ICONS: Record<DetailsSection, ReactNode> = {
+  health: <IconGauge />,
+  uptime: <IconPulse />,
+  latency: <IconClock />,
+  downtime: <IconAlert />,
+  trend: <IconPulse />,
+  timeline: <IconCalendar />,
+  ssl: <IconShield />,
+  domain: <IconGlobe />,
+  incidents: <IconList />,
+  codes: <IconHash />,
 };
 
 type Props = {
@@ -32,13 +50,14 @@ export function DetailsPanel({ section, data, details, error, onRetry }: Props) 
     if (error) {
       return (
         <div className="text-sm">
-          <p className="border border-rose-200 bg-rose-50 px-3 py-2 text-danger dark:border-rose-400/30 dark:bg-rose-400/10">
+          <p className="flex gap-2 border border-rose-200 bg-rose-50 px-3 py-2.5 text-danger dark:border-rose-400/30 dark:bg-rose-400/10">
+            <IconAlert className="mt-0.5 h-4 w-4 shrink-0" />
             {error}
           </p>
           <button
             type="button"
             onClick={onRetry}
-            className="mt-3 border border-rule px-3 py-1.5 text-xs font-medium text-ink hover:bg-accent-soft"
+            className="mt-3 border border-rule bg-surface px-3 py-1.5 text-xs font-medium text-ink hover:bg-accent-soft"
           >
             Try again
           </button>
