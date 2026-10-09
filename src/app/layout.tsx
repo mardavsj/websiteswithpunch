@@ -17,6 +17,15 @@ import {
   THEME_LIGHT,
 } from "@/lib/site-config";
 
+/** Default share card (X, LinkedIn, Slack…). Absolute URL so every crawler resolves it. */
+const OG_IMAGE = {
+  url: `${SITE_URL}/og-default.png`,
+  width: 1200,
+  height: 630,
+  type: "image/png",
+  alt: `${SITE_NAME}: uptime, SSL and domain expiry monitoring`,
+};
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-body",
@@ -51,11 +60,13 @@ export const metadata: Metadata = {
     title: `${SITE_NAME}: ${TAGLINE}`,
     description: SITE_DESCRIPTION,
     locale: "en_US",
+    images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
     title: `${SITE_NAME}: ${TAGLINE}`,
     description: SITE_DESCRIPTION,
+    images: [OG_IMAGE],
   },
   formatDetection: { telephone: false, email: false, address: false },
 };
