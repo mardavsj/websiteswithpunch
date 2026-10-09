@@ -16,7 +16,13 @@ export type BillingSummary = {
   pendingIntervalPriceFormatted?: string | null;
   sitePackCount: number;
   siteLimit: number;
+  /** Today's per-period total (current plan + packs). */
   monthlyTotalFormatted: string;
+  /** What the next renewal bills, after any booked change. */
+  nextTotalFormatted?: string | null;
+  nextAmountFormatted?: string | null;
+  /** True when the next renewal differs from today's total (a change is booked). */
+  nextChanges?: boolean;
   nextPaymentDateFormatted: string | null;
   hasPendingRemoval: boolean;
   pendingSitesToRemove: number;
@@ -52,6 +58,8 @@ export type PackPreview = {
   siteCount?: number;
   amountDueToday: number;
   amountDueTodayFormatted: string;
+  /** Tax in today's charge, as reported by Dodo's preview (null when none). */
+  taxTodayFormatted?: string | null;
   daysLeftInPeriod: number | null;
   nextRenewal: string | null;
   nextRenewalFormatted: string | null;

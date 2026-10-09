@@ -10,6 +10,7 @@ import {
   useEscapeClose,
 } from "@/components/billing/modal-bits";
 import { PLANS } from "@/lib/plans";
+import { TAX_NOTE_CHECKOUT } from "@/lib/tax-copy";
 import {
   ANNUAL_PRICES,
   formatPlanPrice,
@@ -69,7 +70,7 @@ export function CheckoutPlanModal({ planId, loading, message, onClose, onConfirm
         </p>
         <p className="text-xs text-muted">
           Next you&apos;ll pay on the secure Dodo Payments checkout (our merchant of record). Nothing
-          is charged until you confirm there.
+          is charged until you confirm there. {TAX_NOTE_CHECKOUT}
         </p>
         <NoRefundNote />
       </div>

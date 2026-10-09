@@ -43,6 +43,7 @@ function previewPlan(rawPlan: unknown, rawInterval: unknown) {
 
     const preview = await dodo.subscriptions.previewChangePlan(sub.subscription_id, previewBody(built.body));
     const amountDueToday = preview.immediate_charge.summary.total_amount;
+    const taxToday = preview.immediate_charge.summary.tax ?? 0;
     const currency = preview.immediate_charge.summary.currency || sub.currency || "USD";
     const nextRenewal = preview.new_plan.next_billing_date || null;
     const newRecurringCents =
@@ -61,6 +62,7 @@ function previewPlan(rawPlan: unknown, rawInterval: unknown) {
       hadPacks: !samePlan && st.packs > 0,
       amountDueToday,
       amountDueTodayFormatted: formatChargeToday(amountDueToday, currency),
+      taxTodayFormatted: taxToday > 0 ? formatChargeToday(taxToday, currency) : null,
       daysLeftInPeriod: daysLeftInPeriod(st),
       nextRenewal,
       nextRenewalFormatted: formatShortDate(nextRenewal),

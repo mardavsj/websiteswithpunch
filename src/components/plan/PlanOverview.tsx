@@ -3,6 +3,8 @@
 import { PLANS, SITE_PACKS, type PlanId } from "@/lib/plans";
 import { packPrice, planPrice, type BillingInterval } from "@/lib/billing-interval";
 import { useBillingSummary } from "@/components/billing/useBillingSummary";
+import { nextPaymentText } from "@/lib/next-payment";
+import { TAX_NOTE_PLAN } from "@/lib/tax-copy";
 
 export function PlanOverview({
   plan,
@@ -32,6 +34,8 @@ export function PlanOverview({
     summary?.monthlyTotalFormatted ||
     (basePrice + packSubtotal > 0 ? `$${basePrice + packSubtotal}/${per}` : "$0");
   const renews = summary?.nextPaymentDateFormatted;
+  // Shared with "Your plan": "Next payment: $510 on …" or "From …: $420/year".
+  const nextLine = nextPaymentText(summary);
 
   return (
     <div className="rounded-none border border-rule bg-surface px-4 py-4">
@@ -83,9 +87,13 @@ export function PlanOverview({
             <div>
               <dt className="text-muted">Next payment</dt>
               <dd className="font-medium text-ink">
-                {renews
-                  ? `${total.replace(/\/(month|year)$/, "")} on ${renews}`
-                  : "—"}
+                {summary?.cancelAtPeriodEnd
+                  ? "None, your plan ends at the end of this period"
+                  : nextLine
+                    ? nextLine.replace(/^Next payment: /, "")
+                    : renews
+                      ? `${total.replace(/\/(month|year)$/, "")} on ${renews}`
+                      : "—"}
               </dd>
             </div>
           </>
@@ -96,6 +104,7 @@ export function PlanOverview({
           </div>
         )}
       </dl>
+      {paid && <p className="mt-3 text-xs text-muted">{TAX_NOTE_PLAN}</p>}
     </div>
   );
 }

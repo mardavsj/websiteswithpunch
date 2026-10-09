@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getEffectivePlan, getUserEffectiveSiteLimit, PLANS, resolvePackCountForLimit, SITE_PACKS } from "@/lib/plans";
+import { getEffectivePlan, getUserEffectiveSiteLimit, PLANS, resolvePackCountForLimit, SITE_PACKS, type PlanId } from "@/lib/plans";
 import { intervalLabel, type BillingInterval } from "@/lib/billing-interval";
 import { getDodo, isDodoConfigured } from "@/lib/dodo";
 import { ENDED_STATUSES, isPaidStatus, scheduledKind, subscriptionState } from "@/lib/dodo-subscription";
@@ -52,8 +52,8 @@ export async function GET() {
 
   let interval: BillingInterval = "month";
   let nextPaymentDate: string | null = null;
-  // What the next renewal bills: the booked pack count when a removal is pending.
-  let billedPacks = user.pendingSitePackCount ?? packCount;
+  // What renews next: the booked change (plan, packs, interval) when there is one.
+  let next: { plan: PlanId; packs: number; interval: BillingInterval } | null = null;
   let pendingMonthly: { atFormatted: string | null; priceFormatted: string } | null = null;
 
   if (live && isPaidStatus(user.dodoStatus) && plan !== "free") {
@@ -61,7 +61,7 @@ export async function GET() {
       const st = live;
       interval = st.interval;
       nextPaymentDate = st.periodEnd?.toISOString() ?? null;
-      if (st.scheduled && scheduledKind(st) !== "downgrade") billedPacks = st.scheduled.packs;
+      if (st.scheduled) next = { plan: st.scheduled.plan, packs: st.scheduled.packs, interval: st.scheduled.interval };
       if (st.scheduled && scheduledKind(st) === "interval") {
         const cents = recurringTotalCents(plan, st.scheduled.packs, "month");
         pendingMonthly = {
@@ -72,7 +72,6 @@ export async function GET() {
     }
   }
 
-  const monthlyTotalCents = recurringTotalCents(plan, billedPacks, interval);
   const hasPendingRemoval =
     user.pendingSitePackCount != null &&
     user.pendingPackChangeAt != null &&
@@ -81,6 +80,16 @@ export async function GET() {
     hasPendingRemoval && plan !== "free"
       ? ((user.sitePackCount ?? 0) - (user.pendingSitePackCount ?? 0)) * SITE_PACKS[plan].sitesPerPack
       : 0;
+
+  // Today's total (what the current period cost) and the next renewal's total, kept apart so
+  // every surface shows "$X/year" now and "From {date}: $Y/year" when a change is booked.
+  const monthlyTotalCents = recurringTotalCents(plan, packCount, interval);
+  if (!next && plan !== "free") {
+    const pendingPro = user.pendingPlan === "pro" && plan === "business";
+    next = { plan: pendingPro ? "pro" : plan, packs: pendingPro ? 0 : hasPendingRemoval ? user.pendingSitePackCount! : packCount, interval };
+  }
+  const nextTotalCents = next ? recurringTotalCents(next.plan, next.packs, next.interval) : 0;
+  const nextTotalFormatted = next ? formatRecurringFromCents(nextTotalCents, "usd", next.interval) : null;
 
   return NextResponse.json({
     healed,
@@ -92,7 +101,11 @@ export async function GET() {
     siteLimit,
     monthlyTotalCents,
     monthlyTotalFormatted: formatRecurringFromCents(monthlyTotalCents, "usd", interval),
-    recurringBreakdown: plan === "free" ? null : recurringBreakdown(plan, billedPacks, interval),
+    recurringBreakdown: plan === "free" ? null : recurringBreakdown(plan, packCount, interval),
+    nextTotalCents,
+    nextTotalFormatted,
+    nextAmountFormatted: nextTotalFormatted?.replace(/\/(month|year)$/, "") ?? null,
+    nextChanges: Boolean(next && (nextTotalCents !== monthlyTotalCents || next.interval !== interval)),
     pendingInterval: pendingMonthly ? "month" : null,
     pendingIntervalAtFormatted: pendingMonthly?.atFormatted ?? null,
     pendingIntervalPriceFormatted: pendingMonthly?.priceFormatted ?? null,

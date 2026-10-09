@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ANNUAL_PACK_PRICES, type BillingInterval } from "@/lib/billing-interval";
 import { SITE_PACKS } from "@/lib/plans";
+import { TAX_NOTE_CHECKOUT } from "@/lib/tax-copy";
 import { BillingIntervalToggle } from "@/components/BillingIntervalToggle";
 import { PricingCard } from "./PricingCard";
 import { customPlanHref, maxSelfServeSites, pricingPlans } from "./pricing-content";
@@ -37,7 +38,7 @@ export function PricingSection({ as: Heading = "h2" }: { as?: "h1" | "h2" }) {
 
         <div className="mt-8 space-y-2 text-sm text-muted">
           <p>
-            Prices in USD; applicable taxes may be added at checkout. Optional site packs:{" "}
+            {TAX_NOTE_CHECKOUT} Optional site packs:{" "}
             {pack("pro", "Pro")}; {pack("business", "Business")}, billed with your plan.
           </p>
           <p>

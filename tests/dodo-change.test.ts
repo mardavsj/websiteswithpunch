@@ -2,6 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { changeBody } from "../src/lib/dodo-change";
+import { nextPaymentText } from "../src/lib/next-payment";
 import type { SubscriptionState } from "../src/lib/dodo-subscription";
 
 process.env.DODO_PRODUCT_PRO_MONTHLY = "pdt_pro_m";
@@ -32,4 +33,16 @@ test("a booking replaces an existing scheduled change", () => {
   const withSched = { ...st, scheduled: { plan: "business", interval: "month", packs: 0, at: null } } as unknown as SubscriptionState;
   const r = changeBody({ plan: "pro", interval: "month", packs: 0 }, "renewal", withSched);
   assert.ok(r.ok && r.body.cancel_scheduled_change_plan === true);
+});
+
+
+test("next payment: same total vs booked change vs cancel", () => {
+  const base = { nextPaymentDateFormatted: "Oct 9, 2027", nextTotalFormatted: "$510/year", nextAmountFormatted: "$510" };
+  assert.equal(nextPaymentText({ ...base, nextChanges: false }), "Next payment: $510 on Oct 9, 2027");
+  assert.equal(
+    nextPaymentText({ ...base, nextTotalFormatted: "$420/year", nextAmountFormatted: "$420", nextChanges: true }),
+    "From Oct 9, 2027: $420/year",
+  );
+  assert.equal(nextPaymentText({ ...base, cancelAtPeriodEnd: true }), null);
+  assert.equal(nextPaymentText(null), null);
 });

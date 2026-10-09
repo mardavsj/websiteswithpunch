@@ -66,12 +66,14 @@ function preview(action: Action) {
       return fail(403, "Pack limit reached.", "PACK_LIMIT", { maxPacks: config.maxPacks });
     }
     let amountDueToday = 0;
+    let taxToday = 0;
     let renewal = { nextRenewal: next, nextRenewalFormatted: formatShortDate(next) };
     if (!isUndo) {
       const built = changeBody({ plan: st.plan, interval: st.interval, packs: st.packs + 1 }, "now", st);
       if (!built.ok) return fail(503, built.error, "PRICE_MISSING");
       const p = await dodo.subscriptions.previewChangePlan(sub.subscription_id, previewBody(built.body));
       amountDueToday = p.immediate_charge.summary.total_amount;
+      taxToday = p.immediate_charge.summary.tax ?? 0;
       // Charging now starts a new billing cycle at Dodo, so the renewal date moves.
       const moved = p.new_plan.next_billing_date || next;
       renewal = { nextRenewal: moved, nextRenewalFormatted: formatShortDate(moved) };
@@ -84,6 +86,7 @@ function preview(action: Action) {
       ...renewal,
       amountDueToday,
       amountDueTodayFormatted: formatChargeToday(amountDueToday, currency),
+      taxTodayFormatted: taxToday > 0 ? formatChargeToday(taxToday, currency) : null,
       ...recurring(packs),
       nextPackCount: packs,
       newSiteLimit: getEffectiveSiteLimit(st.plan, packs),

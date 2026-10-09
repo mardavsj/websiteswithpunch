@@ -27,8 +27,8 @@ export function SignupHeader({
   const priceLabel = formatPlanPrice(paidId, interval);
   const subtitle = isPaid
     ? interval === "year"
-      ? `You'll pay ${priceLabel} ($${perMonthPrice(paidId, "year")}/mo, 2 months free) for up to ${plan.siteLimit} sites. You'll verify your email, then pay securely on Dodo Payments.`
-      : `You'll pay ${priceLabel} for up to ${plan.siteLimit} sites. You'll verify your email, then pay securely on Dodo Payments.`
+      ? `You'll pay ${priceLabel} ($${perMonthPrice(paidId, "year")}/mo, 2 months free) for up to ${plan.siteLimit} sites, plus applicable tax shown at checkout. You'll verify your email, then pay securely on Dodo Payments.`
+      : `You'll pay ${priceLabel} for up to ${plan.siteLimit} sites, plus applicable tax shown at checkout. You'll verify your email, then pay securely on Dodo Payments.`
     : "Free plan includes 1 monitored site. Upgrade anytime for more sites.";
 
   return (

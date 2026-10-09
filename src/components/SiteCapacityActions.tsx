@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SITE_PACKS, canBuySitePack } from "@/lib/plans";
+import { nextPaymentText } from "@/lib/next-payment";
 import { useToast } from "@/components/Toast";
 import { PlanSummaryCard } from "@/components/billing/PlanSummaryCard";
 import { PackActions } from "@/components/billing/PackActions";
@@ -53,10 +54,8 @@ export function SiteCapacityActions({
     hasPending && pendingSites >= effectivePacks * (pack?.sitesPerPack || 5);
   const canBuy = showBilling && (hasPending || canBuySitePack(plan, effectivePacks));
   const canRemove = showBilling && effectivePacks > 0 && !allPacksAway;
-  const nextPaymentLine =
-    summary?.nextPaymentDateFormatted && summary.monthlyTotalFormatted
-      ? `Next payment: ${summary.monthlyTotalFormatted.replace(/\/(month|year)$/, "")} on ${summary.nextPaymentDateFormatted}`
-      : null;
+  // Same wording as the Current plan card: today's total + "From {date}: {new total}".
+  const nextPaymentLine = nextPaymentText(summary);
 
   async function run(fn: () => Promise<boolean | null | void>) {
     setBusy(true);

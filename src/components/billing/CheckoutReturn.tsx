@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PLANS, type PlanId } from "@/lib/plans";
+import { RECEIPT_NOTE } from "@/lib/tax-copy";
 import { STILL_PENDING_MESSAGE, awaitBilling } from "@/components/billing/awaitBilling";
 
 const box = "mt-6 rounded-none border px-4 py-3 text-sm";
@@ -61,7 +62,7 @@ export function CheckoutReturn({
     return (
       <div className={ok} role="status">
         Payment confirmed. You&apos;re on {PLANS[newPlan].name}: up to {PLANS[newPlan].siteLimit} sites are
-        ready to monitor.
+        ready to monitor. {RECEIPT_NOTE}
       </div>
     );
   }
@@ -69,7 +70,7 @@ export function CheckoutReturn({
     <div className={warn} role="status" aria-live="polite">
       {state === "slow"
         ? STILL_PENDING_MESSAGE
-        : "Thanks! Confirming your payment with Dodo Payments. Your plan switches on automatically, usually within a minute."}
+        : `Thanks! Confirming your payment with Dodo Payments. Your plan switches on automatically, usually within a minute. ${RECEIPT_NOTE}`}
     </div>
   );
 }

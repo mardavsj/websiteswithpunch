@@ -12,7 +12,7 @@ import {
   secondaryBtn,
   useEscapeClose,
 } from "@/components/billing/modal-bits";
-
+import { TAX_NOTE_SAVED_CARD, taxLine } from "@/lib/tax-copy";
 
 type AddProps = {
   open: boolean;
@@ -107,7 +107,9 @@ export function AddPackModal({ open, plan, loading, message, onClose, onConfirm 
             </p>
             {!todayZero && !preview.isUndo && (
               <p className="text-xs text-muted">
-                Charged to the payment method on your subscription.
+                Charged to the payment method on your subscription.{" "}
+                {taxLine(preview.taxTodayFormatted) ? `${taxLine(preview.taxTodayFormatted)}. ` : ""}
+                {TAX_NOTE_SAVED_CARD}
               </p>
             )}
             <NoRefundNote />

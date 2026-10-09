@@ -11,6 +11,7 @@ import {
   useEscapeClose,
 } from "@/components/billing/modal-bits";
 import { intervalParam, type BillingInterval } from "@/lib/billing-interval";
+import { TAX_NOTE_SAVED_CARD, taxLine } from "@/lib/tax-copy";
 
 type UpgradeProps = {
   open: boolean;
@@ -34,6 +35,7 @@ export type PlanPreview = {
   hadPacks: boolean;
   amountDueToday: number;
   amountDueTodayFormatted: string;
+  taxTodayFormatted?: string | null;
   daysLeftInPeriod: number | null;
   nextRenewalFormatted: string | null;
   newRecurringMonthlyFormatted: string;
@@ -151,7 +153,9 @@ export function UpgradePlanModal({
             </p>
             {!todayZero && (
               <p className="text-xs text-muted">
-                Charged to the payment method on your subscription. Your new plan starts once the payment is confirmed, usually within a couple of minutes.
+                Charged to the payment method on your subscription. Your new plan starts once the payment is confirmed, usually within a couple of minutes.{" "}
+                {taxLine(preview.taxTodayFormatted) ? `${taxLine(preview.taxTodayFormatted)}. ` : ""}
+                {TAX_NOTE_SAVED_CARD}
               </p>
             )}
             <NoRefundNote />

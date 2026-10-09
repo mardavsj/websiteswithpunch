@@ -14,12 +14,12 @@ export type PlanPricing = { price: number; note: string; href: string };
 const paidPricing = (id: "pro" | "business"): Record<BillingInterval, PlanPricing> => ({
   month: {
     price: PLANS[id].price,
-    note: `Billed monthly · $${perSite(id, "month")} per site`,
+    note: `Billed monthly · $${perSite(id, "month")} per site · plus tax`,
     href: `/signup?plan=${id}&interval=monthly`,
   },
   year: {
     price: perMonthPrice(id, "year"),
-    note: `Billed $${ANNUAL_PRICES[id]} yearly · $${perSite(id, "year")} per site`,
+    note: `Billed $${ANNUAL_PRICES[id]} yearly · $${perSite(id, "year")} per site · plus tax`,
     href: `/signup?plan=${id}&interval=annual`,
   },
 });
