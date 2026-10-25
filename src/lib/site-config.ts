@@ -1,6 +1,8 @@
 /** Public site facts shared by metadata, robots, sitemap, manifest and JSON-LD. */
 export const SITE_URL = "https://www.websiteswithpunch.com";
 export const SITE_NAME = "Websites With Punch";
+/** Common ways people type the brand; used as schema.org alternateName. */
+export const SITE_ALT_NAMES = ["WebsitesWithPunch", "websiteswithpunch.com", "Websites Punch", "Website Punch", "Web Sites With Punch", "WWP"];
 export const PRODUCT_NAME = "Website Health";
 export const TAGLINE = "Spot website problems before your customers do.";
 export const SITE_DESCRIPTION =

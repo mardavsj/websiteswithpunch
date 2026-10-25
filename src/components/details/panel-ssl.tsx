@@ -2,16 +2,18 @@ import type { AnalyticsPayload } from "@/components/analytics-types";
 import type { SiteDetails } from "./types";
 import { NA, Note, Row, Rows, fmtDay, fmtTime, orNA } from "./parts";
 import { Card, Chip, Empty, Hero, Lifespan, Tags, daysTone } from "./ui";
+import { Cols } from "@/components/modal-ui";
+import type { ReactNode } from "react";
 import { IconGlobe, IconHash, IconLink, IconShield } from "./icons";
 
-type PD = { data: AnalyticsPayload; details: SiteDetails };
+type PD = { data: AnalyticsPayload; details: SiteDetails; extra?: ReactNode };
 
 export const NOT_YET =
   "Not saved for this site yet. Full details are collected on every check: press Recheck, or wait for the next daily check.";
 
 const TONE_TEXT = { ok: "Valid", warn: "Renew soon", bad: "Expiring", neutral: "Unknown", accent: "" } as const;
 
-export function SslPanel({ data, details }: PD) {
+export function SslPanel({ data, details, extra }: PD) {
   const c = details.ssl;
   const have = Boolean(c?.checkedAt);
   const why = have ? "Not in this certificate." : "Not saved yet (see above).";
@@ -20,7 +22,9 @@ export function SslPanel({ data, details }: PD) {
   const tone = have && c && !c.trusted ? "bad" : daysTone(left);
   const chip = have && c && !c.trusted ? "Not trusted" : left != null && left < 0 ? "Expired" : TONE_TEXT[tone];
   return (
-    <>
+    <Cols
+      left={
+        <>
       {!have && <Note>{c?.lastError ? `The latest check couldn't read a certificate: ${c.lastError}.` : NOT_YET}</Note>}
       {have && c?.lastError && (
         <Note tone="warn">
@@ -60,6 +64,10 @@ export function SslPanel({ data, details }: PD) {
           <Row label="Expires">{orNA(expires && fmtTime(expires), why)}</Row>
         </Rows>
       </Card>
+        </>
+      }
+      right={
+        <>
       <Card title="Names covered" icon={<IconGlobe />} meta={c?.altNames.length ? c.altNames.length : undefined}>
         {c?.altNames.length ? (
           <Tags items={c.altNames} />
@@ -80,6 +88,9 @@ export function SslPanel({ data, details }: PD) {
           <Row label="SHA-256 fingerprint" stack>{orNA(c?.fingerprint256, why)}</Row>
         </Rows>
       </Card>
-    </>
+          {extra}
+        </>
+      }
+    />
   );
 }

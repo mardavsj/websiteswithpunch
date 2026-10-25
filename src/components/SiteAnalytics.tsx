@@ -10,6 +10,7 @@ import { AutoUpdateControl } from "./AutoUpdateControl";
 import { SiteRecheckProvider, useSiteRecheckContext } from "./SiteRecheckProvider";
 import { onSiteChecked } from "@/lib/site-check-client";
 import { DetailsProvider } from "./details/DetailsContext";
+import { useNoticeToasts } from "./NoticeToasts";
 
 type LoadOpts = { quiet?: boolean; signal?: AbortSignal };
 
@@ -37,24 +38,13 @@ function SiteAnalyticsPanel({ siteId, compact = false }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [siteLocked, setSiteLocked] = useState(false);
   const [fade, setFade] = useState(true);
-  const [lockNotice, setLockNotice] = useState<string | null>(null);
-  const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const notices = useNoticeToasts(siteId);
   const rangeRef = useRef<RangeKey>(range);
   rangeRef.current = range;
   const seq = useRef(0);
 
   const unlockedRanges: RangeKey[] = data?.unlockedRanges?.length ? data.unlockedRanges : ["24h"];
   const ageDays = data?.ageDays ?? 0;
-
-  const clearNotice = useCallback(() => {
-    if (noticeTimer.current) clearTimeout(noticeTimer.current);
-    noticeTimer.current = null;
-    setLockNotice(null);
-  }, []);
-
-  useEffect(() => () => {
-    if (noticeTimer.current) clearTimeout(noticeTimer.current);
-  }, []);
 
   /** quiet = background refresh: no fade/spinner, errors go to the caller. */
   const load = useCallback(
@@ -100,12 +90,9 @@ function SiteAnalyticsPanel({ siteId, compact = false }: Props) {
 
   function selectRange(next: RangeKey) {
     if (!unlockedRanges.includes(next)) {
-      setLockNotice(lockedRangeNotice(ageDays, next));
-      if (noticeTimer.current) clearTimeout(noticeTimer.current);
-      noticeTimer.current = setTimeout(() => setLockNotice(null), 6000);
+      notices.push({ key: `locked-${next}`, text: lockedRangeNotice(ageDays, next) });
       return;
     }
-    clearNotice();
     setRange(next);
     void load(next);
   }
@@ -145,10 +132,7 @@ function SiteAnalyticsPanel({ siteId, compact = false }: Props) {
         ageDays={ageDays}
         loading={loading}
         onSelect={selectRange}
-        onRefresh={() => {
-          clearNotice();
-          void load(range);
-        }}
+        onRefresh={() => void load(range)}
         live={
           data && !siteLocked ? (
             <AutoUpdateControl rc={rc} />
@@ -158,14 +142,7 @@ function SiteAnalyticsPanel({ siteId, compact = false }: Props) {
         }
       />
 
-      {lockNotice && (
-        <p
-          role="status"
-          className="mt-2 rounded-none border border-amber-200 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-400/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-100"
-        >
-          {lockNotice}
-        </p>
-      )}
+      {notices.view}
 
       <DetailsProvider siteId={siteId} data={data && !siteLocked && !data.empty ? data : null}>
         <div

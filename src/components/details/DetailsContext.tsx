@@ -2,11 +2,20 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { AnalyticsPayload } from "@/components/SiteAnalyticsBody";
-import { DetailsDrawer } from "./DetailsDrawer";
+import { Modal } from "@/components/Modal";
+import { healthFixes } from "@/lib/insights/health";
+import { healthInput, sectionInsight } from "@/lib/insights/sections";
+import { insightStatus, scoreStatus } from "@/lib/insights/status";
+import { Chip } from "./ui";
+import { fixTitle } from "@/lib/insights/focus";
+import type { FixKey } from "@/lib/insights/health";
 import { DetailsPanel, SECTION_ICONS, SECTION_TITLES } from "./DetailsPanel";
+import { FixView } from "./FixView";
+import { IconGauge } from "./icons";
+import { urlFor, viewFromSearch, type View } from "./url";
 import type { DetailsSection, SiteDetails } from "./types";
 
-type Ctx = { open: (s: DetailsSection) => void };
+type Ctx = { open: (s: DetailsSection) => void; openFix: (k?: FixKey) => void };
 const DetailsCtx = createContext<Ctx | null>(null);
 
 /**
@@ -22,7 +31,8 @@ export function DetailsProvider({
   data: AnalyticsPayload | null;
   children: ReactNode;
 }) {
-  const [section, setSection] = useState<DetailsSection | null>(null);
+  const [view, setView] = useState<View | null>(null);
+  const pushed = useRef(false);
   const [details, setDetails] = useState<SiteDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
   const busy = useRef(false);
@@ -51,35 +61,65 @@ export function DetailsProvider({
     return () => clearTimeout(t);
   }, [checkKey, load]);
 
-  const open = useCallback(
-    (s: DetailsSection) => {
-      setSection(s);
+  // Deep link: ?details=<section>&fix=<key>. Opening pushes a history entry so Back closes it.
+  useEffect(() => {
+    const sync = () => {
+      pushed.current = false;
+      setView(viewFromSearch(window.location.search));
+    };
+    sync();
+    window.addEventListener("popstate", sync);
+    return () => window.removeEventListener("popstate", sync);
+  }, []);
+
+  const show = useCallback(
+    (v: View) => {
+      if (view) window.history.replaceState(window.history.state, "", urlFor(v));
+      else {
+        window.history.pushState(window.history.state, "", urlFor(v));
+        pushed.current = true;
+      }
+      setView(v);
       if (!details) void load();
     },
-    [details, load],
+    [view, details, load],
   );
-  const close = useCallback(() => setSection(null), []);
+  const open = useCallback((s: DetailsSection) => show({ s }), [show]);
+  const openFix = useCallback((k?: FixKey) => show({ s: "fixes", fix: k }), [show]);
+  const close = useCallback(() => {
+    if (pushed.current) return window.history.back();
+    window.history.replaceState(window.history.state, "", urlFor(null));
+    setView(null);
+  }, []);
+
+  const s = view?.s;
+  const title = !s ? "" : s === "fixes" ? (view.fix ? fixTitle(view.fix) : "All fixes") : SECTION_TITLES[s];
+
+  const hf = data ? healthFixes(healthInput(data, details)) : null;
+  const st = !s || !data || !hf ? null : s === "fixes" || s === "health" ? scoreStatus(hf.score) : insightStatus(sectionInsight(s, data, details));
+  const n = hf?.fixes.length ?? 0;
+  const primary =
+    !s || !n ? undefined
+    : s === "fixes" && !view.fix ? { label: "Health score details", onClick: () => open("health") }
+    : { label: `See all fixes (${n})`, onClick: () => openFix() };
 
   return (
-    <DetailsCtx.Provider value={{ open }}>
+    <DetailsCtx.Provider value={{ open, openFix }}>
       {children}
-      <DetailsDrawer
-        open={section != null && data != null}
-        title={section ? SECTION_TITLES[section] : ""}
-        icon={section ? SECTION_ICONS[section] : null}
-        subtitle={section && data ? subtitleFor(section, data) : undefined}
+      <Modal
+        open={view != null && data != null}
+        title={title}
+        icon={!s ? null : s === "fixes" ? <IconGauge /> : SECTION_ICONS[s]}
+        subtitle={!s || !data ? undefined : s === "fixes" ? "Ways to raise your health score" : subtitleFor(s, data)}
+        chip={st && <Chip tone={st.tone}>{st.label}</Chip>}
+        primary={primary}
         onClose={close}
       >
-        {section && data && (
-          <DetailsPanel
-            section={section}
-            data={data}
-            details={details}
-            error={details ? null : error}
-            onRetry={() => void load()}
-          />
+        {s && data && s === "fixes" && <FixView data={data} details={details} fix={view.fix} />}
+        {s && data && s !== "fixes" && (
+          <DetailsPanel section={s} data={data} details={details} error={details ? null : error} onRetry={() => void load()} />
         )}
-      </DetailsDrawer>
+      </Modal>
     </DetailsCtx.Provider>
   );
 }
@@ -112,4 +152,9 @@ export function DetailsButton({ section, label }: { section: DetailsSection; lab
       Details
     </button>
   );
+}
+
+/** Opens a Details panel from anywhere inside the provider (null outside it). */
+export function useOpenDetails(): Ctx | null {
+  return useContext(DetailsCtx);
 }

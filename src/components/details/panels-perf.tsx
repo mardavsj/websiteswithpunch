@@ -3,15 +3,17 @@ import { CHECK_SCHEDULE } from "@/lib/check-schedule";
 import type { AnalyticsPayload } from "@/components/analytics-types";
 import { Item, List, Row, Rows, fmtMs, fmtTime, orNA } from "./parts";
 import { Card, Chip, Empty, Hero, Meter, Stats, type Tone } from "./ui";
+import { Cols } from "@/components/modal-ui";
+import type { ReactNode } from "react";
 import { IconClock, IconGauge, IconList, IconPulse } from "./icons";
 
-type P = { data: AnalyticsPayload };
+type P = { data: AnalyticsPayload; extra?: ReactNode };
 
 const pct = (n: number | null | undefined) => (n == null ? null : `${n}%`);
 const scoreTone = (s: number): Tone => (s >= 70 ? "ok" : s >= 50 ? "warn" : "bad");
 const msTone = (ms: number | null | undefined): Tone => (ms == null ? "neutral" : ms <= 500 ? "ok" : ms <= 1000 ? "warn" : "bad");
 
-export function HealthPanel({ data }: P) {
+export function HealthPanel({ data, extra }: P) {
   const p = data.healthParts;
   const lines = [
     { label: "Uptime", w: HEALTH_WEIGHTS.uptime, score: p?.uptime, input: pct(data.uptimePercent) ?? "No checks yet (counted as 100)" },
@@ -21,7 +23,9 @@ export function HealthPanel({ data }: P) {
   ];
   const r = (v: number) => Math.round(v * 10) / 10;
   return (
-    <>
+    <Cols
+      left={
+        <>
       <Hero
         label="Health score"
         value={data.healthScore}
@@ -31,6 +35,18 @@ export function HealthPanel({ data }: P) {
       >
         <Meter value={data.healthScore / 100} tone={scoreTone(data.healthScore)} label="Health score" />
       </Hero>
+      <Card title="Scoring bands" icon={<IconList />}>
+        <List>
+          <Item left="Labels" right="" sub="85+ Excellent · 70–84 Good · 50–69 Watch · under 50 Critical" />
+          <Item left="Response time" right="" sub="≤200 ms 100 · ≤500 85 · ≤1 s 70 · ≤2 s 50 · slower 30" />
+          <Item left="SSL days left" right="" sub="60+ 100 · 31–60 80 · 15–30 55 · 8–14 35 · ≤7 15" />
+          <Item left="Domain days left" right="" sub="90+ 100 · 61–90 85 · 31–60 65 · 15–30 40 · ≤14 20" />
+        </List>
+      </Card>
+        </>
+      }
+      right={
+        <>
       <Card title="How it adds up" icon={<IconGauge />} meta="score → points">
         <ul className="divide-y divide-rule">
           {lines.map((l) => (
@@ -53,25 +69,22 @@ export function HealthPanel({ data }: P) {
           ))}
         </ul>
       </Card>
-      <Card title="Scoring bands" icon={<IconList />}>
-        <List>
-          <Item left="Labels" right="" sub="85+ Excellent · 70–84 Good · 50–69 Watch · under 50 Critical" />
-          <Item left="Response time" right="" sub="≤200 ms 100 · ≤500 85 · ≤1 s 70 · ≤2 s 50 · slower 30" />
-          <Item left="SSL days left" right="" sub="60+ 100 · 31–60 80 · 15–30 55 · 8–14 35 · ≤7 15" />
-          <Item left="Domain days left" right="" sub="90+ 100 · 61–90 85 · 31–60 65 · 15–30 40 · ≤14 20" />
-        </List>
-      </Card>
-    </>
+          {extra}
+        </>
+      }
+    />
   );
 }
 
-export function LatencyPanel({ data }: P) {
+export function LatencyPanel({ data, extra }: P) {
   const l = data.latency;
   const x = data.extras;
   const none = "No timed checks in this range.";
   const top = x?.slowest.length ? Math.max(...x.slowest.map((c) => c.ms ?? 0)) : 0;
   return (
-    <>
+    <Cols
+      left={
+        <>
       <Hero
         label="Average response time"
         value={l.avg == null ? "—" : Math.round(l.avg).toLocaleString("en-IN")}
@@ -93,6 +106,10 @@ export function LatencyPanel({ data }: P) {
           <Row label="Latest check">{orNA(data.site?.lastLatencyMs != null && fmtMs(data.site.lastLatencyMs), "Not checked yet.")}</Row>
         </Rows>
       </Card>
+        </>
+      }
+      right={
+        <>
       <Card title="Slowest checks" icon={<IconPulse />} meta={x?.slowest.length || undefined}>
         {x?.slowest.length ? (
           <ul className="divide-y divide-rule">
@@ -113,6 +130,9 @@ export function LatencyPanel({ data }: P) {
           <Empty title="No timed checks" reason={none} />
         )}
       </Card>
-    </>
+          {extra}
+        </>
+      }
+    />
   );
 }

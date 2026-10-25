@@ -1,9 +1,11 @@
 import type { AnalyticsPayload } from "@/components/analytics-types";
 import { Item, List, Row, Rows, fmtDay, fmtMs, fmtTime, orNA } from "./parts";
 import { Card, Empty, Stats } from "./ui";
+import { Cols } from "@/components/modal-ui";
+import type { ReactNode } from "react";
 import { IconAlert, IconInfo, IconList, IconPulse } from "./icons";
 
-type P = { data: AnalyticsPayload };
+type P = { data: AnalyticsPayload; extra?: ReactNode };
 
 function span(ms: number | undefined): string {
   if (!ms) return "—";
@@ -18,12 +20,14 @@ export function Dot({ status }: { status: string }) {
   return <span className={`block h-2 w-2 rounded-full ${c}`} />;
 }
 
-export function TrendPanel({ data }: P) {
+export function TrendPanel({ data, extra }: P) {
   const s = data.latency.series;
   const x = data.extras;
   const vals = s.map((p) => p.ms);
   return (
-    <>
+    <Cols
+      left={
+        <>
       <Stats
         items={[
           { label: "Points plotted", value: s.length },
@@ -37,6 +41,10 @@ export function TrendPanel({ data }: P) {
           <Row label="Slowest single check">{orNA(data.latency.max != null && fmtMs(data.latency.max), "No timed checks.")}</Row>
         </Rows>
       </Card>
+        </>
+      }
+      right={
+        <>
       <Card title="Latest checks" icon={<IconPulse />} meta={x?.recent.length || undefined}>
         {x?.recent.length ? (
           <List>
@@ -54,11 +62,14 @@ export function TrendPanel({ data }: P) {
           <Empty title="No checks yet" reason="No checks in this range." />
         )}
       </Card>
-    </>
+          {extra}
+        </>
+      }
+    />
   );
 }
 
-export function TimelinePanel({ data }: P) {
+export function TimelinePanel({ data, extra }: P) {
   const tl = data.timeline;
   const bad = tl.filter((b) => b.status !== "up" && b.status !== "empty");
   const label = data.extras?.timelineBucketMs === 3_600_000 ? "hour" : "day";
@@ -70,7 +81,9 @@ export function TimelinePanel({ data }: P) {
     ["empty", "No data", `No checks ran in that ${label}`],
   ];
   return (
-    <>
+    <Cols
+      left={
+        <>
       <Stats
         items={[
           { label: `${label === "day" ? "Days" : "Hours"} shown`, value: tl.length },
@@ -79,6 +92,10 @@ export function TimelinePanel({ data }: P) {
           { label: "No checks", value: tl.filter((b) => b.status === "empty").length },
         ]}
       />
+        </>
+      }
+      right={
+        <>
       <Card
         title="Legend"
         icon={<IconList />}
@@ -107,6 +124,9 @@ export function TimelinePanel({ data }: P) {
           <Empty title="All clear" reason="No segments with problems in this range." />
         )}
       </Card>
-    </>
+          {extra}
+        </>
+      }
+    />
   );
 }

@@ -67,6 +67,10 @@ function Legend() {
 export function AnalyticsBodySkeleton() {
   return (
     <div className="space-y-5" aria-hidden>
+      <div className="border border-rule bg-surface">
+        <p className="label-caps border-b border-rule px-4 py-2.5"><Sk>Top fixes</Sk></p>
+        <p className="px-4 py-3 text-sm"><Sk>Response time · +3.8 pts · how to fix</Sk></p>
+      </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex flex-col items-center justify-center border border-rule bg-surface p-4">
           <p className="label-caps mb-2 self-start">

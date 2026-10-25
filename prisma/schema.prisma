@@ -315,3 +315,15 @@ model AuditLog {
   @@index([actorId, createdAt])
   @@index([createdAt])
 }
+
+/// Per-admin "last looked at" time for each admin section/filter (green "new" badges).
+/// prevAt keeps the visit before, so a refresh right after opening still highlights new rows.
+model AdminSeen {
+  id         String    @id @default(cuid())
+  adminEmail String
+  key        String
+  seenAt     DateTime
+  prevAt     DateTime?
+
+  @@unique([adminEmail, key])
+}

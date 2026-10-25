@@ -2,10 +2,12 @@ import type { AnalyticsPayload } from "@/components/analytics-types";
 import type { SiteDetails } from "./types";
 import { Item, List, Note, Row, Rows, fmtDay, fmtTime, orNA } from "./parts";
 import { Card, Chip, Empty, Hero, Lifespan, Tags, daysTone } from "./ui";
+import { Cols } from "@/components/modal-ui";
+import type { ReactNode } from "react";
 import { IconCalendar, IconInfo, IconServer, IconShield } from "./icons";
 import { NOT_YET } from "./panel-ssl";
 
-type PD = { data: AnalyticsPayload; details: SiteDetails };
+type PD = { data: AnalyticsPayload; details: SiteDetails; extra?: ReactNode };
 
 const EPP: Record<string, string> = {
   "client transfer prohibited": "Transfer lock on",
@@ -26,7 +28,7 @@ const EPP: Record<string, string> = {
 const BAD = /hold|pending delete|redemption/;
 const TONE_TEXT = { ok: "Registered", warn: "Renew soon", bad: "Expiring", neutral: "Unknown", accent: "" } as const;
 
-export function DomainPanel({ data, details }: PD) {
+export function DomainPanel({ data, details, extra }: PD) {
   const d = details.domain;
   const have = Boolean(d?.checkedAt);
   const whois = d?.source === "WHOIS";
@@ -35,7 +37,9 @@ export function DomainPanel({ data, details }: PD) {
   const expires = d?.expiresAt ?? data.domain.expiresAt ?? null;
   const tone = daysTone(left);
   return (
-    <>
+    <Cols
+      left={
+        <>
       {!have && (
         <Note>
           {d?.lastError
@@ -73,6 +77,10 @@ export function DomainPanel({ data, details }: PD) {
           <Row label="Expires">{orNA(expires && fmtDay(expires), why)}</Row>
         </Rows>
       </Card>
+        </>
+      }
+      right={
+        <>
       <Card title="Nameservers" icon={<IconServer />} meta={d?.nameservers.length || undefined}>
         {d?.nameservers.length ? <Tags items={d.nameservers} mono /> : <Empty title="No nameservers" reason={why} />}
       </Card>
@@ -101,6 +109,9 @@ export function DomainPanel({ data, details }: PD) {
           <Row label="Refreshed">On add, Recheck and daily</Row>
         </Rows>
       </Card>
-    </>
+          {extra}
+        </>
+      }
+    />
   );
 }

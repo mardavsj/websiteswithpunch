@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminModal } from "./AdminModal";
 import { prisma } from "@/lib/prisma";
 import { fmtUsd } from "@/lib/referrals/config";
 import { referrerTotals } from "@/lib/admin/referrer";
@@ -22,19 +23,16 @@ export async function UserDrawer({ id, close }: { id: string; close: string }) {
     <div className="flex gap-3 py-1.5 text-sm"><dt className="w-32 shrink-0 text-muted">{k}</dt><dd className="min-w-0 break-all text-ink">{v || "—"}</dd></div>
   );
   return (
-    <div className="fixed inset-0 z-[60] flex justify-end">
-      <Link href={close} aria-label="Close details" className="absolute inset-0 bg-black/30" scroll={false} />
-      <aside role="dialog" aria-label="User details" className="relative h-full w-full max-w-md overflow-y-auto border-l border-rule bg-surface p-5 shadow-xl">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="label-caps">User</p>
-            <h2 className="mt-1 break-all font-display text-lg font-medium text-ink">{u?.email ?? "Not found"}</h2>
-          </div>
-          <Link href={close} scroll={false} className="border border-rule px-2.5 py-1 text-sm text-ink hover:border-accent">Close</Link>
-        </div>
-        {u && (
-          <>
-            <dl className="mt-4 divide-y divide-rule border-y border-rule">
+    <AdminModal
+      close={close}
+      label="User details"
+      eyebrow="User"
+      title={u?.email ?? "Not found"}
+      subtitle={u?.name ?? undefined}
+      chip={u && <Badge tone={u.plan === "free" ? "muted" : "accent"}>{u.plan}</Badge>}
+      left={u ? (
+        <>
+            <dl className="divide-y divide-rule border-y border-rule">
               {row("Name", u.name)}
               {row("Plan", <><Badge tone={u.plan === "free" ? "muted" : "accent"}>{u.plan}</Badge>{u.sitePackCount ? ` + ${u.sitePackCount} pack(s)` : ""}{u.cancelAtPeriodEnd ? " · cancels at period end" : ""}</>)}
               {row("Billing status", u.dodoStatus)}
@@ -45,7 +43,11 @@ export async function UserDrawer({ id, close }: { id: string; close: string }) {
               {row("Referral code", u.referralCode && <span className="font-mono text-xs">{u.referralCode}</span>)}
               {row("Payout to", u.payoutAddress && `${u.payoutMethod === "upi" ? "UPI" : "PayPal"} · ${u.payoutAddress}`)}
             </dl>
-            <h3 className="label-caps mt-6">Sites ({u.sites.length})</h3>
+        </>
+      ) : <p className="text-sm text-muted">This record was not found.</p>}
+      right={u ? (
+        <>
+            <h3 className="label-caps mt-6 lg:mt-0">Sites ({u.sites.length})</h3>
             <ul className="mt-2 divide-y divide-rule border-y border-rule">
               {u.sites.length === 0 && <li className="py-2 text-sm text-muted">No sites.</li>}
               {u.sites.map((s) => (
@@ -91,9 +93,8 @@ export async function UserDrawer({ id, close }: { id: string; close: string }) {
                 </li>
               ))}
             </ul>
-          </>
-        )}
-      </aside>
-    </div>
+        </>
+      ) : undefined}
+    />
   );
 }

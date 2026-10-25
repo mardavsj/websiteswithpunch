@@ -8,7 +8,7 @@ import { ANNUAL_PRICES } from "@/lib/billing-interval";
 const price = (id: "pro" | "business") => `$${PLANS[id].price}/month or $${ANNUAL_PRICES[id]}/year`;
 
 export const metadata: Metadata = {
-  title: "Pricing",
+  title: { absolute: "Website Monitoring Pricing: Free, Pro & Business Plans" },
   description: `Website monitoring pricing: Free for 1 site, Pro ${price("pro")}, Business ${price("business")}, plus optional site packs. Prices in USD. Cancel anytime.`,
   alternates: { canonical: "/pricing" },
 };

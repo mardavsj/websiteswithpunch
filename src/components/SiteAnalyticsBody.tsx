@@ -3,6 +3,7 @@ import { AvailabilityStrip, DonutChart, RingGauge } from "./analytics-charts";
 import { LatencyAreaChart, seriesRange } from "./LatencyChart";
 import { DomainExpiryMeter, ExpiryRingCard } from "./expiry-meters";
 import { DetailsButton } from "./details/DetailsContext";
+import { TopFixes } from "./TopFixes";
 import type { DetailsSection } from "./details/types";
 
 import type { AnalyticsPayload } from "./analytics-types";
@@ -54,6 +55,7 @@ export function SiteAnalyticsBody({ data }: { data: AnalyticsPayload }) {
   const plotted = seriesRange(data.latency.series);
   return (
     <div className="space-y-5">
+      <TopFixes data={data} />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex flex-col items-center justify-center border border-rule bg-surface p-4">
           <Head section="health" title="Health score" className="mb-2" />

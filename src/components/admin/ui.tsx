@@ -1,3 +1,4 @@
+import { NewPill } from "./NewPill";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -48,7 +49,7 @@ export function Stat({ label, value, note, href }: { label: string; value: React
 }
 
 /** Horizontal scroll on small screens instead of squashed columns. */
-export function Table({ head, children, empty }: { head: string[]; children: ReactNode; empty?: boolean }) {
+export function Table({ head, children, empty, emptyText = "Nothing here yet." }: { head: string[]; children: ReactNode; empty?: boolean; emptyText?: ReactNode }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-left text-sm">
@@ -57,8 +58,8 @@ export function Table({ head, children, empty }: { head: string[]; children: Rea
             {head.map((h) => <th key={h} className="whitespace-nowrap px-4 py-2.5 text-xs font-medium text-muted">{h}</th>)}
           </tr>
         </thead>
-        <tbody className="divide-y divide-rule">
-          {empty ? <tr><td colSpan={head.length} className="px-4 py-8 text-center text-sm text-muted">Nothing here yet.</td></tr> : children}
+        <tbody className="divide-y divide-rule [&>tr:has([aria-label=New])]:bg-emerald-50/60 dark:[&>tr:has([aria-label=New])]:bg-emerald-500/5 [&>tr:has([aria-label=New])>td:first-child]:font-semibold">
+          {empty ? <tr><td colSpan={head.length} className="px-4 py-8 text-center text-sm text-muted">{emptyText}</td></tr> : children}
         </tbody>
       </table>
     </div>
@@ -76,14 +77,16 @@ const qs = (base: Q, extra: Q) => {
 };
 
 /** Server-rendered filter chips: plain links, no client state. */
-export function Filters({ path, q, name, options }: { path: string; q: Q; name: string; options: Array<[string, string]> }) {
+export function Filters({ path, q, name, options, badges }: { path: string; q: Q; name: string; options: Array<[string, string]>; badges?: Record<string, number> }) {
   return (
     <div className="flex flex-wrap gap-1.5 text-sm">
       {options.map(([v, label]) => {
         const on = (q[name] ?? "") === v;
+        const fresh = (badges?.[v] ?? 0) > 0;
         return (
-          <Link key={`${name}:${v}`} href={`${path}${qs(q, { [name]: v || undefined, page: undefined })}`} aria-current={on ? "true" : undefined} className={`border px-3 py-1.5 ${on ? "border-accent bg-accent text-white" : "border-rule bg-surface text-muted hover:border-accent hover:text-ink"}`}>
+          <Link key={`${name}:${v}`} href={`${path}${qs(q, { [name]: v || undefined, page: undefined })}`} aria-current={on ? "true" : undefined} className={`inline-flex items-center justify-between gap-2 border px-3 py-1.5 ${on ? "border-accent bg-accent text-white" : "border-rule bg-surface text-muted hover:border-accent hover:text-ink"} ${fresh ? `font-semibold shadow-[inset_0_-2px_0_#059669] ${on ? "" : "!text-zinc-900 dark:!text-white"}` : ""}`}>
             {label}
+            <NewPill n={badges?.[v] ?? 0} />
           </Link>
         );
       })}
@@ -111,3 +114,5 @@ export function Badge({ children, tone = "muted" }: { children: ReactNode; tone?
 }
 
 export { qs };
+
+export { NewDot, NewPill } from "./NewPill";

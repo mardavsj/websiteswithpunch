@@ -2,22 +2,30 @@ import { formatDuration } from "@/lib/analytics";
 import type { AnalyticsPayload } from "@/components/analytics-types";
 import { Item, List, fmtTime } from "./parts";
 import { Card, Empty, Meter, Stats, type Tone } from "./ui";
+import { Cols } from "@/components/modal-ui";
+import type { ReactNode } from "react";
 import { IconAlert, IconHash } from "./icons";
 import { Dot } from "./panels-charts";
 
-type P = { data: AnalyticsPayload };
+type P = { data: AnalyticsPayload; extra?: ReactNode };
 
-export function IncidentsPanel({ data }: P) {
+export function IncidentsPanel({ data, extra }: P) {
   const x = data.extras;
   const list = data.incidents;
   return (
-    <>
+    <Cols
+      left={
+        <>
       <Stats
         items={[
           { label: "Incidents", value: x ? x.incidentCount : list.length, tone: list.length ? "bad" : undefined },
           { label: "Total downtime", value: x?.downtimeMs ? formatDuration(x.downtimeMs) : "None" },
         ]}
       />
+        </>
+      }
+      right={
+        <>
       <Card
         title="Incidents"
         icon={<IconAlert />}
@@ -47,7 +55,10 @@ export function IncidentsPanel({ data }: P) {
           <Empty title="No incidents" reason="No failed checks in this range." />
         )}
       </Card>
-    </>
+          {extra}
+        </>
+      }
+    />
   );
 }
 
@@ -62,13 +73,15 @@ const MEANING: Record<string, string> = {
 };
 const family = (code: string): Tone => (code[0] === "2" ? "ok" : code[0] === "3" ? "accent" : code[0] === "4" ? "warn" : "bad");
 
-export function CodesPanel({ data }: P) {
+export function CodesPanel({ data, extra }: P) {
   const total = data.totals.checks;
   const x = data.extras;
   const codes = Object.entries(data.statusCodes).sort((a, b) => b[1] - a[1]);
   const share = (n: number) => (total ? `${Math.round((n / total) * 1000) / 10}%` : "—");
   return (
-    <>
+    <Cols
+      left={
+        <>
       <Card title="HTTP status codes" icon={<IconHash />} note="The final response after following up to 5 redirects.">
         {codes.length ? (
           <ul className="divide-y divide-rule">
@@ -93,6 +106,10 @@ export function CodesPanel({ data }: P) {
           <Empty title="No HTTP responses" reason="No check got an HTTP response in this range." />
         )}
       </Card>
+        </>
+      }
+      right={
+        <>
       <Card title="No response" icon={<IconAlert />} meta={x ? `${x.noCode.toLocaleString("en-IN")} · ${share(x.noCode)}` : undefined}>
         {x && x.errors.length > 0 ? (
           <List>
@@ -104,6 +121,9 @@ export function CodesPanel({ data }: P) {
           <Empty title="None" reason="No check in this range went without an HTTP response." />
         )}
       </Card>
-    </>
+          {extra}
+        </>
+      }
+    />
   );
 }

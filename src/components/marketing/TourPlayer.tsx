@@ -81,7 +81,6 @@ export function TourPlayer() {
             <button
               type="button"
               onClick={() => play(ended ? 0 : undefined)}
-              aria-label={ended ? "Watch the tour again" : `Play the ${TOUR.seconds}-second product tour`}
               className="group absolute inset-0 z-[1] flex items-center justify-center focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
             >
               {!started ? (

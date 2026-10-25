@@ -58,7 +58,7 @@ export function AudienceSection() {
                     <span className="min-w-0 flex-1">
                       <span
                         className={`block font-display text-2xl font-medium tracking-tight transition-colors sm:text-3xl lg:text-4xl ${ease} ${
-                          on ? "text-ink" : "text-ink/35 group-hover/row:text-ink/70"
+                          on ? "text-ink" : "text-ink/60 group-hover/row:text-ink/80"
                         }`}
                       >
                         {p.title}

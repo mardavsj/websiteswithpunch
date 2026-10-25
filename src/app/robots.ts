@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site-config";
 
-const PRIVATE = ["/api/", "/dashboard", "/plan", "/profile", "/reset-password", "/verify-email"];
+const PRIVATE = ["/api/", "/admin", "/r/", "/dashboard", "/plan", "/profile", "/reset-password", "/verify-email"];
 
 /**
  * Marketing pages and free tools are crawlable; the app, API and auth flows are not.

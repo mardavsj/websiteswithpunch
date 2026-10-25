@@ -49,8 +49,8 @@ export function HeroSection() {
               SSL or domain lets you down.
             </h1>
             <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted lg:max-w-[36rem]">
-              We monitor your sites’ uptime, SSL certificate expiry and domain expiry, and show all
-              three on one dashboard.
+              Websites With Punch is website monitoring for your sites’ uptime, SSL certificate
+              expiry and domain expiry, with all three on one dashboard.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">

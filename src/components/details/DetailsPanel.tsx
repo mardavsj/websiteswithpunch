@@ -8,6 +8,7 @@ import { TimelinePanel, TrendPanel } from "./panels-charts";
 import { CodesPanel, IncidentsPanel } from "./panels-events";
 import { SslPanel } from "./panel-ssl";
 import { DomainPanel } from "./panel-domain";
+import { Improve } from "./Improve";
 import { IconAlert, IconCalendar, IconClock, IconGauge, IconGlobe, IconHash, IconList, IconPulse, IconShield } from "./icons";
 
 export const SECTION_TITLES: Record<DetailsSection, string> = {
@@ -66,26 +67,32 @@ export function DetailsPanel({ section, data, details, error, onRetry }: Props) 
     }
     return <DetailsSkeleton groups={section === "ssl" || section === "domain" ? 3 : 2} />;
   }
+  return (
+    <Body section={section} data={data} details={details} extra={<Improve section={section} data={data} details={details} />} />
+  );
+}
+
+function Body({ section, data, details, extra }: Omit<Props, "error" | "onRetry"> & { extra: ReactNode }) {
   switch (section) {
     case "health":
-      return <HealthPanel data={data} />;
+      return <HealthPanel data={data} extra={extra} />;
     case "uptime":
-      return <UptimePanel data={data} details={details!} />;
+      return <UptimePanel data={data} details={details!} extra={extra} />;
     case "latency":
-      return <LatencyPanel data={data} />;
+      return <LatencyPanel data={data} extra={extra} />;
     case "downtime":
-      return <DowntimePanel data={data} details={details!} />;
+      return <DowntimePanel data={data} details={details!} extra={extra} />;
     case "trend":
-      return <TrendPanel data={data} />;
+      return <TrendPanel data={data} extra={extra} />;
     case "timeline":
-      return <TimelinePanel data={data} />;
+      return <TimelinePanel data={data} extra={extra} />;
     case "ssl":
-      return <SslPanel data={data} details={details!} />;
+      return <SslPanel data={data} details={details!} extra={extra} />;
     case "domain":
-      return <DomainPanel data={data} details={details!} />;
+      return <DomainPanel data={data} details={details!} extra={extra} />;
     case "incidents":
-      return <IncidentsPanel data={data} />;
+      return <IncidentsPanel data={data} extra={extra} />;
     case "codes":
-      return <CodesPanel data={data} />;
+      return <CodesPanel data={data} extra={extra} />;
   }
 }

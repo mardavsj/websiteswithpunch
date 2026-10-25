@@ -50,7 +50,7 @@ export function PayoutActions({ id, cents, amount, method, address, upi, blocked
   const field = `w-full border bg-bg px-3 py-2 text-sm text-ink placeholder:text-muted/70 focus:outline-none ${error ? "border-danger" : "border-rule focus:border-accent"}`;
   return (
     <>
-      <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+      <div className="flex gap-2">
         <button type="button" disabled={blocked} onClick={() => open("paid")} className="flex-1 bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50">Mark paid…</button>
         <button type="button" onClick={() => open("reject")} className="border border-danger/40 px-4 py-2.5 text-sm font-medium text-danger hover:bg-danger/5">Reject…</button>
       </div>

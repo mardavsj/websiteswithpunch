@@ -1,7 +1,7 @@
 import { PLANS } from "@/lib/plans";
 import { faqs } from "./home-content";
 import { TOUR } from "./tour-content";
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site-config";
+import { SITE_ALT_NAMES, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site-config";
 
 /**
  * Structured data for the homepage: the organisation and the app. Monthly prices come from the
@@ -17,6 +17,7 @@ export function HomeJsonLd() {
         "@type": "Organization",
         "@id": `${SITE_URL}/#organization`,
         name: SITE_NAME,
+        alternateName: SITE_ALT_NAMES,
         url: SITE_URL,
         logo: `${SITE_URL}/icon-512.png`,
         parentOrganization: {
@@ -29,7 +30,9 @@ export function HomeJsonLd() {
         "@type": "WebSite",
         "@id": `${SITE_URL}/#website`,
         name: SITE_NAME,
+        alternateName: SITE_ALT_NAMES,
         url: SITE_URL,
+        inLanguage: "en",
         publisher: { "@id": `${SITE_URL}/#organization` },
       },
       {
@@ -45,6 +48,14 @@ export function HomeJsonLd() {
           name: p.name,
           price: String(p.price),
           priceCurrency: "USD",
+          priceSpecification: {
+            "@type": "UnitPriceSpecification",
+            price: String(p.price),
+            priceCurrency: "USD",
+            unitText: "MONTH",
+            billingDuration: "P1M",
+          },
+          url: `${SITE_URL}/pricing`,
           description: p.description,
         })),
       },

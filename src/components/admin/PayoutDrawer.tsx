@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AdminModal } from "./AdminModal";
 import { prisma } from "@/lib/prisma";
 import { fmtUsd, ratePercent } from "@/lib/referrals/config";
 import { breakdown, fmtInr } from "@/lib/referrals/breakdown";
@@ -34,19 +34,16 @@ export async function PayoutDrawer({ id, close }: { id: string; close: string })
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex justify-end">
-      <Link href={close} aria-label="Close details" className="absolute inset-0 bg-black/30" scroll={false} />
-      <aside role="dialog" aria-label="Payout details" className="relative h-full w-full max-w-lg overflow-y-auto border-l border-rule bg-surface p-5 shadow-xl">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="label-caps">Payout {p && <Badge tone={p.status === "paid" ? "ok" : p.status === "requested" ? "accent" : "muted"}>{p.status}</Badge>}</p>
-            <h2 className="mt-1 break-all font-display text-lg font-medium text-ink">{p?.user.email ?? "Not found"}</h2>
-          </div>
-          <Link href={close} scroll={false} className="border border-rule px-2.5 py-1 text-sm text-ink hover:border-accent">Close</Link>
-        </div>
-        {p && b && (
-          <>
-            <div className="mt-4 border border-rule px-4 py-3">
+    <AdminModal
+      close={close}
+      label="Payout details"
+      eyebrow="Payout"
+      title={p?.user.email ?? "Not found"}
+      subtitle={p ? `${method} · requested ${fmtDate(p.createdAt)}` : undefined}
+      chip={p && <Badge tone={p.status === "paid" ? "ok" : p.status === "requested" ? "accent" : "muted"}>{p.status}</Badge>}
+      left={p && b ? (
+        <>
+            <div className="border border-rule px-4 py-3">
               <p className="text-xs text-muted">{p.status === "paid" ? "Paid" : p.status === "rejected" ? "Was requested" : "Amount to send"}</p>
               <p className="font-display text-3xl font-medium tabular-nums text-ink" data-testid="payout-amount">{fmtUsd(p.amountCents)}</p>
               <p className="mt-0.5 text-xs text-muted">Requested {fmtDate(p.createdAt)}</p>
@@ -66,7 +63,11 @@ export async function PayoutDrawer({ id, close }: { id: string; close: string })
               {p.decidedAt && <div className="flex gap-3"><dt className="w-20 shrink-0 text-muted">Decided</dt><dd className="text-muted">{fmtDate(p.decidedAt)} by {p.decidedBy}</dd></div>}
             </dl>
 
-            <h3 className="label-caps mt-6">Breakdown</h3>
+        </>
+      ) : <p className="text-sm text-muted">This record was not found.</p>}
+      right={p && b ? (
+        <>
+            <h3 className="label-caps mt-6 lg:mt-0">Breakdown</h3>
             <ul className="mt-2 divide-y divide-rule border-y border-rule">
               {b.included.map((r) => line(r.id))}
               {b.removed.map((r) => line(r.id, "", true))}
@@ -85,10 +86,13 @@ export async function PayoutDrawer({ id, close }: { id: string; close: string })
                 Mismatch: the lines add up to {fmtUsd(b.total)} but the payout says {fmtUsd(p.amountCents)}. Don&apos;t pay until this is checked.
               </p>
             )}
-            {p.status === "requested" && <PayoutActions id={p.id} cents={p.amountCents} amount={fmtUsd(p.amountCents)} method={method} address={p.address} upi={p.method === "upi"} blocked={!b.ok || p.amountCents <= 0} />}
-          </>
-        )}
-      </aside>
-    </div>
+        </>
+      ) : undefined}
+      footer={p && b && p.status === "requested" && (
+        <div className="w-full sm:w-auto">
+          <PayoutActions id={p.id} cents={p.amountCents} amount={fmtUsd(p.amountCents)} method={method} address={p.address} upi={p.method === "upi"} blocked={!b.ok || p.amountCents <= 0} />
+        </div>
+      )}
+    />
   );
 }

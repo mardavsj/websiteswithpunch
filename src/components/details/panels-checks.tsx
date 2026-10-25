@@ -3,9 +3,11 @@ import type { AnalyticsPayload } from "@/components/analytics-types";
 import type { SiteDetails } from "./types";
 import { NA, Row, Rows, fmtTime, orNA } from "./parts";
 import { Card, Chip, Hero, Meter, Stats, type Tone } from "./ui";
+import { Cols } from "@/components/modal-ui";
+import type { ReactNode } from "react";
 import { IconAlert, IconCalendar, IconClock, IconPulse } from "./icons";
 
-type PD = { data: AnalyticsPayload; details: SiteDetails };
+type PD = { data: AnalyticsPayload; details: SiteDetails; extra?: ReactNode };
 
 const n = (v: number) => v.toLocaleString("en-IN");
 
@@ -16,12 +18,14 @@ export function statusChip(status: string | undefined) {
   return <Chip>Not checked yet</Chip>;
 }
 
-export function UptimePanel({ data, details }: PD) {
+export function UptimePanel({ data, details, extra }: PD) {
   const t = data.totals;
   const pct = data.uptimePercent;
   const tone: Tone = data.site?.status === "up" ? "ok" : data.site?.status ? "bad" : "neutral";
   return (
-    <>
+    <Cols
+      left={
+        <>
       <Hero
         label="Uptime in this range"
         value={pct == null ? "—" : pct}
@@ -39,6 +43,10 @@ export function UptimePanel({ data, details }: PD) {
           { label: "No response", value: n(t.error), tone: t.error ? "bad" : undefined },
         ]}
       />
+        </>
+      }
+      right={
+        <>
       <Card title="Uptime by window" icon={<IconPulse />}>
         <ul className="divide-y divide-rule">
           {details.uptimeWindows.map((w) => (
@@ -82,16 +90,21 @@ export function UptimePanel({ data, details }: PD) {
           ))}
         </ul>
       </Card>
-    </>
+          {extra}
+        </>
+      }
+    />
   );
 }
 
-export function DowntimePanel({ data, details }: PD) {
+export function DowntimePanel({ data, details, extra }: PD) {
   const inc = data.incidents[0];
   const x = data.extras;
   const ongoing = inc && !inc.endedAt;
   return (
-    <>
+    <Cols
+      left={
+        <>
       <Hero
         compact
         label="Last problem in this range"
@@ -105,6 +118,10 @@ export function DowntimePanel({ data, details }: PD) {
           { label: "Total downtime", value: x?.downtimeMs ? formatDuration(x.downtimeMs) : "None" },
         ]}
       />
+        </>
+      }
+      right={
+        <>
       {inc && (
         <Card title="Latest incident" icon={<IconAlert />} meta={ongoing ? "Ongoing" : formatDuration(inc.durationMs)}>
           <Rows>
@@ -132,6 +149,9 @@ export function DowntimePanel({ data, details }: PD) {
           <Row label="Last successful check">{orNA(details.lastUpAt && fmtTime(details.lastUpAt), "No successful check saved yet.")}</Row>
         </Rows>
       </Card>
-    </>
+          {extra}
+        </>
+      }
+    />
   );
 }
