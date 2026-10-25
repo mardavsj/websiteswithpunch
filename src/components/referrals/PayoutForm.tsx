@@ -10,7 +10,7 @@ const OPTIONS: Array<{ id: Method; label: string; hint: string; placeholder: str
   { id: "upi", label: "UPI (India)", hint: "Paid in INR at the day's exchange rate.", placeholder: "yourname@okhdfcbank" },
 ];
 
-/** Where payouts go. Saved server-side (validated, rate-limited, audited, and emailed on change). */
+/** Collapsed "Payout method" row; Edit opens the form inline. Where payouts go. Saved server-side (validated, rate-limited, audited, and emailed on change). */
 export function PayoutForm({ method, address }: { method: Method | null; address: string | null }) {
   const [saved, setSaved] = useState({ method, address });
   const [m, setM] = useState<Method>(method ?? "paypal");
@@ -18,6 +18,7 @@ export function PayoutForm({ method, address }: { method: Method | null; address
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
+  const [open, setOpen] = useState(false);
   const opt = OPTIONS.find((o) => o.id === m)!;
   const dirty = m !== saved.method || value.trim().toLowerCase() !== (saved.address ?? "");
 
@@ -39,6 +40,7 @@ export function PayoutForm({ method, address }: { method: Method | null; address
       setSaved({ method: data.method, address: data.address });
       setValue(data.address);
       setOk(true);
+      setOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't save your payout method.");
     } finally {
@@ -48,10 +50,26 @@ export function PayoutForm({ method, address }: { method: Method | null; address
 
   return (
     <section className="border border-rule bg-surface" id="payout">
-      <header className="border-b border-rule px-4 py-2.5">
-        <h3 className="label-caps !text-ink/80">Payout method</h3>
-      </header>
-      <form onSubmit={submit} className="px-4 py-4" noValidate>
+      <div className="flex items-center gap-3 px-4 py-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-ink">Payout method</p>
+          <p className="truncate text-xs text-muted">
+            {saved.address ? `${saved.method === "upi" ? "UPI" : "PayPal"} · ${saved.address}` : "Not set. Add PayPal or UPI to withdraw."}
+          </p>
+          {ok && !open && <p className="text-xs text-emerald-600 dark:text-emerald-400">Saved. Future payouts go here.</p>}
+        </div>
+        <button
+          type="button"
+          onClick={() => { setOpen((o) => !o); setError(null); setOk(false); }}
+          aria-expanded={open}
+          aria-controls="payout-form"
+          className="shrink-0 border border-rule px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-accent hover:text-accent"
+        >
+          {open ? "Cancel" : saved.address ? "Edit" : "Add"}
+        </button>
+      </div>
+      {open && (
+      <form id="payout-form" onSubmit={submit} className="border-t border-rule px-4 py-4" noValidate>
         <div role="radiogroup" aria-label="Payout method" className="grid grid-cols-2 gap-px border border-rule bg-rule">
           {OPTIONS.map((o) => (
             <button
@@ -85,7 +103,6 @@ export function PayoutForm({ method, address }: { method: Method | null; address
         />
         <p id="payout-hint" className="mt-1.5 text-xs text-muted">{opt.hint} Double-check it: we send to exactly this address.</p>
         {error && <p className="mt-1.5 text-xs text-danger" role="alert">{error}</p>}
-        {ok && !dirty && <p className="mt-1.5 text-xs text-emerald-600 dark:text-emerald-400">Saved. Future payouts go here.</p>}
         <button
           type="submit"
           disabled={busy || !dirty || !value.trim()}
@@ -94,6 +111,7 @@ export function PayoutForm({ method, address }: { method: Method | null; address
           {busy ? "Saving…" : saved.address ? "Update payout method" : "Save payout method"}
         </button>
       </form>
+      )}
     </section>
   );
 }

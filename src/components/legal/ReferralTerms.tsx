@@ -18,8 +18,8 @@ export function ReferralTerms() {
           accounts earn nothing.
         </li>
         <li>
-          Each commission is held for {REFERRAL.holdDays} days to cover refunds and chargebacks, then
-          becomes available. If the payment is refunded or disputed, its commission is reversed,
+          Each commission is available as soon as the payment goes through. If the payment is
+          refunded (in rare exceptions) or disputed, its commission is reversed,
           including after it has been paid out, in which case it is deducted from your next payout.
         </li>
         <li>

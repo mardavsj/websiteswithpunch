@@ -4,7 +4,7 @@ import { isVerified } from "@/lib/email-verify";
 import { sendEmail } from "@/lib/email/send";
 import type { BuiltEmail } from "@/lib/email/templates";
 import {
-  commissionAvailableEmail, commissionEarnedEmail, payoutMethodChangedEmail, payoutPaidEmail, payoutRejectedEmail,
+  commissionEarnedEmail, payoutMethodChangedEmail, payoutPaidEmail, payoutRejectedEmail,
 } from "@/lib/email/referral";
 
 async function send(userId: string, mail: BuiltEmail, tag: string) {
@@ -18,10 +18,8 @@ async function send(userId: string, mail: BuiltEmail, tag: string) {
   }
 }
 
-export const notifyEarned = (userId: string, cents: number, availableAt: Date) =>
-  send(userId, commissionEarnedEmail(cents, availableAt), "ref:earned");
-export const notifyAvailable = (userId: string, cents: number) =>
-  send(userId, commissionAvailableEmail(cents), "ref:available");
+export const notifyEarned = (userId: string, cents: number) =>
+  send(userId, commissionEarnedEmail(cents), "ref:earned");
 export const notifyPaid = (userId: string, cents: number, method: string, reference: string) =>
   send(userId, payoutPaidEmail(cents, method, reference), "ref:paid");
 export const notifyRejected = (userId: string, cents: number, reason: string) =>

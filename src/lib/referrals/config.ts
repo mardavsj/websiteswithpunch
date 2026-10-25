@@ -2,7 +2,6 @@
 export const REFERRAL = {
   /** 20% in basis points. */
   rateBps: 2000,
-  holdDays: 30,
   /** $20.00 in cents. */
   minPayoutCents: 2000,
   attributionDays: 30,

@@ -61,12 +61,6 @@ export function Navbar() {
           ) : (
             <>
               <Link
-                href="/pricing"
-                className="hidden rounded-none px-3 py-1.5 text-ink hover:bg-accent-soft md:inline-flex"
-              >
-                Pricing
-              </Link>
-              <Link
                 href="/login"
                 className="hidden rounded-none px-3 py-1.5 text-ink hover:bg-accent-soft md:inline-flex"
               >

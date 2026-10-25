@@ -5,26 +5,18 @@ import { useRouter } from "next/navigation";
 import type { Balances } from "@/lib/referrals/ledger";
 import { REFERRAL, fmtUsd } from "@/lib/referrals/config";
 
-const TILES: Array<{ key: keyof Balances; label: string; sub: string; dot: string }> = [
-  { key: "pending", label: "On hold", sub: `${REFERRAL.holdDays}-day refund window`, dot: "bg-amber-500" },
-  { key: "available", label: "Available", sub: "Ready to withdraw", dot: "bg-emerald-500" },
-  { key: "requested", label: "Requested", sub: "Payout in review", dot: "bg-accent" },
-  { key: "paid", label: "Paid out", sub: "Sent to you", dot: "bg-muted/60" },
-];
-
-/** Balances by status + the withdraw action. The server re-checks every rule; this is just the UI. */
+/** Three numbers + inline Withdraw. The server re-checks every rule; this is just the UI. */
 export function Earnings({ balances: b, hasMethod, hasOpenRequest }: { balances: Balances; hasMethod: boolean; hasOpenRequest: boolean }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
-  const min = REFERRAL.minPayoutCents;
-  const short = Math.max(0, min - b.withdrawable);
+  const short = Math.max(0, REFERRAL.minPayoutCents - b.withdrawable);
 
-  let blocker: string | null = null;
-  if (hasOpenRequest || done) blocker = "Your payout request is in review. We usually pay within 5 business days.";
-  else if (!hasMethod) blocker = "Add a PayPal email or UPI ID below to withdraw.";
-  else if (short > 0) blocker = `${fmtUsd(short)} more to reach the ${fmtUsd(min)} minimum.`;
+  let hint: string | null = null;
+  if (hasOpenRequest || done) hint = `${fmtUsd(b.requested)} payout in review`;
+  else if (short > 0) hint = `${fmtUsd(short)} to go`;
+  else if (!hasMethod) hint = "Add a payout method first";
 
   async function withdraw() {
     setBusy(true);
@@ -42,44 +34,41 @@ export function Earnings({ balances: b, hasMethod, hasOpenRequest }: { balances:
     }
   }
 
+  const stats = [
+    { label: "Available", value: b.withdrawable },
+    { label: "In review", value: b.requested },
+    { label: "Paid", value: b.paid },
+  ];
+
   return (
     <section className="border border-rule bg-surface">
-      <header className="flex items-center justify-between gap-3 border-b border-rule px-4 py-2.5">
-        <h3 className="label-caps !text-ink/80">Earnings</h3>
-        <span className="text-xs text-muted">USD</span>
-      </header>
-      <div className="grid grid-cols-2 gap-px bg-rule sm:grid-cols-4">
-        {TILES.map((t) => (
-          <div key={t.key} className="min-w-0 bg-surface px-4 py-3">
-            <p className="flex items-center gap-1.5 label-caps">
-              <span className={`h-1.5 w-1.5 rounded-full ${t.dot}`} aria-hidden />
-              {t.label}
-            </p>
-            <p className="mt-1 font-display text-xl font-medium tabular-nums text-ink">{fmtUsd(b[t.key])}</p>
-            <p className="mt-0.5 text-xs text-muted">{t.sub}</p>
-          </div>
-        ))}
-      </div>
-      <div className="flex flex-col gap-3 border-t border-rule px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-sm text-ink">
-            You can withdraw <span className="font-medium tabular-nums">{fmtUsd(b.withdrawable)}</span>
-          </p>
-          {b.owed > 0 && (
-            <p className="mt-0.5 text-xs text-muted">{fmtUsd(b.owed)} from refunded payments is deducted from your next payout.</p>
-          )}
-          {blocker && <p className="mt-0.5 text-xs text-muted">{blocker}</p>}
-          {error && <p className="mt-1 text-xs text-danger" role="alert">{error}</p>}
+      <div className="flex flex-col sm:flex-row sm:items-center">
+        <dl className="grid flex-1 grid-cols-3 divide-x divide-rule">
+          {stats.map((s) => (
+            <div key={s.label} className="min-w-0 px-4 py-3">
+              <dt className="text-xs text-muted">{s.label}</dt>
+              <dd className="mt-0.5 truncate font-display text-lg font-medium tabular-nums text-ink sm:text-xl">{fmtUsd(s.value)}</dd>
+            </div>
+          ))}
+        </dl>
+        <div className="flex items-center justify-between gap-3 border-t border-rule px-4 py-3 sm:flex-col sm:items-end sm:border-l sm:border-t-0">
+          <button
+            type="button"
+            onClick={withdraw}
+            disabled={Boolean(hint) || busy}
+            className="order-2 shrink-0 bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 sm:order-1"
+          >
+            {busy ? "Requesting…" : "Withdraw"}
+          </button>
+          {hint && <p className="order-1 text-xs text-muted sm:order-2">{hint}</p>}
         </div>
-        <button
-          type="button"
-          onClick={withdraw}
-          disabled={Boolean(blocker) || busy}
-          className="shrink-0 bg-accent px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {busy ? "Requesting…" : `Withdraw ${fmtUsd(b.withdrawable)}`}
-        </button>
       </div>
+      {(error || b.owed > 0) && (
+        <div className="border-t border-rule px-4 py-2 text-xs">
+          {error && <p className="text-danger" role="alert">{error}</p>}
+          {b.owed > 0 && <p className="text-muted">{fmtUsd(b.owed)} from refunded payments comes off your next payout.</p>}
+        </div>
+      )}
     </section>
   );
 }

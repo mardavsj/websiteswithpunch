@@ -21,7 +21,8 @@ export function ProfileSkeleton() {
         <p className="mt-1 text-sm">
           <Sk>Your account details and email alerts.</Sk>
         </p>
-        <div className="mt-6 max-w-md space-y-4 rounded-none border border-rule bg-surface p-6">
+        <div className="mt-6 grid max-w-4xl gap-6 md:grid-cols-2">
+        <div className="h-full min-w-0 space-y-4 rounded-none border border-rule bg-surface p-6">
           <div>
             <p className="block text-sm font-medium">
               <Sk>Email</Sk>
@@ -54,7 +55,7 @@ export function ProfileSkeleton() {
           </div>
           <SkBtn className="px-4 py-2 text-sm font-medium">Save</SkBtn>
         </div>
-        <div className="mt-6 max-w-md border border-rule bg-surface">
+        <div className="h-full min-w-0 border border-rule bg-surface">
           <div className="border-b border-rule px-6 py-4">
             <p className="label-caps"><Sk>Email alerts</Sk></p>
             <p className="mt-1 text-sm"><Sk>Sent after our daily check or a Recheck. Not real-time.</Sk></p>
@@ -68,6 +69,7 @@ export function ProfileSkeleton() {
               <span className="sk mt-0.5 block h-6 w-11 shrink-0" />
             </div>
           ))}
+        </div>
         </div>
       </div>
     </div>

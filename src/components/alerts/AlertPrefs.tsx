@@ -36,7 +36,7 @@ export function AlertPrefs({ initial, email }: { initial: Prefs; email: string }
   }
 
   return (
-    <section id="alerts" className="mt-6 max-w-md scroll-mt-24 border border-rule bg-surface">
+    <section id="alerts" className="h-full min-w-0 scroll-mt-24 border border-rule bg-surface">
       <div className="border-b border-rule px-6 py-4">
         <p className="label-caps text-muted">Email alerts</p>
         <p className="mt-1 text-sm text-muted">

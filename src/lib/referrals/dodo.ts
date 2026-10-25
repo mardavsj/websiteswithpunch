@@ -61,6 +61,6 @@ export async function handleReferralEvent(type: string, data: { payment_id?: str
   const res = await ledger.recordCommission({
     paymentId, referrerId: payer.referredById, referredUserId: payer.id, subscriptionId: p.subscription_id, ...basis,
   });
-  if (res.created) await notifyEarned(res.row.referrerId, res.row.amountCents, res.row.availableAt);
+  if (res.created) await notifyEarned(res.row.referrerId, res.row.amountCents);
   return res.created ? "recorded" : res.reason;
 }

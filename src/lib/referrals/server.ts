@@ -2,7 +2,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { REFERRAL } from "./config";
 import { cleanCode, newReferralCode, selfReferralReason } from "./attribution";
-import { balances, releaseDue } from "./ledger";
+import { balances } from "./ledger";
 
 export async function audit(action: string, o: { actorId?: string | null; targetId?: string | null; meta?: Prisma.InputJsonValue; ip?: string | null }) {
   await prisma.auditLog
@@ -54,7 +54,6 @@ export async function attributeSignup(user: { id: string; email: string }, rawCo
 const SUMMARY_ROWS = { id: true, status: true, amountCents: true, baseCents: true, currency: true, clawback: true, clawbackPayoutId: true, availableAt: true, createdAt: true, reversedReason: true } as const;
 
 export async function referralSummary(userId: string) {
-  await releaseDue(new Date()).catch(() => undefined); // lazy release in case the cron hasn't run yet
   const code = await ensureReferralCode(userId);
   const [user, rows, signups, paying, payouts, open] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { referralClicks: true, payoutMethod: true, payoutAddress: true } }),
@@ -83,15 +82,15 @@ export async function requestPayout(userId: string) {
         throw new PayoutError("You already have a payout request in review.");
       }
       const rows = await tx.commission.findMany({
-        where: { referrerId: userId, currency: REFERRAL.currency, OR: [{ status: "available" }, { status: "reversed", clawback: true, clawbackPayoutId: null }] },
+        where: { referrerId: userId, currency: REFERRAL.currency, OR: [{ status: { in: ["available", "pending"] } }, { status: "reversed", clawback: true, clawbackPayoutId: null }] },
         select: { id: true, status: true, amountCents: true },
       });
-      const avail = rows.filter((r) => r.status === "available");
+      const avail = rows.filter((r) => r.status === "available" || r.status === "pending");
       const owed = rows.filter((r) => r.status === "reversed");
       const net = avail.reduce((s, r) => s + r.amountCents, 0) - owed.reduce((s, r) => s + r.amountCents, 0);
       if (net < REFERRAL.minPayoutCents) throw new PayoutError("Your available balance is below the $20 minimum.");
       const payout = await tx.payout.create({ data: { userId, amountCents: net, method: u.payoutMethod, address: u.payoutAddress } });
-      const moved = await tx.commission.updateMany({ where: { id: { in: avail.map((r) => r.id) }, status: "available" }, data: { status: "requested", payoutId: payout.id } });
+      const moved = await tx.commission.updateMany({ where: { id: { in: avail.map((r) => r.id) }, status: { in: ["available", "pending"] } }, data: { status: "requested", payoutId: payout.id } });
       if (moved.count !== avail.length) throw new PayoutError("Your balance changed. Please try again.");
       if (owed.length) await tx.commission.updateMany({ where: { id: { in: owed.map((r) => r.id) } }, data: { clawbackPayoutId: payout.id } });
       return payout;

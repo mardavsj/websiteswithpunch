@@ -6,7 +6,6 @@ import { infoFields } from "@/lib/site-info";
 import { pruneRateLimits } from "@/lib/rate-limit";
 import { pruneUnverified } from "@/lib/email-verify";
 import { evaluateAlerts } from "@/lib/alerts";
-import { releaseHeldCommissions } from "@/lib/referrals/ledger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -124,9 +123,8 @@ export async function GET(req: Request) {
 
   // Housekeeping: old check history, expired rate-limit rows, old webhook ids, and accounts that
   // never verified their email within 48h (only if they have no sites and no Dodo customer).
-  const cleanup = { commissionsReleased: 0, checks: 0, rateLimits: 0, webhookEvents: 0, unverifiedUsers: 0, codes: 0 };
+  const cleanup = { checks: 0, rateLimits: 0, webhookEvents: 0, unverifiedUsers: 0, codes: 0 };
   try {
-    cleanup.commissionsReleased = await releaseHeldCommissions();
     const cutoff = new Date(Date.now() - RETENTION_DAYS * DAY_MS);
     cleanup.checks = (await prisma.checkResult.deleteMany({ where: { checkedAt: { lt: cutoff } } })).count;
     cleanup.rateLimits = await pruneRateLimits();

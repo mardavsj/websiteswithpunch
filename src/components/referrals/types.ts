@@ -37,5 +37,6 @@ export type ReferralData = {
   address: string | null;
 };
 
+/** Fixed locale + zone so server and browser always print the same string. */
 export const fmtDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });

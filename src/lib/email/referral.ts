@@ -7,7 +7,6 @@ import { REFERRAL, fmtUsd } from "@/lib/referrals/config";
 
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const URL_ = `${SITE_URL}/referrals`;
-const fmtDate = (d: Date) => d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
 const REASON = "You're receiving this because you take part in the Websites With Punch referral program.";
 
 function amountBlock(tone: keyof typeof TONE | "blue", label: string, amount: string) {
@@ -31,24 +30,14 @@ function build(o: { subject: string; heading: string; block: string; intro: stri
   };
 }
 
-export function commissionEarnedEmail(cents: number, availableAt: Date): BuiltEmail {
+export function commissionEarnedEmail(cents: number): BuiltEmail {
   return build({
     subject: `You earned ${fmtUsd(cents)} in referral commission`,
     heading: "New referral commission",
-    block: amountBlock("blue", "Pending commission", fmtUsd(cents)),
-    intro: [`Someone you referred just paid for Websites With Punch, so you earned ${fmtUsd(cents)}.`],
-    notes: [`It's on hold until ${fmtDate(availableAt)} (our ${REFERRAL.holdDays}-day refund window), then becomes available to withdraw. If the payment is refunded or disputed, it's reversed.`],
-  });
-}
-
-export function commissionAvailableEmail(cents: number): BuiltEmail {
-  return build({
-    subject: `${fmtUsd(cents)} in referral earnings is now available`,
-    heading: "Earnings now available",
-    block: amountBlock("green", "Now available", fmtUsd(cents)),
-    intro: [`${fmtUsd(cents)} finished its ${REFERRAL.holdDays}-day hold and moved to your available balance.`],
-    notes: [`You can request a payout once your available balance reaches ${fmtUsd(REFERRAL.minPayoutCents)}.`],
-    button: "Withdraw earnings",
+    block: amountBlock("green", "Available now", fmtUsd(cents)),
+    intro: [`Someone you referred just paid for Websites With Punch, so you earned ${fmtUsd(cents)}. It's in your available balance now.`],
+    notes: [`You can request a payout once your available balance reaches ${fmtUsd(REFERRAL.minPayoutCents)}. If the payment is ever refunded or disputed, the commission is reversed.`],
+    button: "Open referrals",
   });
 }
 

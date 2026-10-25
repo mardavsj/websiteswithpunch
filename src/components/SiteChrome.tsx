@@ -6,9 +6,9 @@ import { useSession } from "next-auth/react";
 /** Auth pages fill the viewport under the navbar and have no footer. */
 export const AUTH_ROUTES = ["/login", "/signup", "/forgot-password", "/reset-password", "/verify-email"];
 /** Logged-in app pages get the slim app footer instead of the big marketing footer. */
-export const APP_ROUTES = ["/dashboard", "/plan", "/profile", "/referrals", "/admin"];
+export const APP_ROUTES = ["/dashboard", "/plan", "/profile", "/admin"];
 /** Public pages that also feel in-app (slim footer) when someone is signed in. */
-export const SHARED_ROUTES = ["/terms", "/privacy", "/refund-policy", "/cookie-policy"];
+export const SHARED_ROUTES = ["/referrals", "/terms", "/privacy", "/refund-policy", "/cookie-policy"];
 /**
  * Pages whose content is centred between the navbar and the footer: <main> becomes a flex column
  * that fills that space, and the page's flex-1 box centres itself inside it.
@@ -37,7 +37,7 @@ const CENTRED_MAIN = "flex flex-1 flex-col";
 
 /**
  * Picks the footer: none on auth pages; slim on app pages; the big marketing footer on public
- * pages. Terms/privacy depend on the session, which the client resolves after load (the pages
+ * pages. Referrals/terms/privacy depend on the session, which the client resolves after load (the pages
  * stay static), so they render no footer until it's known: no wrong footer ever shows.
  * Without JavaScript the session never resolves, so <noscript> keeps the public footer there.
  */

@@ -2,7 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 /** Signed-in only (the layouts check again on the server). */
-const APP = /^\/(dashboard|plan|profile|referrals|admin)(\/|$)/;
+const APP = /^\/(dashboard|plan|profile|admin)(\/|$)/;
+/** Public for signed-out visitors (program page); signed-in but unverified still go to /verify-email. */
+const PUBLIC_APP = /^\/referrals(\/|$)/;
 const VERIFY = "/verify-email";
 /** Same as lib/referrals (kept inline: middleware runs on the edge). */
 const REF_COOKIE = "wwp_ref";
@@ -59,6 +61,7 @@ async function route(req: NextRequest) {
     }
     if (unverified) return NextResponse.redirect(new URL(VERIFY, req.url));
   }
+  if (PUBLIC_APP.test(pathname) && unverified) return NextResponse.redirect(new URL(VERIFY, req.url));
   if (pathname === "/" && token) {
     return NextResponse.redirect(new URL(unverified ? VERIFY : "/dashboard", req.url));
   }

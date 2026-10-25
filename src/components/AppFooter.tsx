@@ -1,11 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 
-/** Logged-in app pages only (see SiteChrome): the original slim footer, with app links. */
+/** Logged-in app pages only (see SiteChrome): the slim footer: support and legal links only (app pages live in the navbar menu). */
 const links = [
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Your plan", href: "/plan" },
-  { label: "Referrals", href: "/referrals" },
   { label: "Contact", href: "/contact?topic=general" },
   { label: "Terms", href: "/terms" },
   { label: "Privacy", href: "/privacy" },

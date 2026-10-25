@@ -18,6 +18,7 @@ const columns: { title: string; links: FooterLink[] }[] = [
       { label: "Domain expiry monitoring", href: "/domain-expiry-monitoring" },
       { label: "How it works", href: "/#how-it-works" },
       { label: "Pricing", href: "/pricing" },
+      { label: "Referral program", href: "/referrals" },
     ],
   },
   {

@@ -1,14 +1,13 @@
-/** Run with `npm test`. Referral commission maths, idempotent ledger, reversal, hold release. */
+/** Run with `npm test`. Referral commission maths, idempotent ledger, reversal, no hold (available immediately). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  balances, commissionAmount, commissionBase, recordCommission, reinstateCommission, releaseDue, reverseCommission, type LedgerDb,
+  balances, commissionAmount, commissionBase, recordCommission, reinstateCommission, reverseCommission, type LedgerDb,
 } from "../src/lib/referrals/ledger";
 import { paymentBasis } from "../src/lib/referrals/dodo";
 import { cleanCode, maskAddress, newReferralCode, normalizeEmail, selfReferralReason, validatePayout } from "../src/lib/referrals/attribution";
 
 type Row = Record<string, any>;
-const DAY = 86_400_000;
 
 /** Tiny in-memory stand-in for the two Prisma models the ledger uses. */
 function fakeDb() {
@@ -72,19 +71,15 @@ test("one commission per payment id (webhook replay is a no-op)", async () => {
   assert.equal(b.created, false);
   assert.equal(commissions.length, 1);
   assert.equal(commissions[0].amountCents, 240);
-  assert.equal(commissions[0].status, "pending");
-  assert.equal(commissions[0].availableAt.getTime(), now.getTime() + 30 * DAY);
+  assert.equal(commissions[0].status, "available");
+  assert.equal(commissions[0].availableAt.getTime(), now.getTime());
 });
 
-test("hold releases after 30 days, not before", async () => {
+test("new commission is withdrawable right away", async () => {
   const { db, commissions } = fakeDb();
-  const now = new Date("2026-10-09T00:00:00Z");
-  await recordCommission(pay, now, db);
-  assert.equal((await releaseDue(new Date(now.getTime() + 29 * DAY), db)).length, 0);
-  assert.equal(commissions[0].status, "pending");
-  assert.equal((await releaseDue(new Date(now.getTime() + 30 * DAY), db)).length, 1);
-  assert.equal(commissions[0].status, "available");
-  assert.equal((await releaseDue(new Date(now.getTime() + 31 * DAY), db)).length, 0);
+  await recordCommission({ ...pay, baseCents: 10_000 }, new Date(), db);
+  const b = balances(commissions.map((c) => ({ ...c, clawbackPayoutId: null })) as never);
+  assert.equal(b.withdrawable, 2000);
 });
 
 test("refund reverses once; refund after payout becomes a clawback", async () => {
@@ -117,17 +112,18 @@ test("won dispute reinstates; refunds stay reversed", async () => {
   const now = new Date();
   await recordCommission(pay, now, db);
   await reverseCommission("pay_1", "dispute", now, db);
-  assert.equal(await reinstateCommission("pay_1", now, db), "reinstated");
-  assert.equal(commissions[0].status, "pending");
+  assert.equal(await reinstateCommission("pay_1", db), "reinstated");
+  assert.equal(commissions[0].status, "available");
   await reverseCommission("pay_1", "refund", now, db);
-  assert.equal(await reinstateCommission("pay_1", now, db), "noop");
+  assert.equal(await reinstateCommission("pay_1", db), "noop");
   assert.equal(commissions[0].status, "reversed");
 });
 
 test("balances: withdrawable is available minus owed clawbacks", () => {
   const r = (status: string, amountCents: number, extra: Row = {}) => ({ status, amountCents, currency: "USD", clawback: false, clawbackPayoutId: null, ...extra });
   const b = balances([r("pending", 100), r("available", 3000), r("paid", 500), r("reversed", 400, { clawback: true }), r("available", 999, { currency: "EUR" })]);
-  assert.deepEqual([b.pending, b.available, b.paid, b.owed, b.withdrawable], [100, 3000, 500, 400, 2600]);
+  // legacy "pending" (old hold) rows count as available
+  assert.deepEqual([b.pending, b.available, b.paid, b.owed, b.withdrawable], [0, 3100, 500, 400, 2700]);
 });
 
 test("self-referral and attribution checks", () => {

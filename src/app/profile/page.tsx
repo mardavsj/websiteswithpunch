@@ -21,11 +21,14 @@ export default async function ProfilePage() {
       <div className="w-full">
         <h1 className="font-display text-2xl font-medium text-ink">Profile</h1>
         <p className="mt-1 text-sm text-muted">Your account details and email alerts.</p>
-        <ProfileForm initialName={user.name || ""} email={user.email} />
-        <AlertPrefs
-          email={user.email}
-          initial={{ alertDown: user.alertDown, alertSsl: user.alertSsl, alertDomain: user.alertDomain }}
-        />
+        {/* Profile card left, alerts right on desktop; stacked on mobile. Equal heights via stretch. */}
+        <div className="mt-6 grid max-w-4xl gap-6 md:grid-cols-2">
+          <ProfileForm initialName={user.name || ""} email={user.email} />
+          <AlertPrefs
+            email={user.email}
+            initial={{ alertDown: user.alertDown, alertSsl: user.alertSsl, alertDomain: user.alertDomain }}
+          />
+        </div>
       </div>
     </div>
   );
