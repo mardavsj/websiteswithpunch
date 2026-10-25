@@ -3,7 +3,7 @@ import { C, escapeHtml, renderEmail, renderText } from "./layout";
 import type { BuiltEmail } from "./templates";
 import { TONE } from "./alerts";
 import { SITE_URL } from "@/lib/site-config";
-import { REFERRAL, fmtUsd } from "@/lib/referrals/config";
+import { REFERRAL, fmtUsd, ratePercent, SCOPE } from "@/lib/referrals/config";
 
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const URL_ = `${SITE_URL}/referrals`;
@@ -18,15 +18,17 @@ function amountBlock(tone: keyof typeof TONE | "blue", label: string, amount: st
 </td></tr></table>`;
 }
 
-function build(o: { subject: string; heading: string; block: string; intro: string[]; notes: string[]; button?: string }): BuiltEmail {
+function build(o: { subject: string; heading: string; block: string; intro: string[]; notes: string[]; button?: string; url?: string; reason?: string }): BuiltEmail {
+  const url = o.url || URL_;
+  const reason = o.reason || REASON;
   return {
     subject: o.subject,
     html: renderEmail({
       title: o.subject, preheader: o.intro[0], heading: o.heading, top: o.block,
-      intro: o.intro.map(escapeHtml), button: { label: o.button || "Open referrals", url: URL_ },
-      notes: o.notes.map(escapeHtml), reason: REASON,
+      intro: o.intro.map(escapeHtml), button: { label: o.button || "Open referrals", url },
+      notes: o.notes.map(escapeHtml), reason,
     }),
-    text: renderText([o.heading, ...o.intro, `Open referrals: ${URL_}`, ...o.notes, REASON]),
+    text: renderText([o.heading, ...o.intro, `${o.button || "Open referrals"}: ${url}`, ...o.notes, reason]),
   };
 }
 
@@ -35,7 +37,7 @@ export function commissionEarnedEmail(cents: number): BuiltEmail {
     subject: `You earned ${fmtUsd(cents)} in referral commission`,
     heading: "New referral commission",
     block: amountBlock("green", "Available now", fmtUsd(cents)),
-    intro: [`Someone you referred just paid for Websites With Punch, so you earned ${fmtUsd(cents)}. It's in your available balance now.`],
+    intro: [`Someone you referred just paid for a Websites With Punch plan, so you earned ${fmtUsd(cents)} (${ratePercent}% ${SCOPE}). It's in your available balance now.`],
     notes: [`You can request a payout once your available balance reaches ${fmtUsd(REFERRAL.minPayoutCents)}. If the payment is ever refunded or disputed, the commission is reversed.`],
     button: "Open referrals",
   });
@@ -68,5 +70,32 @@ export function payoutMethodChangedEmail(method: string, masked: string): BuiltE
     block: amountBlock("amber", "Security notice", method === "upi" ? "UPI" : "PayPal"),
     intro: [`Payouts will now go to ${masked}.`],
     notes: ["Didn't make this change? Change your password now and contact us right away."],
+  });
+}
+
+const ADMIN_REASON = "You're receiving this because your address is in ADMIN_EMAILS for Websites With Punch.";
+type AdminPayout = { id: string; email: string; amountCents: number; method: string; address: string };
+
+/** To every admin: a referral payout was requested. */
+export function adminPayoutRequestedEmail(p: AdminPayout): BuiltEmail {
+  return build({
+    subject: `Payout request: ${fmtUsd(p.amountCents)} from ${p.email}`,
+    heading: "New payout request",
+    block: amountBlock("blue", "To pay", fmtUsd(p.amountCents)),
+    intro: [`${p.email} asked for their referral balance: ${fmtUsd(p.amountCents)}.`, `Method: ${p.method === "upi" ? "UPI" : "PayPal"} · ${p.address}`],
+    notes: ["Open the request to see the commission breakdown, send the money, then mark it paid with the transaction reference."],
+    button: "Open payout", url: `${SITE_URL}/admin/payouts?p=${p.id}`, reason: ADMIN_REASON,
+  });
+}
+
+/** To every admin: a refund or dispute changed an open request's amount. */
+export function adminPayoutChangedEmail(p: AdminPayout & { wasCents: number }): BuiltEmail {
+  return build({
+    subject: `Payout amount changed: ${fmtUsd(p.wasCents)} -> ${fmtUsd(p.amountCents)} (${p.email})`,
+    heading: "Open payout amount changed",
+    block: amountBlock("amber", `Was ${fmtUsd(p.wasCents)}, now`, fmtUsd(p.amountCents)),
+    intro: [`A refund or dispute on a commission in ${p.email}'s open request changed the amount to pay.`],
+    notes: ["Pay the new amount shown in the admin panel, not the one in the earlier email."],
+    button: "Open payout", url: `${SITE_URL}/admin/payouts?p=${p.id}`, reason: ADMIN_REASON,
   });
 }

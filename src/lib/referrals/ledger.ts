@@ -17,6 +17,20 @@ async function getDb(db?: LedgerDb): Promise<LedgerDb> {
   return defaultDb;
 }
 
+/**
+ * Real database: run the change in a transaction that first locks the payout the commission sits in,
+ * so an admin marking it paid at the same moment either sees the new amount or blocks this change
+ * until the payment is recorded. Tests pass an in-memory db and skip the lock.
+ */
+async function locked<T>(paymentId: string, db: LedgerDb | undefined, fn: (d: LedgerDb) => Promise<T>): Promise<T> {
+  if (db) return fn(db);
+  const { prisma } = await import("@/lib/prisma");
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT p.id FROM "Payout" p JOIN "Commission" c ON c."payoutId" = p.id WHERE c."paymentId" = ${paymentId} FOR UPDATE OF p`;
+    return fn(tx);
+  });
+}
+
 /** Commission basis: what the customer paid minus tax (Dodo reports tax separately when charged). */
 export function commissionBase(p: { total_amount: number; tax?: number | null }): number {
   return Math.max(0, Math.round(p.total_amount) - Math.max(0, Math.round(p.tax ?? 0)));
@@ -49,7 +63,10 @@ export async function recordCommission(c: NewCommission, now = new Date(), db?: 
 
 /** Refund or dispute: reverse the payment's commission (no-op if none or already reversed). */
 export async function reverseCommission(paymentId: string, reason: "refund" | "dispute", now = new Date(), db?: LedgerDb) {
-  const d = await getDb(db);
+  return locked(paymentId, db, (d) => reverseIn(d, paymentId, reason, now));
+}
+
+async function reverseIn(d: LedgerDb, paymentId: string, reason: "refund" | "dispute", now: Date) {
   const c = await d.commission.findUnique({ where: { paymentId } });
   if (!c || c.status === "reversed") return "noop" as const;
   const res = await d.commission.updateMany({
@@ -58,14 +75,17 @@ export async function reverseCommission(paymentId: string, reason: "refund" | "d
   });
   if (res.count === 0) return "raced" as const;
   if (c.status === "requested" && c.payoutId) {
-    await d.payout.update({ where: { id: c.payoutId }, data: { amountCents: { decrement: c.amountCents } } });
+    await d.payout.update({ where: { id: c.payoutId }, data: { amountCents: { decrement: c.amountCents }, amountChangedAt: now } });
   }
   return "reversed" as const;
 }
 
 /** Dispute won/cancelled: put a dispute reversal back where it belongs. Refund reversals stay. */
-export async function reinstateCommission(paymentId: string, db?: LedgerDb) {
-  const d = await getDb(db);
+export async function reinstateCommission(paymentId: string, db?: LedgerDb, now = new Date()) {
+  return locked(paymentId, db, (d) => reinstateIn(d, paymentId, now));
+}
+
+async function reinstateIn(d: LedgerDb, paymentId: string, now: Date) {
   const c = await d.commission.findUnique({ where: { paymentId } });
   if (!c || c.status !== "reversed" || c.reversedReason !== "dispute") return "noop" as const;
   let status = "available";
@@ -76,7 +96,7 @@ export async function reinstateCommission(paymentId: string, db?: LedgerDb) {
     const p = await d.payout.findUnique({ where: { id: c.payoutId } });
     if (p?.status === "requested") {
       status = "requested"; payoutId = p.id;
-      await d.payout.update({ where: { id: p.id }, data: { amountCents: { increment: c.amountCents } } });
+      await d.payout.update({ where: { id: p.id }, data: { amountCents: { increment: c.amountCents }, amountChangedAt: now } });
     }
   }
   await d.commission.updateMany({

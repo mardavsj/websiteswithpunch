@@ -1,5 +1,5 @@
 import { H2, P, UL } from "./LegalPage";
-import { REFERRAL, fmtUsd, ratePercent } from "@/lib/referrals/config";
+import { REFERRAL, fmtUsd, ratePercent, SCOPE } from "@/lib/referrals/config";
 
 /** Terms section for the referral program (numbers come from lib/referrals/config). */
 export function ReferralTerms() {
@@ -13,9 +13,10 @@ export function ReferralTerms() {
       </P>
       <UL>
         <li>
-          You earn {ratePercent}% of every payment your referral makes for Pro or Business plans and
-          site packs, calculated on the amount paid excluding tax (sales tax, VAT or GST). Free
-          accounts earn nothing.
+          You earn {ratePercent}% {SCOPE}, calculated on the plan amount excluding tax (sales tax,
+          VAT or GST). When a payment also covers site packs, only the plan part counts; payments for
+          site packs alone, and free accounts, earn nothing. For a prorated upgrade, only the plan
+          part of the prorated charge counts.
         </li>
         <li>
           Each commission is available as soon as the payment goes through. If the payment is

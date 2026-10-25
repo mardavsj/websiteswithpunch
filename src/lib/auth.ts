@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 import { MINUTE, clientIp, rateLimit } from "./rate-limit";
 import { isVerified, issueCode } from "./email-verify";
+import { isAdminEmail } from "./admin/access";
 
 /** Compared against when the email has no account, so both paths take the same time. */
 const DUMMY_HASH = "$2b$12$r09sNKkp7.i.ZP17a.00aOrsxPh.E3qm/BMw3EiFd6gOb4r09khuO";
@@ -31,6 +32,8 @@ function session({ session, token }: { session: Session; token: JWT }): Session 
     session.user.dodoStatus = (token.dodoStatus as string | null) || null;
     // Sessions from before verification existed carry no flag; those users all predate it.
     session.user.verified = token.ev !== false;
+    // Re-derived from ADMIN_EMAILS on every read, so removing an email takes effect at once.
+    session.user.admin = isAdminEmail(token.email);
   }
   return session;
 }

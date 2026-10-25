@@ -161,15 +161,18 @@ model CheckResult {
 
 /// Contact form submissions (backup copy; the team is also emailed via Resend).
 model ContactMessage {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   name      String
   email     String
   topic     String // general | billing | custom-limits | other
   message   String
   userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  emailSent Boolean  @default(false)
-  createdAt DateTime @default(now())
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  emailSent Boolean   @default(false)
+  /// Admin marked it handled (null = open).
+  handledAt DateTime?
+  handledBy String?
+  createdAt DateTime  @default(now())
 
   @@index([createdAt])
 }
@@ -274,20 +277,26 @@ model Commission {
 
 /// Manual withdrawal requests (PayPal or UPI). Method/address are snapshotted at request time.
 model Payout {
-  id          String       @id @default(cuid())
-  userId      String
-  amountCents Int
-  currency    String       @default("USD")
-  method      String
-  address     String
-  status      String       @default("requested") // requested | paid | rejected
-  reference   String?
-  reason      String?
-  decidedBy   String?
-  decidedAt   DateTime?
-  createdAt   DateTime     @default(now())
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  commissions Commission[]
+  id              String       @id @default(cuid())
+  userId          String
+  amountCents     Int
+  currency        String       @default("USD")
+  method          String
+  address         String
+  status          String       @default("requested") // requested | paid | rejected
+  reference       String?
+  reason          String?
+  decidedBy       String?
+  decidedAt       DateTime?
+  /// Amount at the moment of the request (amountCents can drop if a commission is reversed before payment).
+  requestedCents  Int?
+  /// Set when a refund/dispute changed amountCents while the request was open.
+  amountChangedAt DateTime?
+  /// UPI payouts: the INR actually sent, in paise (entered by the admin when marking paid).
+  paidInrPaise    Int?
+  createdAt       DateTime     @default(now())
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  commissions     Commission[]
 
   @@index([status, createdAt])
   @@index([userId, createdAt])

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { adminDecision, isAdminEmail } from "@/lib/admin/access";
 
 /** Signed-in only (the layouts check again on the server). */
 const APP = /^\/(dashboard|plan|profile|admin)(\/|$)/;
@@ -37,6 +38,17 @@ async function route(req: NextRequest) {
 
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   const unverified = Boolean(token) && token?.ev === false;
+  const admin = Boolean(token) && !unverified && isAdminEmail(token?.email);
+  const decision = adminDecision(pathname, req.method, Boolean(token), admin);
+  if (decision === "not-found") {
+    // Same answer as a page that doesn't exist: the admin area doesn't advertise itself.
+    if (isApi) return NextResponse.json({ error: "Not found" }, { status: 404, headers: { "Cache-Control": "no-store" } });
+    return NextResponse.rewrite(new URL("/404", req.url), { status: 404 });
+  }
+  if (decision === "forbidden") {
+    return NextResponse.json({ error: "Admin accounts can't change sites, billing or referrals." }, { status: 403, headers: { "Cache-Control": "no-store" } });
+  }
+  if (decision === "to-admin") return NextResponse.redirect(new URL("/admin", req.url));
 
   if (isApi) {
     if (unverified) {
@@ -70,7 +82,7 @@ async function route(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/", "/signup", "/pricing", "/dashboard/:path*", "/plan/:path*", "/profile/:path*", "/referrals/:path*",
+    "/", "/signup", "/pricing", "/checkout/:path*", "/onboarding/:path*", "/dashboard/:path*", "/plan/:path*", "/profile/:path*", "/referrals/:path*",
     "/admin/:path*", "/verify-email", "/api/:path*",
   ],
 };

@@ -12,6 +12,8 @@ declare module "next-auth" {
       dodoStatus: string | null;
       /** false until the email code is confirmed (see lib/email-verify.ts). */
       verified: boolean;
+      /** Email is in ADMIN_EMAILS: gets the admin panel instead of the customer app. */
+      admin?: boolean;
     };
   }
 

@@ -10,12 +10,8 @@ export async function audit(action: string, o: { actorId?: string | null; target
     .catch((e) => console.error("[audit] write failed", action, e));
 }
 
-/** ADMIN_EMAILS: comma separated allowlist. Empty = nobody is an admin. */
-export function isAdminEmail(email: string | null | undefined): boolean {
-  if (!email) return false;
-  const list = (process.env.ADMIN_EMAILS || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
-  return list.includes(email.trim().toLowerCase());
-}
+/** ADMIN_EMAILS allowlist (lives in lib/admin/access so middleware can share it). */
+export { isAdminEmail } from "@/lib/admin/access";
 
 export async function ensureReferralCode(userId: string): Promise<string> {
   const u = await prisma.user.findUnique({ where: { id: userId }, select: { referralCode: true } });
@@ -76,6 +72,8 @@ export class PayoutError extends Error {}
 export async function requestPayout(userId: string) {
   return prisma.$transaction(
     async (tx) => {
+      // Row lock on the user: a second request from the same user waits here, then sees the open payout.
+      await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`;
       const u = await tx.user.findUnique({ where: { id: userId }, select: { payoutMethod: true, payoutAddress: true } });
       if (!u?.payoutMethod || !u.payoutAddress) throw new PayoutError("Save a payout method first.");
       if (await tx.payout.findFirst({ where: { userId, status: "requested" }, select: { id: true } })) {
@@ -89,7 +87,7 @@ export async function requestPayout(userId: string) {
       const owed = rows.filter((r) => r.status === "reversed");
       const net = avail.reduce((s, r) => s + r.amountCents, 0) - owed.reduce((s, r) => s + r.amountCents, 0);
       if (net < REFERRAL.minPayoutCents) throw new PayoutError("Your available balance is below the $20 minimum.");
-      const payout = await tx.payout.create({ data: { userId, amountCents: net, method: u.payoutMethod, address: u.payoutAddress } });
+      const payout = await tx.payout.create({ data: { userId, amountCents: net, requestedCents: net, method: u.payoutMethod, address: u.payoutAddress } });
       const moved = await tx.commission.updateMany({ where: { id: { in: avail.map((r) => r.id) }, status: { in: ["available", "pending"] } }, data: { status: "requested", payoutId: payout.id } });
       if (moved.count !== avail.length) throw new PayoutError("Your balance changed. Please try again.");
       if (owed.length) await tx.commission.updateMany({ where: { id: { in: owed.map((r) => r.id) } }, data: { clawbackPayoutId: payout.id } });
@@ -100,17 +98,26 @@ export async function requestPayout(userId: string) {
 }
 
 /** Admin decision on a requested payout (guarded: only a "requested" payout can change). */
-export async function decidePayout(id: string, adminEmail: string, d: { action: "paid"; reference: string } | { action: "reject"; reason: string }) {
+export async function decidePayout(id: string, adminEmail: string, d: { action: "paid"; reference: string; inrPaise?: number | null; expectedCents?: number } | { action: "reject"; reason: string }) {
   return prisma.$transaction(async (tx) => {
     const now = new Date();
+    // Lock the payout row so a refund webhook can't change the amount between our check and the update.
+    const [locked] = await tx.$queryRaw<{ amountCents: number; status: string }[]>`SELECT "amountCents", status FROM "Payout" WHERE id = ${id} FOR UPDATE`;
+    if (!locked) throw new PayoutError("Payout not found.");
+    if (locked.status !== "requested") throw new PayoutError("This request was already decided.");
+    if (d.action === "paid" && d.expectedCents != null && d.expectedCents !== locked.amountCents) {
+      throw new PayoutError("The amount changed while you were looking at it. Reload and check the new amount.");
+    }
     const res = await tx.payout.updateMany({
       where: { id, status: "requested" },
       data: d.action === "paid"
-        ? { status: "paid", reference: d.reference, decidedBy: adminEmail, decidedAt: now }
+        ? { status: "paid", reference: d.reference, paidInrPaise: d.inrPaise ?? null, decidedBy: adminEmail, decidedAt: now }
         : { status: "rejected", reason: d.reason, decidedBy: adminEmail, decidedAt: now },
     });
     if (res.count === 0) throw new PayoutError("This request was already decided.");
     if (d.action === "paid") {
+      const p = await tx.payout.findUniqueOrThrow({ where: { id }, select: { amountCents: true } });
+      if (p.amountCents <= 0) throw new PayoutError("Nothing left to pay on this request (all commissions were reversed). Reject it instead.");
       await tx.commission.updateMany({ where: { payoutId: id, status: "requested" }, data: { status: "paid" } });
     } else {
       await tx.commission.updateMany({ where: { payoutId: id, status: "requested" }, data: { status: "available", payoutId: null } });

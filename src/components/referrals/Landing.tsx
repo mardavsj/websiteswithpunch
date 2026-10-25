@@ -1,17 +1,17 @@
 import Link from "next/link";
-import { REFERRAL, fmtUsd, ratePercent } from "@/lib/referrals/config";
+import { REFERRAL, fmtUsd, ratePercent, SCOPE } from "@/lib/referrals/config";
 
 const min = fmtUsd(REFERRAL.minPayoutCents).replace(".00", "");
 
 const STEPS = [
   { title: "Share your link", body: "Create a free account and copy your personal link." },
   { title: "They subscribe to Pro or Business", body: `Anyone who signs up within ${REFERRAL.attributionDays} days of opening it becomes your referral.` },
-  { title: `You get ${ratePercent}%`, body: `Of every payment they make. Withdraw from ${min} via PayPal or UPI.` },
+  { title: `You get ${ratePercent}%`, body: `Of their plan payments (site packs excluded). Withdraw from ${min} via PayPal or UPI.` },
 ];
 
 const FAQ = [
   { q: "Who can join?", a: "Anyone with a free Websites With Punch account. No application, no paid plan needed." },
-  { q: "How much do I earn?", a: `${ratePercent}% of every payment your referral makes for Pro or Business plans and site packs, excluding tax. USD subscriptions only. Refunded or disputed payments are reversed.` },
+  { q: "How much do I earn?", a: `${ratePercent}% ${SCOPE}, excluding tax. If a payment includes site packs, only the plan part counts. USD subscriptions only. Refunded or disputed payments are reversed.` },
   { q: "When can I withdraw?", a: `Each commission is available as soon as the payment goes through. Request a payout once your available balance reaches ${min}.` },
   { q: "How do I get paid?", a: "Payouts are reviewed and sent manually in USD to your PayPal email or UPI ID, usually within 7 business days. Provider fees or conversion may apply." },
 ];
@@ -27,7 +27,7 @@ export function ReferralLanding({ refCode }: { refCode: string | null }) {
         Earn {ratePercent}% when friends you refer pay
       </h1>
       <p className="mt-4 max-w-xl text-base text-muted">
-        Know someone who runs websites? Send them your link. When they pay, you get a cut of every payment.
+        Know someone who runs websites? Send them your link. You get a cut of their Pro and Business plan payments.
       </p>
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">
         <Link href={signup} className="bg-accent px-5 py-3 text-center text-sm font-medium text-white transition-colors hover:bg-accent-hover">

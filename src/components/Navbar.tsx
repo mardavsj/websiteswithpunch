@@ -8,6 +8,7 @@ import { GuestMenu } from "@/components/GuestMenu";
 import { NavUpgradeButtons } from "@/components/NavUpgradeButtons";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AdminMenu } from "@/components/admin/AdminMenu";
 
 /** Signed-in visitors are redirected away from these, so they always show the guest navbar. */
 const GUEST_ONLY = ["/login", "/signup"];
@@ -23,12 +24,13 @@ export function Navbar() {
   const unverified = session?.user?.verified === false;
   const verifying = pathname === "/verify-email" || unverified;
   const status = guestOnly ? "unauthenticated" : rawStatus;
+  const admin = Boolean(session?.user?.admin) && !unverified;
 
   return (
     <header className="sticky top-0 z-50 border-b border-rule bg-bg/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl min-w-0 items-center justify-between gap-2 px-4 py-4 sm:px-6">
         <Link
-          href={unverified ? "/verify-email" : session ? "/dashboard" : "/"}
+          href={unverified ? "/verify-email" : admin ? "/admin" : session ? "/dashboard" : "/"}
           className="flex min-w-0 items-center gap-2 font-display text-sm font-medium text-ink sm:gap-2.5 sm:text-base"
         >
           <Image
@@ -51,6 +53,12 @@ export function Navbar() {
                 </Link>
               )}
               <ThemeToggle />
+            </>
+          ) : admin ? (
+            <>
+              <span className="border border-accent/30 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider text-accent">Admin</span>
+              <ThemeToggle />
+              <AdminMenu email={session?.user?.email ?? "admin"} />
             </>
           ) : session ? (
             <>

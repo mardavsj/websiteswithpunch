@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 const title = "Referral program: earn 20% when friends you refer pay";
 const description =
-  "Share your link. When someone you refer pays for Pro or Business, you get 20%. Withdraw from $20 via PayPal or UPI.";
+  "Share your link. You get 20% on Pro and Business plan payments from people you refer (site packs excluded). Withdraw from $20 via PayPal or UPI.";
 
 export const metadata: Metadata = {
   title: "Referral program",

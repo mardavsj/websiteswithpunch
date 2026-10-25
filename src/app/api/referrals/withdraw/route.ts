@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { HOUR, clientIp, rateLimit, tooMany } from "@/lib/rate-limit";
 import { crossSiteBlocked } from "@/lib/same-origin";
 import { PayoutError, audit, requestPayout } from "@/lib/referrals/server";
+import { notifyAdminsRequested } from "@/lib/referrals/notify";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,6 +22,7 @@ export async function POST(req: Request) {
   try {
     const payout = await requestPayout(userId);
     await audit("payout.request", { actorId: userId, targetId: payout.id, ip: clientIp(req), meta: { amountCents: payout.amountCents, method: payout.method } });
+    await notifyAdminsRequested(payout.id);
     return NextResponse.json({ payout: { id: payout.id, amountCents: payout.amountCents, status: payout.status } }, { status: 201 });
   } catch (e) {
     if (e instanceof PayoutError) return NextResponse.json({ error: e.message }, { status: 409 });

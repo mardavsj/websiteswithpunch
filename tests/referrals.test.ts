@@ -146,3 +146,19 @@ test("payout method validation and masking", () => {
   assert.ok("error" in validatePayout("bank", "x@y.z"));
   assert.equal(maskAddress("mardav@okicici"), "ma••••@okicici");
 });
+
+test("reversal inside an open payout stamps amountChangedAt; reinstate stamps it again", async () => {
+  const db = fakeDb();
+  const now = new Date("2026-10-01T00:00:00Z");
+  await recordCommission({ referrerId: "r", referredUserId: "u", paymentId: "pay_x", subscriptionId: "s", currency: "USD", baseCents: 9600 }, now, db.db as unknown as LedgerDb);
+  const c = db.commissions[0];
+  db.payouts.push({ id: "P1", amountCents: 1920, status: "requested", amountChangedAt: null });
+  Object.assign(c, { status: "requested", payoutId: "P1" });
+  await reverseCommission("pay_x", "dispute", now, db.db as unknown as LedgerDb);
+  assert.equal(db.payouts[0].amountCents, 0);
+  assert.equal(db.payouts[0].amountChangedAt, now);
+  const later = new Date("2026-10-02T00:00:00Z");
+  await reinstateCommission("pay_x", db.db as unknown as LedgerDb, later);
+  assert.equal(db.payouts[0].amountCents, 1920);
+  assert.equal(db.payouts[0].amountChangedAt, later);
+});

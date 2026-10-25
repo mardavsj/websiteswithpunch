@@ -21,7 +21,7 @@ function lines(rows: CommissionRow[], payouts: PayoutRow[]): Line[] {
     const [status, tone] = C[r.status] ?? C.available;
     const note =
       r.status === "reversed" ? (r.clawback ? "Refunded after payout" : r.reversedReason || "Refunded or disputed")
-      : `of a ${fmtUsd(r.baseCents)} payment`;
+      : `of a ${fmtUsd(r.baseCents)} plan payment`;
     return { id: r.id, at: r.createdAt, what: "Commission", note, status, tone, cents: r.amountCents, strike: r.status === "reversed" };
   });
   const p = payouts.map((x): Line => {

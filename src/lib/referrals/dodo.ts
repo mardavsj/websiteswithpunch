@@ -25,10 +25,10 @@ type PaymentLike = {
   customer?: { customer_id?: string; email?: string } | null;
 };
 
-/** Commission basis for a payment, or null when it doesn't qualify. Amounts are cents. */
+/** Pre-tax payment total, or null when it doesn't qualify. Amounts are cents. */
 export function paymentBasis(p: PaymentLike): { baseCents: number; currency: string } | null {
   if (p.status && p.status !== "succeeded") return null;
-  if (!p.subscription_id) return null; // only Pro/Business subscriptions and their packs
+  if (!p.subscription_id) return null; // only Pro/Business subscriptions
   if (String(p.currency).toUpperCase() !== REFERRAL.currency) return null;
   const base = Math.round(p.total_amount) - Math.max(0, Math.round(p.tax ?? 0));
   return base > 0 ? { baseCents: base, currency: REFERRAL.currency } : null;
@@ -40,9 +40,13 @@ export async function handleReferralEvent(type: string, data: { payment_id?: str
   const paymentId = data.payment_id;
   const ledger = await import("./ledger");
 
-  if (type === "refund.succeeded") return ledger.reverseCommission(paymentId, "refund");
-  if (type === "dispute.opened" || type === "dispute.lost") return ledger.reverseCommission(paymentId, "dispute");
-  if (type === "dispute.won" || type === "dispute.cancelled") return ledger.reinstateCommission(paymentId);
+  const changed = async <T>(r: T) => {
+    if (r === "reversed" || r === "reinstated") await (await import("./notify")).notifyAdminsIfOpenPayoutChanged(paymentId);
+    return r;
+  };
+  if (type === "refund.succeeded") return changed(await ledger.reverseCommission(paymentId, "refund"));
+  if (type === "dispute.opened" || type === "dispute.lost") return changed(await ledger.reverseCommission(paymentId, "dispute"));
+  if (type === "dispute.won" || type === "dispute.cancelled") return changed(await ledger.reinstateCommission(paymentId));
 
   // payment.succeeded: re-read the payment from the API (never trust amounts in the body).
   const [{ getDodo }, { prisma }, { findUserForSubscription }, { notifyEarned }] = await Promise.all([
@@ -52,8 +56,14 @@ export async function handleReferralEvent(type: string, data: { payment_id?: str
   const dodo = getDodo();
   if (!dodo) throw new Error("DODO_PAYMENTS_API_KEY missing: cannot read the payment");
   const p = (await dodo.payments.retrieve(paymentId)) as unknown as PaymentLike;
-  const basis = paymentBasis(p);
-  if (!basis) return "not-eligible";
+  const total = paymentBasis(p);
+  if (!total) return "not-eligible";
+  const plan = await planPortion(dodo, p, total.baseCents);
+  if (plan.planCents <= 0) {
+    if (plan.source === "unmatched") console.warn("[referrals] no plan portion found, review manually", paymentId);
+    return "no-plan-portion";
+  }
+  const basis = { baseCents: plan.planCents, currency: total.currency };
   const payer = await findUserForSubscription({
     subscription_id: p.subscription_id!, metadata: p.metadata ?? undefined, customer: p.customer ?? undefined,
   } as Parameters<typeof findUserForSubscription>[0]);
@@ -63,4 +73,18 @@ export async function handleReferralEvent(type: string, data: { payment_id?: str
   });
   if (res.created) await notifyEarned(res.row.referrerId, res.row.amountCents);
   return res.created ? "recorded" : res.reason;
+}
+
+/** Plan share of the payment (site packs excluded); see basis.ts for the rules. */
+async function planPortion(dodo: NonNullable<ReturnType<typeof import("@/lib/dodo").getDodo>>, p: PaymentLike, preTaxCents: number) {
+  const [{ planBasis }, { lookupCatalogId }] = await Promise.all([import("./basis"), import("@/lib/dodo-products")]);
+  const items = await dodo.payments.retrieveLineItems(p.payment_id).then((r) => r.items, () => null);
+  let sub = null;
+  if (!items?.length || !items.every((i) => lookupCatalogId(i.items_id))) {
+    const s = await dodo.subscriptions.retrieve(p.subscription_id!);
+    const k = lookupCatalogId(s.product_id);
+    const packs = (s.addons ?? []).reduce((n, a) => n + (lookupCatalogId(a.addon_id)?.kind === "pack" ? a.quantity : 0), 0);
+    if (k?.kind === "plan") sub = { plan: k.plan, interval: k.interval, packs };
+  }
+  return planBasis({ preTaxCents, totalCents: Math.round(p.total_amount), items, sub, classify: lookupCatalogId });
 }
