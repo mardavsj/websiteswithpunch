@@ -155,6 +155,14 @@ export function ProfileMenu() {
           >
             My Plan
           </Link>
+          <Link
+            role="menuitem"
+            href="/referrals"
+            onClick={() => setOpen(false)}
+            className={itemClass}
+          >
+            Referrals · earn 20%
+          </Link>
           <div className="my-1 border-t border-rule" role="separator" />
           <button
             role="menuitem"

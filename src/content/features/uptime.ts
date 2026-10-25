@@ -27,7 +27,7 @@ export const uptimeFeature = {
       h: "How often sites are checked, honestly",
       p: [
         "Every active site gets one scheduled check a day, together with its SSL certificate and domain expiry lookup. That's enough to catch the slow failures (a site that broke after an update, a host that quietly went away, a certificate or domain about to lapse) and to build a useful history without hammering anyone's server.",
-        "When you want more than that, open a site's page and press Recheck for a fresh result right away (once a minute per site), or switch on auto refresh to rerun the check every 60 seconds while the page stays open, which is handy while you're fixing an outage or watching a deploy. We don't run minute-by-minute checks around the clock, and we don't send alerts: the dashboard is where you look.",
+        "When you want more than that, open a site's page and press Recheck for a fresh result right away (once a minute per site), or switch on auto refresh to rerun the check every 60 seconds while the page stays open, which is handy while you're fixing an outage or watching a deploy. We don't run minute-by-minute checks around the clock. When a check finds the site down we email you once, and once more when it's back up.",
       ],
     },
     {
@@ -54,7 +54,7 @@ export const uptimeFeature = {
     },
     {
       q: "Will I get an alert when my site goes down?",
-      a: "No. We don't send email, SMS or chat alerts. Status, response time and history are on your dashboard whenever you open it.",
+      a: "Yes, by email. When our daily check (or a Recheck you run) finds the site down, we email you once, and again once it recovers. Checks aren't minute-by-minute, so alerts aren't real-time, and we don't send SMS or chat alerts. You can switch alerts off on your profile.",
     },
     {
       q: "What counts as down?",

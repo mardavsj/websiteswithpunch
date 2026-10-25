@@ -70,7 +70,7 @@ export const faqs = [
   },
   {
     q: "Do you send alerts?",
-    a: "No. Everything shows on your dashboard: up/down status, response time, and clear warnings as SSL and domain expiry dates get close. Open it whenever you like, or recheck a site on demand.",
+    a: "Yes, by email. When a check finds a site down we email you once (and again when it recovers), and we email 30, 7 and 1 day before an SSL certificate or domain expires. Checks run daily and whenever you press Recheck, so alerts aren't real-time. Turn any of them off on your profile.",
   },
   {
     q: "What happens to my sites if I downgrade or cancel?",

@@ -70,8 +70,8 @@ export const downChecker = {
     },
     {
       q: "Can I get my site checked automatically?",
-      a: "Yes. Websites With Punch checks every site you add once a day in the background. On a site's page you can recheck on demand or turn on auto refresh, which rechecks every 60 seconds while the page is open. We don't send alerts; status and history are on your dashboard.",
+      a: "Yes. Websites With Punch checks every site you add once a day in the background. On a site's page you can recheck on demand or turn on auto refresh, which rechecks every 60 seconds while the page is open. If a check finds it down we email you once, and again when it's back; status and history are on your dashboard.",
     },
   ] satisfies Faq[],
-  cta: "Add the site and we check it every day, record the status and response time, and keep the history on your dashboard. Recheck on demand, or turn on auto refresh while you're fixing something. Free for one site, no card needed. (No alerts: you check the dashboard when it suits you.)",
+  cta: "Add the site and we check it every day, record the status and response time, and keep the history on your dashboard. Recheck on demand, or turn on auto refresh while you're fixing something. Free for one site, no card needed. (Email alerts when a check finds it down. Checks are daily, not real-time.)",
 };

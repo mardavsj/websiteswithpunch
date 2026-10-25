@@ -8,6 +8,8 @@ export type OutgoingEmail = {
   text: string;
   from?: string;
   replyTo?: string;
+  /** Extra headers, e.g. List-Unsubscribe for alert emails. */
+  headers?: Record<string, string>;
   /** Short label for dev logs, e.g. "verify". */
   tag: string;
 };
@@ -39,6 +41,7 @@ export async function sendEmail(mail: OutgoingEmail): Promise<SendResult> {
         from: mail.from || authFromEmail(),
         to: [mail.to],
         ...(mail.replyTo ? { reply_to: mail.replyTo } : {}),
+        ...(mail.headers ? { headers: mail.headers } : {}),
         subject: mail.subject,
         text: mail.text,
         html: mail.html,

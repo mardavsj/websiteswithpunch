@@ -19,7 +19,7 @@ export function ProfileSkeleton() {
           <Sk>Profile</Sk>
         </h1>
         <p className="mt-1 text-sm">
-          <Sk>Your account details.</Sk>
+          <Sk>Your account details and email alerts.</Sk>
         </p>
         <div className="mt-6 max-w-md space-y-4 rounded-none border border-rule bg-surface p-6">
           <div>
@@ -53,6 +53,21 @@ export function ProfileSkeleton() {
             <SkInput>At least 8 characters</SkInput>
           </div>
           <SkBtn className="px-4 py-2 text-sm font-medium">Save</SkBtn>
+        </div>
+        <div className="mt-6 max-w-md border border-rule bg-surface">
+          <div className="border-b border-rule px-6 py-4">
+            <p className="label-caps"><Sk>Email alerts</Sk></p>
+            <p className="mt-1 text-sm"><Sk>Sent after our daily check or a Recheck. Not real-time.</Sk></p>
+          </div>
+          {["Site down and recovered", "SSL certificate", "Domain expiry"].map((t) => (
+            <div key={t} className="flex items-start justify-between gap-4 border-t border-rule px-6 py-4 first:border-t-0">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium"><Sk>{t}</Sk></p>
+                <p className="mt-0.5 text-xs leading-5"><Sk>30, 7 and 1 day before expiry, and when it expires.</Sk></p>
+              </div>
+              <span className="sk mt-0.5 block h-6 w-11 shrink-0" />
+            </div>
+          ))}
         </div>
       </div>
     </div>

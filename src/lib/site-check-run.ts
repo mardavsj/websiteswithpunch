@@ -2,6 +2,7 @@ import type { Site } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { checkSsl, checkUptime, runFullSiteCheck } from "@/lib/checks";
 import { infoFields } from "@/lib/site-info";
+import { evaluateAlerts } from "@/lib/alerts";
 
 /** Recheck (manual or auto refresh): once per minute per site. */
 export const RECHECK_COOLDOWN_MS = 60_000;
@@ -71,6 +72,7 @@ export async function runSiteCheck(
         error: expiry.uptime.error,
       },
     });
+    await evaluateAlerts(updated, expiry.uptime);
     return { kind: "ok", site: updated, result: expiry.result };
   } catch (err) {
     // Release the slot so a failed check doesn't block the next attempt.

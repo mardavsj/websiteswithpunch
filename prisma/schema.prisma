@@ -8,47 +8,69 @@ datasource db {
 }
 
 model User {
-  id                      String    @id @default(cuid())
-  name                    String?
-  email                   String    @unique
-  password                String
+  id                    String                  @id @default(cuid())
+  name                  String?
+  email                 String                  @unique
+  password              String
   /// When the address was confirmed with an emailed code (see lib/email-verify.ts). Accounts
   /// created before VERIFICATION_STARTED_AT count as verified even while this is null.
-  emailVerified           DateTime?
-  image                   String?
-  plan                    String    @default("free") // free | pro | business (paid-through)
-  sitePackCount           Int       @default(0)
+  emailVerified         DateTime?
+  image                 String?
+  plan                  String                  @default("free") // free | pro | business (paid-through)
+  sitePackCount         Int                     @default(0)
   /// Target pack count after a scheduled removal (applies at pendingPackChangeAt).
-  pendingSitePackCount    Int?
+  pendingSitePackCount  Int?
   /// When pendingSitePackCount becomes the live limit (usually next renewal).
-  pendingPackChangeAt     DateTime?
+  pendingPackChangeAt   DateTime?
   /// Target plan after a scheduled downgrade/cancel (applies at pendingPlanAt).
-  pendingPlan             String?
+  pendingPlan           String?
   /// When pendingPlan becomes live (usually next renewal / cancel date).
-  pendingPlanAt           DateTime?
+  pendingPlanAt         DateTime?
   /// Mirrors Dodo cancel_at_next_billing_date for dashboard UI.
-  cancelAtPeriodEnd       Boolean   @default(false)
+  cancelAtPeriodEnd     Boolean                 @default(false)
   /// Unused (was 24h active-site swap cooldown). Kept to avoid schema churn.
-  lastSiteSwapAt          DateTime?
+  lastSiteSwapAt        DateTime?
   /// Show the "we kept your oldest" banner until dismissed.
-  showDefaultLockNotice   Boolean   @default(false)
+  showDefaultLockNotice Boolean                 @default(false)
   /// Dodo Payments customer (cus_…), created before the first checkout.
-  dodoCustomerId          String?   @unique
+  dodoCustomerId        String?                 @unique
   /// Current Dodo subscription (sub_…): one per customer, packs are add-ons on it.
-  dodoSubscriptionId      String?   @unique
-  dodoStatus              String?   // active | past_due | on_hold | cancelled | expired | failed
+  dodoSubscriptionId    String?                 @unique
+  dodoStatus            String? // active | past_due | on_hold | cancelled | expired | failed
   /// Timestamp of the newest webhook applied (older, out-of-order events are skipped).
-  dodoSyncedAt            DateTime?
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
-  accounts                Account[]
-  sessions                Session[]
-  sites                   Site[]
-  contactMessages         ContactMessage[]
-  passwordResetTokens     PasswordResetToken[]
-  emailCodes              EmailVerificationCode[]
+  dodoSyncedAt          DateTime?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  accounts              Account[]
+  sessions              Session[]
+  sites                 Site[]
+  contactMessages       ContactMessage[]
+  passwordResetTokens   PasswordResetToken[]
+  emailCodes            EmailVerificationCode[]
+  /// Email alert preferences (on by default; one-click unsubscribe turns one off).
+  alertDown             Boolean                 @default(true)
+  alertSsl              Boolean                 @default(true)
+  alertDomain           Boolean                 @default(true)
+  alertLogs             AlertLog[]
+  /// Referral program (lib/referrals). Code is created on first visit to /referrals.
+  referralCode          String?                 @unique
+  referredById          String?
+  referredBy            User?                   @relation("Referrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals             User[]                  @relation("Referrals")
+  referredAt            DateTime?
+  /// Visits to /r/CODE that set a new attribution cookie (rough count, not unique people).
+  referralClicks        Int                     @default(0)
+  /// SHA-256 of the signup IP (salted), only to refuse obvious self-referrals.
+  signupIpHash          String?
+  payoutMethod          String? // paypal | upi
+  payoutAddress         String?
+  payoutUpdatedAt       DateTime?
+  commissionsEarned     Commission[]            @relation("Earned")
+  commissionsPaidFor    Commission[]            @relation("Payer")
+  payouts               Payout[]
 
   @@index([emailVerified, createdAt])
+  @@index([referredById])
 }
 
 model Account {
@@ -111,6 +133,9 @@ model Site {
   updatedAt       DateTime      @updatedAt
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   checkResults    CheckResult[]
+  /// Set when a "site down" alert went out; cleared (with a recovery email) when it's back up.
+  alertDownAt     DateTime?
+  alertLogs       AlertLog[]
 
   @@unique([userId, url])
   @@index([userId])
@@ -122,7 +147,7 @@ model Site {
 model CheckResult {
   id         String   @id @default(cuid())
   siteId     String
-  status     String   // up | down | error
+  status     String // up | down | error
   statusCode Int?
   latencyMs  Int?
   error      String?
@@ -139,7 +164,7 @@ model ContactMessage {
   id        String   @id @default(cuid())
   name      String
   email     String
-  topic     String   // general | billing | custom-limits | other
+  topic     String // general | billing | custom-limits | other
   message   String
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -196,4 +221,88 @@ model EmailVerificationCode {
 
   @@index([userId, createdAt])
   @@index([expiresAt])
+}
+
+/// One row per alert email (dedupe): key is e.g. "ssl:7:2026-11-02" or "down:<iso>". The unique
+/// (siteId, key) makes every threshold or incident send at most once, even with parallel checks.
+model AlertLog {
+  id        String   @id @default(cuid())
+  userId    String
+  siteId    String
+  key       String
+  kind      String // down | recovered | ssl | domain
+  sent      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, key])
+  @@index([userId, createdAt])
+}
+
+/// Referral ledger: one row per paid Dodo payment by a referred user (paymentId unique = idempotent).
+/// pending (30-day hold) -> available -> requested -> paid; reversed on refund/dispute.
+model Commission {
+  id               String    @id @default(cuid())
+  referrerId       String
+  referredUserId   String?
+  paymentId        String    @unique
+  subscriptionId   String?
+  currency         String
+  /// Amount the commission is based on (payment total minus tax), smallest unit.
+  baseCents        Int
+  rateBps          Int
+  amountCents      Int
+  status           String // pending | available | requested | paid | reversed
+  availableAt      DateTime
+  payoutId         String?
+  /// Reversed after it was paid out: owed back, offset against the next payout.
+  clawback         Boolean   @default(false)
+  clawbackPayoutId String?
+  reversedReason   String? // refund | dispute
+  reversedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  referrer         User      @relation("Earned", fields: [referrerId], references: [id], onDelete: Cascade)
+  referredUser     User?     @relation("Payer", fields: [referredUserId], references: [id], onDelete: SetNull)
+  payout           Payout?   @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+
+  @@index([referrerId, status])
+  @@index([status, availableAt])
+  @@index([payoutId])
+}
+
+/// Manual withdrawal requests (PayPal or UPI). Method/address are snapshotted at request time.
+model Payout {
+  id          String       @id @default(cuid())
+  userId      String
+  amountCents Int
+  currency    String       @default("USD")
+  method      String
+  address     String
+  status      String       @default("requested") // requested | paid | rejected
+  reference   String?
+  reason      String?
+  decidedBy   String?
+  decidedAt   DateTime?
+  createdAt   DateTime     @default(now())
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  commissions Commission[]
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
+}
+
+/// Security-relevant actions (payout method changes, withdrawals, admin decisions).
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  targetId  String?
+  meta      Json?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([createdAt])
 }

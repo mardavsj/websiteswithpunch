@@ -7,6 +7,9 @@ import { HOUR, clientIp, rateLimit, tooMany } from "@/lib/rate-limit";
 import { looksLikeBot } from "@/lib/spam";
 import { checkSignupEmail } from "@/lib/email-domain";
 import { issueCode } from "@/lib/email-verify";
+import { hashIp } from "@/lib/referrals/attribution";
+import { REFERRAL } from "@/lib/referrals/config";
+import { attributeSignup } from "@/lib/referrals/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,13 +52,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "An account with this email already exists." }, { status: 409 });
     }
     const password = await bcrypt.hash(parsed.data.password, 12);
+    const ipHash = hashIp(clientIp(req));
     const user = await prisma.user.create({
-      data: { name: parsed.data.name, email, password, plan: "free" },
+      data: { name: parsed.data.name, email, password, plan: "free", signupIpHash: ipHash },
       select: { id: true, email: true, name: true },
     });
+    // Referral: first-touch cookie (from /r/CODE or ?ref=) wins over a ?ref passed by the form.
+    const refCookie = req.headers.get("cookie")?.match(new RegExp(`(?:^|;\\s*)${REFERRAL.cookie}=([^;]+)`))?.[1];
+    await attributeSignup(user, refCookie || body.ref, ipHash).catch((e) => console.warn("[referral] attribution failed", e));
     // The account stays limited to /verify-email until this code is entered.
     await issueCode(user, clientIp(req)).catch((e) => console.warn("[verify] signup code failed", e));
-    return NextResponse.json({ user, verify: true }, { status: 201 });
+    const res = NextResponse.json({ user, verify: true }, { status: 201 });
+    res.cookies.delete(REFERRAL.cookie);
+    return res;
   } catch (err) {
     const code = (err as { code?: string })?.code;
     if (code === "P2002") {

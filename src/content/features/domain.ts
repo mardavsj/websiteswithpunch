@@ -44,7 +44,7 @@ export const domainFeature = {
     {
       h: "What it doesn't do",
       p: [
-        "We don't renew domains, hold registrar logins or send alerts, and we don't monitor DNS record changes. The renewal date and days left are on your dashboard whenever you open it.",
+        "We don't renew domains, hold registrar logins or monitor DNS record changes. The renewal date and days left are on your dashboard, and we email you 30, 7 and 1 day before the domain expires, and if it does.",
       ],
     },
   ] satisfies ArticleSection[],

@@ -43,7 +43,7 @@ export const sslFeature = {
     {
       h: "What it doesn't do",
       p: [
-        "We don't install or renew certificates for you, we don't scan internal hosts or non-standard ports, and we don't send alerts. You see the numbers on your dashboard, and the renewal itself stays with your host, CDN or ACME client.",
+        "We don't install or renew certificates for you, we don't scan internal hosts or non-standard ports, and we don't watch it minute by minute. You see the numbers on your dashboard and get an email at 30, 7 and 1 day before expiry, and the renewal itself stays with your host, CDN or ACME client.",
       ],
     },
   ] satisfies ArticleSection[],
@@ -54,7 +54,7 @@ export const sslFeature = {
     },
     {
       q: "Do you warn me before a certificate expires?",
-      a: "The days left are shown on your dashboard and turn amber at 30 days and red at 7. We don't send email or chat alerts.",
+      a: "The days left are shown on your dashboard and turn amber at 30 days and red at 7. We also email you at 30, 7 and 1 day before expiry, when it expires, and if browsers stop trusting it (one email each).",
     },
     {
       q: "Does it work with Let's Encrypt and Cloudflare certificates?",

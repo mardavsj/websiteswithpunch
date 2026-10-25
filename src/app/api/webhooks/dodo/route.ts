@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getDodo } from "@/lib/dodo";
 import { verifyWebhook } from "@/lib/dodo-webhook-verify";
 import { syncSubscription } from "@/lib/dodo-sync";
+import { handleReferralEvent } from "@/lib/referrals/dodo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,11 +17,14 @@ export const dynamic = "force-dynamic";
  *   acknowledged without running again; a failed run releases the claim so Dodo's retry can.
  * - Subscription and payment events re-read the subscription from the Dodo API and mirror it
  *   (plan, packs, booked changes, cancel at period end, status), so order never matters.
+ * - Referrals (lib/referrals/dodo.ts): payment.succeeded books a 20% commission for a referred
+ *   payer; refund.succeeded / dispute.opened / dispute.lost reverse it; dispute.won / cancelled
+ *   reinstate it. Each is idempotent per payment id.
  */
 type WebhookEvent = {
   type?: string;
   timestamp?: string;
-  data?: { payload_type?: string; subscription_id?: string | null };
+  data?: { payload_type?: string; subscription_id?: string | null; payment_id?: string | null };
 };
 
 const SUBSCRIPTION_EVENTS = new Set([
@@ -88,6 +92,9 @@ export async function POST(req: Request) {
       const result = await syncSubscription(sub);
       if (result !== "synced") console.warn("[dodo webhook]", type, subId, result);
     }
+    // After the plan sync, so the payer's account is linked to this subscription first.
+    const ref = await handleReferralEvent(type, event.data);
+    if (ref !== "skip") console.info("[dodo webhook] referral", type, ref);
   } catch (err) {
     console.error("[dodo webhook] handler error", type, err);
     await prisma.webhookEvent.delete({ where: { id: id! } }).catch(() => undefined);

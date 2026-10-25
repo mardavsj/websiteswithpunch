@@ -96,7 +96,7 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>Resend</strong> delivers our transactional email: sign-up verification codes,
-          password reset links, password change confirmations and contact form messages to our team.
+          password reset links, password change confirmations, site alert emails (down, recovered, SSL and domain expiry), referral program emails and contact form messages to our team.
         </li>
         <li>
           To find domain expiry dates we send your site&apos;s domain name (never your account

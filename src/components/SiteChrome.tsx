@@ -6,14 +6,14 @@ import { useSession } from "next-auth/react";
 /** Auth pages fill the viewport under the navbar and have no footer. */
 export const AUTH_ROUTES = ["/login", "/signup", "/forgot-password", "/reset-password", "/verify-email"];
 /** Logged-in app pages get the slim app footer instead of the big marketing footer. */
-export const APP_ROUTES = ["/dashboard", "/plan", "/profile"];
+export const APP_ROUTES = ["/dashboard", "/plan", "/profile", "/referrals", "/admin"];
 /** Public pages that also feel in-app (slim footer) when someone is signed in. */
 export const SHARED_ROUTES = ["/terms", "/privacy", "/refund-policy", "/cookie-policy"];
 /**
  * Pages whose content is centred between the navbar and the footer: <main> becomes a flex column
  * that fills that space, and the page's flex-1 box centres itself inside it.
  */
-export const CENTRED_ROUTES = [...AUTH_ROUTES, "/plan", "/profile"];
+export const CENTRED_ROUTES = [...AUTH_ROUTES, "/plan", "/profile", "/referrals"];
 /**
  * /contact renders its own <main> and footer from its server layout (contact/layout.tsx), which
  * knows the session on the server: the right footer is there on first paint, so the centred

@@ -2,10 +2,13 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 /** Signed-in only (the layouts check again on the server). */
-const APP = /^\/(dashboard|plan|profile)(\/|$)/;
+const APP = /^\/(dashboard|plan|profile|referrals|admin)(\/|$)/;
 const VERIFY = "/verify-email";
+/** Same as lib/referrals (kept inline: middleware runs on the edge). */
+const REF_COOKIE = "wwp_ref";
+const REF_CODE = /^[A-HJ-NP-Z2-9]{8}$/;
 /** APIs an unverified account may still call (auth, its own verification, public endpoints). */
-const OPEN_API = /^\/api\/(auth|contact|tools|cron|webhooks\/dodo|me)(\/|$)/;
+const OPEN_API = /^\/api\/(auth|contact|tools|cron|webhooks\/dodo|me|alerts\/unsubscribe)(\/|$)/;
 
 /**
  * - Signed-out visitors to app pages go to our login page (with a callbackUrl back).
@@ -14,6 +17,18 @@ const OPEN_API = /^\/api\/(auth|contact|tools|cron|webhooks\/dodo|me)(\/|$)/;
  * - Signed-in visitors to the homepage go to their dashboard (keeps the homepage static).
  */
 export async function middleware(req: NextRequest) {
+  const res = await route(req);
+  // ?ref=CODE on a public page: first-touch referral cookie (signup checks the code exists).
+  const ref = req.nextUrl.searchParams.get("ref")?.trim().toUpperCase();
+  if (ref && REF_CODE.test(ref) && !req.cookies.has(REF_COOKIE) && !req.nextUrl.pathname.startsWith("/api/")) {
+    res.cookies.set(REF_COOKIE, ref, {
+      httpOnly: true, sameSite: "lax", path: "/", maxAge: 30 * 86_400, secure: process.env.NODE_ENV === "production",
+    });
+  }
+  return res;
+}
+
+async function route(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
   const isApi = pathname.startsWith("/api/");
   if (isApi && OPEN_API.test(pathname)) return NextResponse.next();
@@ -51,5 +66,8 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/dashboard/:path*", "/plan/:path*", "/profile/:path*", "/verify-email", "/api/:path*"],
+  matcher: [
+    "/", "/signup", "/pricing", "/dashboard/:path*", "/plan/:path*", "/profile/:path*", "/referrals/:path*",
+    "/admin/:path*", "/verify-email", "/api/:path*",
+  ],
 };

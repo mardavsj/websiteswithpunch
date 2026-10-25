@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { A, H2, LegalContact, LegalPage, P } from "@/components/legal/LegalPage";
+import { ReferralTerms } from "@/components/legal/ReferralTerms";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <LegalPage title="Terms of Service" updated="October 4, 2026" path="/terms">
+    <LegalPage title="Terms of Service" updated="October 9, 2026" path="/terms">
       <P>
         These Terms govern your use of Websites With Punch at{" "}
         <a className="text-accent underline underline-offset-2 hover:no-underline" href="https://websiteswithpunch.com">
@@ -25,13 +26,16 @@ export default function TermsPage() {
       <P>
         Websites With Punch is a software-as-a-service (SaaS) subscription for website health
         monitoring: uptime checks, SSL certificate expiry checks and best-effort domain expiry
-        lookups, shown on an online dashboard. It is a digital service you use in your browser
+        lookups, shown on an online dashboard, with email alerts when a check finds a site down
+        or back up and as SSL certificates and domains approach expiry. It is a digital service you use in your browser
         right after you sign up. No physical goods are sold or shipped.
       </P>
       <P>
         Monitoring is informational and may be delayed, incomplete, or unavailable. Domain expiry
         information relies on public RDAP/WHOIS sources and is not guaranteed to be accurate or
-        continuously available.
+        continuously available. Sites are checked about once a day and when you press Recheck, so
+        alert emails are not real-time and may be delayed or not delivered. You can turn alerts off
+        on your profile or with the unsubscribe link in any alert email.
       </P>
 
       <H2>Accounts &amp; Plans</H2>
@@ -88,6 +92,8 @@ export default function TermsPage() {
         charged, and your billing date moves to that day.
       </P>
 
+      <ReferralTerms />
+
       <H2>Disclaimer</H2>
       <P>
         THE SERVICE IS PROVIDED “AS IS” WITHOUT WARRANTIES OF ANY KIND. We do not guarantee
@@ -96,7 +102,7 @@ export default function TermsPage() {
       </P>
       <P>
         To the maximum extent permitted by applicable law, Makvion Technologies is not liable for
-        downtime of your websites, missed or delayed status changes, expired certificates or domains,
+        downtime of your websites, missed or delayed status changes or alert emails, expired certificates or domains,
         loss of data, business interruption, or consequential or indirect damages arising from your
         use of the service.
       </P>

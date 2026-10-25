@@ -41,6 +41,8 @@ export type EmailParts = {
   notes?: string[];
   /** Raw HTML block for custom content (contact notification). */
   extra?: string;
+  /** Raw HTML shown above the heading (alert status banner). */
+  top?: string;
   /** Why the recipient got this email, shown in the footer. */
   reason: string;
 };
@@ -90,7 +92,7 @@ ${DARK_CSS("[data-ogsc]")}
 <span class="wwp-ink" style="display:inline-block;vertical-align:middle;margin-left:10px;font-family:${FONT};font-size:16px;font-weight:600;color:${C.ink}">Websites With Punch</span></a>
 </td></tr>
 <tr><td class="wwp-card wwp-pad" style="background:${C.surface};border:1px solid ${C.rule};padding:32px 36px">
-<h1 class="wwp-ink" style="margin:0 0 16px;font-family:${FONT};font-size:22px;line-height:30px;font-weight:600;color:${C.ink}">${escapeHtml(e.heading)}</h1>
+${e.top || ""}<h1 class="wwp-ink" style="margin:0 0 16px;font-family:${FONT};font-size:22px;line-height:30px;font-weight:600;color:${C.ink}">${escapeHtml(e.heading)}</h1>
 ${e.intro.map((h) => p(h)).join("")}
 ${e.code ? codeBlock(e.code) : ""}${e.button ? button(e.button.label, e.button.url) : ""}${e.extra || ""}${notes}
 </td></tr>

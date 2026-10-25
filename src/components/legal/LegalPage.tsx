@@ -42,8 +42,8 @@ export function LegalPage({
   );
 }
 
-export function H2({ children }: { children: React.ReactNode }) {
-  return <h2 className="font-display text-xl font-medium text-ink">{children}</h2>;
+export function H2({ children, id }: { children: React.ReactNode; id?: string }) {
+  return <h2 id={id} className="scroll-mt-24 font-display text-xl font-medium text-ink">{children}</h2>;
 }
 
 export function P({ children }: { children: React.ReactNode }) {
