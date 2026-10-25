@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { CARD_BTN, SiteCardHead, SiteCardMetrics } from "@/components/SiteCardParts";
 import { SiteCardSkeleton } from "@/components/skeleton/SiteCardSkeleton";
 import { useRecheckCooldown } from "@/components/useRecheckCooldown";
+import { AlertsCta } from "../AlertsCta";
 import { AccountPrompt, type PromptKind } from "./AccountPrompt";
 import { CheckError, runCheck, type HeroCheck } from "./run-check";
 
@@ -95,6 +96,7 @@ export function HeroResult({ result, onResult }: { result: HeroCheck; onResult: 
           </div>
         </div>
         {msg && <p className="mt-2 text-xs text-danger">{msg}</p>}
+        <AlertsCta host={result.host} />
       </article>
       <AccountPrompt kind={prompt} site={{ name: result.domain, url: result.url }} onClose={closePrompt} />
     </div>

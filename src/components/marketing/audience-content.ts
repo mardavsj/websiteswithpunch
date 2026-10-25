@@ -30,7 +30,7 @@ export const personas: Persona[] = [
     get: "Uptime, SSL and domain checks for your main site. Upgrade only when you add more.",
     stat: String(PLANS.free.siteLimit),
     statLabel: `site on ${PLANS.free.name}, no card needed`,
-    cta: "Start free",
+    cta: "Start monitoring free",
     href: "/signup",
   },
   {

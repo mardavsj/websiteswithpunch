@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AlertsCta } from "@/components/marketing/AlertsCta";
 import { DomainResultView, DownResultView, SslResultView } from "./result-views";
 
 export type ToolKind = "ssl" | "domain" | "down";
@@ -12,12 +12,11 @@ export function ToolResult({ kind, data }: { kind: ToolKind; data: Data }) {
       {kind === "ssl" && <SslResultView d={data} />}
       {kind === "domain" && <DomainResultView d={data} />}
       {kind === "down" && <DownResultView d={data} />}
-      <p className="mt-6 text-sm text-muted">
-        Want this checked every day?{" "}
-        <Link href="/signup" className="font-medium text-accent hover:underline">
-          Monitor {host || "it"} daily for free →
-        </Link>
-      </p>
+      {host ? (
+        <div className="mt-6">
+          <AlertsCta host={host} lead={`Monitor ${host} every day and get an email when something needs attention.`} />
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -59,7 +59,7 @@ export const pricingPlans: PricingPlan[] = [
     id: "free",
     name: PLANS.free.name,
     audience: "For the one site you can’t afford to lose.",
-    cta: "Get started free",
+    cta: "Start monitoring free",
     pricing: { month: freePricing, year: freePricing },
     features: [{ text: "1 monitored site" }, { text: "No site packs", off: true }, ...shared],
   },

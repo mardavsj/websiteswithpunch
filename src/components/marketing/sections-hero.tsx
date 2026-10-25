@@ -4,6 +4,7 @@ import { HeroStage } from "./HeroStage";
 import { HeroCheckForm } from "./hero-check/HeroCheckForm";
 import { HeroCheckProvider } from "./hero-check/HeroCheckProvider";
 import { HeroResultSlot } from "./hero-check/HeroResultSlot";
+import { FREE_TRUST, START_LABEL } from "./StartCta";
 import { IconGlobe, IconLock, IconPulse } from "./icons";
 
 /** Neutral "what we check" row: protocols we really use, not customer logos. */
@@ -58,7 +59,7 @@ export function HeroSection() {
                 href="/signup"
                 className="bg-accent px-6 py-3 text-sm font-semibold text-white shadow-[4px_4px_0_0_hsl(var(--ink)/0.12)] hover:bg-accent-hover"
               >
-                Start free
+                {START_LABEL}
               </Link>
               <Link
                 href="/#how-it-works"
@@ -67,7 +68,7 @@ export function HeroSection() {
                 See how it works
               </Link>
             </div>
-            <p className="mt-4 text-sm text-muted">Free for 1 site · No card needed</p>
+            <p className="mt-4 text-sm text-muted">{FREE_TRUST}</p>
 
             <div className="mt-10 border-t border-rule pt-5">
               <p className="label-caps">What we check</p>

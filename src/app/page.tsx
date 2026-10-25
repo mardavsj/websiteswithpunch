@@ -1,3 +1,4 @@
+import { CtaBand } from "@/components/marketing/StartCta";
 import type { Metadata } from "next";
 import { AudienceSection } from "@/components/marketing/AudienceSection";
 import { PricingSection } from "@/components/marketing/sections-audience-pricing";
@@ -32,8 +33,10 @@ export default function HomePage() {
       <ProofStrip />
       <HowItWorksSection />
       <FeaturesSection />
+      <CtaBand line="Uptime, SSL and domain expiry for your site, checked every day." />
       <WhyItMattersSection />
       <ProductPreviewSection />
+      <CtaBand line="Add your site and see it on this dashboard." />
       <AudienceSection />
       <PricingSection />
       <FaqSection />

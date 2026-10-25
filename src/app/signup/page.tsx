@@ -6,6 +6,8 @@ import type { PlanId } from "@/lib/plans";
 import { parseInterval } from "@/lib/billing-interval";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { SignupForm } from "./signup-form";
+import { PendingSiteNote } from "./PendingSiteNote";
+import { cleanSiteParam } from "@/lib/signup-link";
 
 export const metadata: Metadata = {
   title: "Create your account",
@@ -23,15 +25,17 @@ function parsePlan(raw: string | string[] | undefined): PlanId {
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: { plan?: string; interval?: string; canceled?: string };
+  searchParams: { plan?: string; interval?: string; canceled?: string; site?: string };
 }) {
   const session = await getSession();
   if (session?.user) redirect("/dashboard");
 
   const initialPlan = parsePlan(searchParams.plan);
+  const site = cleanSiteParam(searchParams.site);
 
   return (
     <AuthShell>
+      {site ? <PendingSiteNote host={site} /> : null}
       <SignupForm
         initialPlan={initialPlan}
         initialInterval={parseInterval(searchParams.interval)}

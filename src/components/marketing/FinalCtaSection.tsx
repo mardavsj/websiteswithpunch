@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FREE_TRUST, START_LABEL } from "./StartCta";
 
 /** Faint hairline grid, fading out toward the copy so text stays crisp (no glow). */
 const gridStyle = {
@@ -64,7 +65,7 @@ export function FinalCtaSection() {
               href="/signup"
               className="inline-flex bg-accent px-6 py-3 text-sm font-semibold text-white hover:bg-accent-hover"
             >
-              Start free
+              {START_LABEL}
             </Link>
             <a
               href="#pricing"
@@ -73,7 +74,7 @@ export function FinalCtaSection() {
               See pricing
             </a>
           </div>
-          <p className="mt-5 text-sm text-solid-fg/55">Free for 1 site · No card needed</p>
+          <p className="mt-5 text-sm text-solid-fg/55">{FREE_TRUST}</p>
         </div>
         <FirstCheckReadout />
       </div>
